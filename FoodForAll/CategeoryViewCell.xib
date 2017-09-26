@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" rowHeight="50" id="KGk-i7-Jjw" customClass="CategeoryViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="49.5"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="radio_unclicked" translatesAutoresizingMaskIntoConstraints="NO" id="3gD-ZU-Bp4">
+                        <rect key="frame" x="40" y="15" width="20" height="20"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="20" id="fXN-8H-XOQ"/>
+                            <constraint firstAttribute="height" constant="20" id="iNE-EG-aeD"/>
+                        </constraints>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" tag="4" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qtR-uu-dt3">
+                        <rect key="frame" x="68" y="15" width="244" height="20"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="20" id="ztG-NF-Byo"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <imageView userInteractionEnabled="NO" tag="1" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="radio_unclicked" translatesAutoresizingMaskIntoConstraints="NO" id="gIF-u6-8IY">
+                        <rect key="frame" x="10" y="15" width="20" height="20"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="20" id="56u-W3-C1u"/>
+                            <constraint firstAttribute="width" constant="20" id="yhq-XI-HlD"/>
+                        </constraints>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-1P-FQW">
+                        <rect key="frame" x="40" y="15" width="272" height="20"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="20" id="ZfI-gq-GkO"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="gIF-u6-8IY" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="13P-iJ-QRA"/>
+                    <constraint firstItem="dcE-1P-FQW" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="21L-Q1-K9j"/>
+                    <constraint firstItem="3gD-ZU-Bp4" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="40" id="8KP-ZF-Ftm"/>
+                    <constraint firstItem="dcE-1P-FQW" firstAttribute="leading" secondItem="gIF-u6-8IY" secondAttribute="trailing" constant="10" id="Ace-f1-g5O"/>
+                    <constraint firstItem="3gD-ZU-Bp4" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="Jga-mS-63b"/>
+                    <constraint firstItem="qtR-uu-dt3" firstAttribute="leading" secondItem="3gD-ZU-Bp4" secondAttribute="trailing" constant="8" id="MzQ-5B-tQJ"/>
+                    <constraint firstItem="qtR-uu-dt3" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="15" id="RkN-Vu-PXp"/>
+                    <constraint firstItem="gIF-u6-8IY" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="10" id="UMv-R0-lOE"/>
+                    <constraint firstAttribute="trailing" secondItem="qtR-uu-dt3" secondAttribute="trailing" constant="8" id="l8i-yh-LSM"/>
+                    <constraint firstAttribute="trailing" secondItem="dcE-1P-FQW" secondAttribute="trailing" constant="8" id="vMi-yz-xzO"/>
+                </constraints>
+            </tableViewCellContentView>
+            <point key="canvasLocation" x="25" y="55"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="radio_unclicked" width="25" height="25"/>
+    </resources>
+</document>
