@@ -773,7 +773,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         let imageURL: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "share_meal_image") as! String
         let url = NSURL(string:imageURL)
-        cell.foodbankImage.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.foodbankImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         cell.foodbankName.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "meal_title") as! String
         cell.foodBankUserName.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "username") as! String
@@ -797,12 +797,12 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         let categeory: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type_image") as! String
         let url2 = NSURL(string:categeory)
-        cell.SubCategeoryImage.sd_setImage(with: (url2) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.SubCategeoryImage.sd_setImage(with: (url2)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         
         let categeory2: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "category_image") as! String
         let url3 = NSURL(string:categeory2)
-        cell.CategeoryImage.sd_setImage(with: (url3) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.CategeoryImage.sd_setImage(with: (url3)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         Timemanager.configureCell(cell, withTimerArr: timerArr, withSecondsArr: secondsArr, forAt: indexPath)
         

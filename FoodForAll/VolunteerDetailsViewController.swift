@@ -223,8 +223,8 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         let boldAttributedString6 = NSAttributedString(string: "", attributes: boldAttribute)
         if let quantity = VolunteerDetails.object(forKey: "distance") as? NSNumber
         {
-            let strval: NSString = (quantity: quantity.stringValue) as NSString
-            
+           // let strval: String = ((quantity: quantity.stringValue) as! String)
+            let strval = String(describing: quantity)
              status6 = String(format:"%@ Kms", strval) as NSString
         }
         else if let quantity = VolunteerDetails.object(forKey: "distance") as? String

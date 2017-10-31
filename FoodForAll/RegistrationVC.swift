@@ -858,7 +858,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
             } else {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
-                print("error: \(error?.localizedDescription)")
+                print("error: \(String(describing: error?.localizedDescription))")
             }
         }
         

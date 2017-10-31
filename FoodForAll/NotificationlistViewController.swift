@@ -347,7 +347,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                   // let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -364,7 +365,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                  //  let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -385,7 +387,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                  //  let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.SharedMealID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -403,7 +406,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                   // let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.SharedMealID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -424,7 +428,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                  // let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -441,7 +446,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 
                 if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
                 {
-                    let strval: NSString = (quantity: quantity.stringValue) as NSString
+                  //  let strval: String = (quantity: quantity.stringValue) as! String
+                    let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
                 else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -460,7 +466,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             
             if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
             {
-                let strval: NSString = (quantity: quantity.stringValue) as NSString
+               // let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
                 myVC?.foodbankID = strval as String
             }
             else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -478,7 +485,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             
             if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
             {
-                let strval: NSString = (quantity: quantity.stringValue) as NSString
+               // let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
                 myVC?.SharedMealID = strval as String
             }
             else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -496,7 +504,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             
             if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
             {
-                let strval: NSString = (quantity: quantity.stringValue) as NSString
+                //let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
                 myVC?.foodbankID = strval as String
             }
             else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -515,7 +524,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             
             if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
             {
-                let strval: NSString = (quantity: quantity.stringValue) as NSString
+               // let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
                 myVC?.SharedMealID = strval as String
             }
             else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
@@ -533,7 +543,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             
             if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
             {
-                let strval: NSString = (quantity: quantity.stringValue) as NSString
+               // let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
                 myVC?.foodbankID = strval as String
             }
             else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String

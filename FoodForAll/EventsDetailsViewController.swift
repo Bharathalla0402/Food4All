@@ -396,7 +396,8 @@ class EventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocatio
                     
                     if let quantity = (self.listDicFoodBank .value(forKey: "distance")) as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        //let strval: String = (quantity: quantity.stringValue) as! String
+                        let strval = String(describing: quantity)
                         let str1:String = "With in "
                         let str2:String = "Kms"
                         self.mileLabel.text! = str1 + (strval as String) + str2

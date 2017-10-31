@@ -818,10 +818,8 @@ class FoodBanksVc: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
                     //print(error.localizedDescription)
                 }
-                
             }
         }
-
     }
     
     func responsewithToken6(_ responseDict: NSDictionary) {
@@ -945,7 +943,7 @@ class FoodBanksVc: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
                 if (strpage == "0") {
                     FoodBankTableView.tableFooterView = footerview2
                   //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.stopAnimating()
-                  //  loadLbl.text = "No More List"
+                  //  loadLbl.text = "No More"
                  //   actInd.stopAnimating()
                 }
                 else {
@@ -968,8 +966,8 @@ class FoodBanksVc: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     
     
   
-    @IBAction func setUpfoodBankBtnAction(_ sender: Any) {
-        
+    @IBAction func setUpfoodBankBtnAction(_ sender: Any)
+    {
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
             let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SetupFoodBankVC") as? SetupFoodBankVC
@@ -982,7 +980,6 @@ class FoodBanksVc: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
             proVC.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(proVC, animated: true)
         }
-        
     }
     
     
@@ -1014,7 +1011,8 @@ class FoodBanksVc: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     }
     
     func revealController(_ revealController: SWRevealViewController, didMoveTo position: FrontViewPosition) {
-        if position == FrontViewPositionLeft {
+        if position == FrontViewPositionLeft
+        {
             //  self.view.addSubview(frontView)
             self.view.isUserInteractionEnabled = true
             frontView.isHidden=true

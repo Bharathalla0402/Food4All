@@ -190,7 +190,7 @@ class MyEventsVC: UIViewController,UITableViewDelegate,UITableViewDataSource,CLL
         
         let imageURL: String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "image") as! String
         let url = NSURL(string: imageURL )
-        cell.EventImage.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.EventImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         cell.EventTitle.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "event_title") as! String
         cell.EventUserName.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_name") as! String
@@ -198,7 +198,8 @@ class MyEventsVC: UIViewController,UITableViewDelegate,UITableViewDataSource,CLL
                
         if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? NSNumber
         {
-            let strval: NSString = (quantity: quantity.stringValue) as NSString
+           // let strval: String = (quantity: quantity.stringValue) as! String
+            let strval = String(describing: quantity)
             cell.EventDistance.text! = strval as String + " kms"
             
         }

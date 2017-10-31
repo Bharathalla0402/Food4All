@@ -1353,7 +1353,7 @@ class MyFoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManager
             checkImage.frame = CGRect(x:self.view.frame.size.width-40, y:20, width:30, height:30)
             if let quantity = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as? NSNumber
             {
-                let VolunteerID: NSString = (quantity: quantity.stringValue) as NSString
+                let VolunteerID: String = (quantity: quantity.stringValue) as! String
 
                 if arryDatalistids.contains(VolunteerID)
                 {
@@ -1405,7 +1405,7 @@ class MyFoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManager
             checkImage.frame = CGRect(x:self.view.frame.size.width-40, y:20, width:30, height:30)
             if let quantity = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as? NSNumber
             {
-                let VolunteerID: NSString = (quantity: quantity.stringValue) as NSString
+                let VolunteerID: String = (quantity: quantity.stringValue) as! String
                 
                 if arryDatalistids.contains(VolunteerID)
                 {

@@ -95,6 +95,16 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if revealViewController() != nil {
+            
+            revealViewController().rearViewRevealWidth = 260
+            menuButton.target = revealViewController()
+            menuButton.action = #selector(SWRevealViewController.revealToggle(_:))
+            self.revealViewController().delegate=self
+            view.addGestureRecognizer(self.revealViewController().panGestureRecognizer())
+            view.addGestureRecognizer(self.revealViewController().tapGestureRecognizer())
+        }
+        
         frontView.frame = CGRect(x:0, y:65, width:self.view.frame.size.width, height:self.view.frame.size.height)
         frontView.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
         frontView.isHidden=true
@@ -179,15 +189,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
         
         
         
-        if revealViewController() != nil {
-            
-            revealViewController().rearViewRevealWidth = 260
-            menuButton.target = revealViewController()
-            menuButton.action = #selector(SWRevealViewController.revealToggle(_:))
-            self.revealViewController().delegate=self
-            view.addGestureRecognizer(self.revealViewController().panGestureRecognizer())
-            view.addGestureRecognizer(self.revealViewController().tapGestureRecognizer())
-        }
+       
         
 //        volunterTblView.estimatedRowHeight = 50
 //        volunterTblView.rowHeight = UITableViewAutomaticDimension
@@ -235,8 +237,11 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
         }
         else
         {
+            self.ValunteerButt.isHidden=false
+             self.ValunteerButt.isUserInteractionEnabled=true
+            self.ValunteerButt2.isHidden=true
             ValunteerButt.setTitle("Login To become Volunteer", for: .normal)
-            ValunteerButt.isUserInteractionEnabled=false
+             ValunteerButt.addTarget(self, action: #selector(VolinteerVC.becomeVolntrBtnAction(_:)), for: UIControlEvents.touchUpInside)
         }
         
          self.GetVolunteerAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=volunteerList&user_id=\(strUserID)")
@@ -454,7 +459,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
         else
         {
             ValunteerButt.setTitle("Login To become Volunteer", for: .normal)
-            ValunteerButt.isUserInteractionEnabled=false
+            ValunteerButt.isUserInteractionEnabled=true
         }
 
 

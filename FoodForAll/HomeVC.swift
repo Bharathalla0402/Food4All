@@ -100,7 +100,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
+        NotificationCenter.default.addObserver(self, selector: #selector(HomeVC.getDashBoardAPImethod), name: NSNotification.Name(rawValue: "NotificationIdentifier"), object: nil)
         
         frontView.frame = CGRect(x:0, y:65, width:self.view.frame.size.width, height:self.view.frame.size.height)
         frontView.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -201,7 +201,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             present(alertController, animated: true, completion: nil)
         }
 
-        
+        self.locationmethod()
         self.getDashBoardAPImethod()
     }
     
@@ -250,6 +250,11 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         
         self.tabBarController?.tabBar.isHidden = false
         self.getDashBoardAPImethod()
+        
+        
+        // self.locationmethod()
+        
+       
     }
     
     
@@ -303,6 +308,32 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         //banner?.notScrolling = true
     }
     
+    func locationmethod () -> Void
+    {
+        
+        print("location method")
+        
+        
+        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
+            currentLatitude = (locationManager.location?.coordinate.latitude)!
+            currentLongitude = (locationManager.location?.coordinate.longitude)!
+            firstLatitude = (locationManager.location?.coordinate.latitude)!
+            firstLongitude = (locationManager.location?.coordinate.longitude)!
+             self.getDashBoardAPImethod()
+        }
+        else
+        {
+              print("location method2")
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
+               self.locationmethod()
+            }
+        }
+    }
+
+    
+    
+    
     func getDashBoardAPImethod () -> Void
     {
                 let baseURL: String  = String(format:"%@",Constants.mainURL)
@@ -353,7 +384,9 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
                             
                             if let quantity = responceDic.object(forKey: "Notification") as? NSNumber
                             {
-                                let strval: NSString = (quantity: quantity.stringValue) as NSString
+                               //let strval: String = (quantity: quantity.stringValue) as! String
+                                
+                                let strval = String(describing: quantity)
                                 
                                 if strval == "0"
                                 {
@@ -363,7 +396,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
                                 }
                                 else
                                 {
-                                    self.NoticationLab.text = (quantity: quantity.stringValue)
+                                    self.NoticationLab.text = (quantity: quantity.stringValue) as? String
                                     UserDefaults.standard.set(self.NoticationLab.text, forKey: "NCount")
                                     self.NoticationLab.isHidden = false
                                     self.NotificationButton.isHidden = false

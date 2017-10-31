@@ -202,7 +202,7 @@
     
     
     
-    NSString *strurl=[NSString stringWithFormat:@"https://www.food4all.org/demo/webservices/Api.php"];
+    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
     
     
     // set URL
@@ -297,7 +297,7 @@
         
         
         
-        NSString *strurl=[NSString stringWithFormat:@"https://www.food4all.org/demo/webservices/Api.php"];
+        NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
         
         
         // set URL
@@ -387,7 +387,7 @@
         
         
         
-        NSString *strurl=[NSString stringWithFormat:@"https://www.food4all.org/demo/webservices/Api.php"];
+        NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
         
         
         // set URL
@@ -738,7 +738,7 @@
                 
                 
                 
-                NSString *strurl=[NSString stringWithFormat:@"https://www.food4all.org/demo/webservices/Api.php"];
+                NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
                 
                 
                 // set URL
@@ -962,7 +962,7 @@
     
     
     
-    NSString *strurl=[NSString stringWithFormat:@"https://www.food4all.org/demo/webservices/Api.php"];
+    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
     
     
     // set URL

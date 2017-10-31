@@ -13,7 +13,8 @@ import UIKit
 
 class Constants {
    // static let mainURL = "https://www.food4all.org/webservices1/Api.php"
-    static let mainURL = "https://www.food4all.org/demo/webservices/Api.php"
+    //static let mainURL = "https://www.food4all.org/demo/webservices/Api.php"
+    static let mainURL = "http://think360.in/Food4All/webservices/Api.php"
     static let applicationName = "Food4All"
 }
 

@@ -107,7 +107,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: "NCount")
         
-        self.getDashBoardAPImethod()
+       // self.getDashBoardAPImethod()
 
         
 //        let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -233,7 +233,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
         
         UserDefaults.standard.set(deviceTokenString, forKey: "DeviceToken")
         
-        self.getDashBoardAPImethod()
+      //  self.getDashBoardAPImethod()
+        
+        let notificationName = Notification.Name("NotificationIdentifier")
+        NotificationCenter.default.post(name: notificationName, object: nil)
        
         
         // Persist it in your backend in case it's new
@@ -269,7 +272,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -291,7 +294,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -320,7 +323,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.SharedMealID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -343,7 +346,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                           let strval: String = (quantity: quantity.stringValue) as! String
                             home?.SharedMealID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -370,7 +373,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.strConversionId = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -396,7 +399,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -420,7 +423,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -447,7 +450,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.foodbankID = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -471,7 +474,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.SharedMealID = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -496,7 +499,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.foodbankID = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -519,7 +522,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.SharedMealID = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -543,7 +546,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     if let quantity = aps["type_id"] as? NSNumber
                     {
-                        let strval: NSString = (quantity: quantity.stringValue) as NSString
+                        let strval: String = (quantity: quantity.stringValue) as! String
                         home?.foodbankID = strval as String
                     }
                     else if let quantity = aps["type_id"] as? String
@@ -570,7 +573,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                            let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
@@ -592,7 +595,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         
                         if let quantity = aps["type_id"] as? NSNumber
                         {
-                            let strval: NSString = (quantity: quantity.stringValue) as NSString
+                           let strval: String = (quantity: quantity.stringValue) as! String
                             home?.foodbankID = strval as String
                         }
                         else if let quantity = aps["type_id"] as? String
