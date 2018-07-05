@@ -477,6 +477,7 @@ extension DateTimePicker: UITableViewDataSource, UITableViewDelegate {
         if tableView == hourTableView {
             // need triple of origin storage to scroll infinitely
             return (is12HourFormat ? 12 : 24) * 3
+            
         } else if tableView == amPmTableView {
             return 2
         }
@@ -496,7 +497,9 @@ extension DateTimePicker: UITableViewDataSource, UITableViewDelegate {
         if tableView == amPmTableView {
             cell.textLabel?.text = (indexPath.row == 0) ? "AM" : "PM"
         } else if tableView == minuteTableView{
-            cell.textLabel?.text = String(format: "%02i", indexPath.row % 60)
+           // cell.textLabel?.text = String(format: "%02i", indexPath.row % 60)
+             cell.textLabel?.text = String(format: "%02i", indexPath.row % 60)
+            
         } else {
             if is12HourFormat {
                 cell.textLabel?.text = String(format: "%02i", (indexPath.row % 12) + 1)
@@ -668,6 +671,7 @@ extension DateTimePicker: UICollectionViewDataSource, UICollectionViewDelegate {
                 }
             } else if tableView == minuteTableView {
                 components.minute = Int(row - 60)%60
+               // components.minute = 0
             } else if tableView == amPmTableView {
                 if let hour = components.hour,
                     row == 0 && hour >= 12 {
