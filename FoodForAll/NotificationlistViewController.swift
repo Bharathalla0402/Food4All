@@ -7,13 +7,18 @@
 //
 
 import UIKit
+import CoreLocation
 
-class NotificationlistViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
+class NotificationlistViewController: UIViewController,UITableViewDelegate,UITableViewDataSource,CLLocationManagerDelegate
 {
 
     @IBOutlet weak var NotificationBackView: UIView!
     var cell: NotificationCell!
     var NotificationTableView = UITableView()
+    
+    var currentLatitude = Double()
+    var currentLongitude = Double()
+    var locationManager = CLLocationManager()
     
     var strUserID = NSString()
     var myArray = NSDictionary()
@@ -40,7 +45,8 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
@@ -61,6 +67,31 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
         perform(#selector(NotificationlistViewController.showTableView), with: nil, afterDelay: 0.02)
         
          UserDefaults.standard.set("0", forKey: "NCount")
+        
+        
+        
+        locationManager.delegate=self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
+        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
+            currentLatitude = (locationManager.location?.coordinate.latitude)!
+            currentLongitude = (locationManager.location?.coordinate.longitude)!
+        }
+        if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
+        }else{
+            let alertController = UIAlertController(title: "Food4All", message: "Location services are disabled in your App settings Please enable the Location Settings. Click Ok to go to Location Settings.", preferredStyle: .alert)
+            let defaultAction = UIAlertAction(title: "OK", style: .default, handler: {(alert :UIAlertAction!) in
+                // UIApplication.shared.openURL(NSURL(string: UIApplicationOpenSettingsURLString) as! URL)
+                UIApplication.shared.open(URL(string: UIApplicationOpenSettingsURLString)!, options: [:], completionHandler: nil)
+                alertController.dismiss(animated: true, completion: nil)
+            })
+            // let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+            // alertController.addAction(cancelAction)
+            alertController.addAction(defaultAction)
+            present(alertController, animated: true, completion: nil)
+        }
         
     }
     
@@ -107,218 +138,176 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
         
         cell.selectionStyle = UITableViewCellSelectionStyle.none
         
-        let imageURL: String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "image") as! String
+        let imageURL: String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "image") as? String ?? ""
         let url = NSURL(string:imageURL)
-        cell.fimage.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.fimage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
+        cell.LocationAddress?.text = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "notification") as? String ?? ""
         
-        
-        let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type") as! String
-        if userID == "1" as String
-        {
-           // cell.CategeoryType.text! = String(format : "Categeory: Food Bank")
-            
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let regularAttributedString = NSAttributedString(string: "A New Food Bank ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String, attributes: boldAttribute)
-            
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            mutableAttributedString.append(boldAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-            
-        }
-        else if (userID == "2" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let regularAttributedString = NSAttributedString(string: "A New Food Share ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String, attributes: boldAttribute)
-            
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            mutableAttributedString.append(boldAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-        else if (userID == "4" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let regularAttributedString = NSAttributedString(string: "A New Event ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String, attributes: boldAttribute)
-            
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            mutableAttributedString.append(boldAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-
-        else if (userID == "5" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let regularAttributedString = NSAttributedString(string: "Your Event ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " has ended. Please Share surplus food on Food4All", attributes: regularAttribute)
-          
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-        else if (userID == "6" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let regularAttributedString = NSAttributedString(string: "Your food sharing ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " has expired. Please update or delete your sharing", attributes: regularAttribute)
-            
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-        else if (userID == "7" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_name") as! String, attributes: boldAttribute)
-            let regularAttributedString = NSAttributedString(string: " Wants to connect with ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " as a Volunteer", attributes: regularAttribute)
-            
-            mutableAttributedString.append(boldAttributedString2)
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-        else if (userID == "8" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_name") as! String, attributes: boldAttribute)
-            let regularAttributedString = NSAttributedString(string: " Wants to collect ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            let regularAttributedString2 = NSAttributedString(string: " shared by you", attributes: regularAttribute)
-            
-            mutableAttributedString.append(boldAttributedString2)
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            mutableAttributedString.append(regularAttributedString2)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
-        else if (userID == "9" as String)
-        {
-            let mutableAttributedString = NSMutableAttributedString()
-            let boldAttribute = [
-                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            let regularAttribute = [
-                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
-                NSForegroundColorAttributeName: UIColor.black
-                ] as [String : Any]
-            
-            
-            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_name") as! String, attributes: boldAttribute)
-            let regularAttributedString = NSAttributedString(string: " Wants to get updates on surplus food from ", attributes: regularAttribute)
-            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
-            
-            mutableAttributedString.append(boldAttributedString2)
-            mutableAttributedString.append(regularAttributedString)
-            mutableAttributedString.append(boldAttributedString)
-            
-            cell.LocationAddress?.attributedText = mutableAttributedString
-        }
+//
+//        let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity") as! String
+//        if userID == "foodbanks" as String
+//        {
+//           // cell.CategeoryType.text! = String(format : "Categeory: Food Bank")
+//
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let regularAttributedString = NSAttributedString(string: "A New Food Bank ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
+//            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as? String ?? "", attributes: boldAttribute)
+//
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//            mutableAttributedString.append(boldAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//
+//
+//        }
+//        else if (userID == "foodsharings" as String)
+//        {
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let regularAttributedString = NSAttributedString(string: "A New Food Share ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
+//            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String, attributes: boldAttribute)
+//
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//            mutableAttributedString.append(boldAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//        }
+//        else if (userID == "events" as String)
+//        {
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let regularAttributedString = NSAttributedString(string: "A New Event ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " is added to Food4All at ", attributes: regularAttribute)
+//            let boldAttributedString2 = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String, attributes: boldAttribute)
+//
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//            mutableAttributedString.append(boldAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//        }
+//
+//        else if (userID == "volunteers" as String)
+//        {
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let regularAttributedString = NSAttributedString(string: "Your Event ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " has ended. Please Share surplus food on Food4All", attributes: regularAttribute)
+//
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//        }
+//        else if (userID == "chats" as String)
+//        {
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let regularAttributedString = NSAttributedString(string: "Your food sharing ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " has expired. Please update or delete your sharing", attributes: regularAttribute)
+//
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//        }
+//        else
+//        {
+//            let mutableAttributedString = NSMutableAttributedString()
+//            let boldAttribute = [
+//                NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//            let regularAttribute = [
+//                NSFontAttributeName: UIFont.systemFont(ofSize: 14),
+//                NSForegroundColorAttributeName: UIColor.black
+//                ] as [String : Any]
+//
+//
+//            let str1 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+//            let str2 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+//            let strname = str1+" "+str2
+//
+//            let boldAttributedString2 = NSAttributedString(string: strname, attributes: boldAttribute)
+//            let regularAttributedString = NSAttributedString(string: " Wants to connect with ", attributes: regularAttribute)
+//            let boldAttributedString = NSAttributedString(string: (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String, attributes: boldAttribute)
+//            let regularAttributedString2 = NSAttributedString(string: " as a Volunteer", attributes: regularAttribute)
+//
+//            mutableAttributedString.append(boldAttributedString2)
+//            mutableAttributedString.append(regularAttributedString)
+//            mutableAttributedString.append(boldAttributedString)
+//            mutableAttributedString.append(regularAttributedString2)
+//
+//            cell.LocationAddress?.attributedText = mutableAttributedString
+//        }
+//
 
         
 
@@ -334,24 +323,24 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-        let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type") as! String
+        let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity") as? String ?? ""
         
-        if userID == "1" as String
+        if userID == "foodbanks" as String
         {
-            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
+            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as? String ?? ""
             if userID == strUserID as String
             {
                 let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                    // let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.foodbankID = quantity
                 }
@@ -363,35 +352,35 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                   //  let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.foodbankID = quantity
                 }
                // myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
             }
         }
-        else if userID == "2" as String
+        else if userID == "foodsharings" as String
         {
-            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
+            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as? String ?? ""
             if userID == strUserID as String
             {
                 let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                   //  let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.SharedMealID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.SharedMealID = quantity
                 }
@@ -404,35 +393,35 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                    // let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.SharedMealID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.SharedMealID = quantity
                 }
               //  myVC?.SharedMealID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
             }
         }
-        else if userID == "4" as String
+        else if userID == "events" as String
         {
-            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
+            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as? String ?? ""
             if userID == strUserID as String
             {
                 let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                   // let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.foodbankID = quantity
                 }
@@ -444,13 +433,13 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                 myVC?.hidesBottomBarWhenPushed=true
                 self.navigationController?.pushViewController(myVC!, animated: true)
                 
-                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+                if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
                 {
                   //  let strval: String = (quantity: quantity.stringValue) as! String
                     let strval = String(describing: quantity)
                     myVC?.foodbankID = strval as String
                 }
-                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+                else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
                 {
                     myVC?.foodbankID = quantity
                 }
@@ -458,100 +447,77 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
               //  myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
             }
         }
-        else if userID == "5" as String
+        else if userID == "chats" as String
         {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "ChatingDetailsViewController") as? ChatingDetailsViewController
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
             {
-               // let strval: String = (quantity: quantity.stringValue) as! String
+                //  let strval: String = (quantity: quantity.stringValue) as! String
                 let strval = String(describing: quantity)
-                myVC?.foodbankID = strval as String
+                myVC?.strConversionId = strval as String
             }
-            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
             {
-                myVC?.foodbankID = quantity
+                myVC?.strConversionId = quantity
             }
-            
-           // myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
         }
-        else if userID == "6" as String
+        else if userID == "volunteers" as String
         {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC
-            myVC?.hidesBottomBarWhenPushed=true
-            self.navigationController?.pushViewController(myVC!, animated: true)
-            
-            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
+            var VolunteerID = String()
+            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? NSNumber
             {
-               // let strval: String = (quantity: quantity.stringValue) as! String
-                let strval = String(describing: quantity)
-                myVC?.SharedMealID = strval as String
+                VolunteerID = String(describing: quantity)
             }
-            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
+            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity_id") as? String
             {
-                myVC?.SharedMealID = quantity
+                VolunteerID = quantity
             }
             
-          //  myVC?.SharedMealID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
+            var localTimeZoneName: String { return TimeZone.current.identifier }
+            let strkey = Constants.ApiKey
+            let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(VolunteerID)&time_zone=\(localTimeZoneName)"
+            let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"volunteerDetail",params)
+            print(baseURL)
+            self.VolunteerDetailAPIMethod(baseURL: String(format:"%@",baseURL))
         }
-        else if userID == "7" as String
-        {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC
-            myVC?.hidesBottomBarWhenPushed=true
-            self.navigationController?.pushViewController(myVC!, animated: true)
+    }
+    
+    
+    @objc private   func VolunteerDetailAPIMethod (baseURL:String)
+    {
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
-            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
-            {
-                //let strval: String = (quantity: quantity.stringValue) as! String
-                let strval = String(describing: quantity)
-                myVC?.foodbankID = strval as String
-            }
-            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
-            {
-                myVC?.foodbankID = quantity
-            }
-            
-           // myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
-          //  myVC?.percentStr = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_detail_id") as! String
-        }
-        else if userID == "8" as String
-        {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC
-            myVC?.hidesBottomBarWhenPushed=true
-            self.navigationController?.pushViewController(myVC!, animated: true)
-            
-            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
-            {
-               // let strval: String = (quantity: quantity.stringValue) as! String
-                let strval = String(describing: quantity)
-                myVC?.SharedMealID = strval as String
-            }
-            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
-            {
-                myVC?.SharedMealID = quantity
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "VolunteerDetailsViewController") as? VolunteerDetailsViewController
+                    myVC?.hidesBottomBarWhenPushed=true
+                    self.navigationController?.pushViewController(myVC!, animated: true)
+                    
+                    myVC?.VolunteerDetails = responceDic.object(forKey: "volunteerDetail") as! NSDictionary
+                }
+                else
+                {
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
             }
             
-           // myVC?.SharedMealID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
-        }
-        else if userID == "9" as String
-        {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController
-            myVC?.hidesBottomBarWhenPushed=true
-            self.navigationController?.pushViewController(myVC!, animated: true)
+        })
+        { (error) in
             
-            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? NSNumber
-            {
-               // let strval: String = (quantity: quantity.stringValue) as! String
-                let strval = String(describing: quantity)
-                myVC?.foodbankID = strval as String
-            }
-            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as? String
-            {
-                myVC?.foodbankID = quantity
-            }
-           // myVC?.SharedMealID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "type_id") as! String
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
         }
     }
     
@@ -572,32 +538,28 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             }
             else
             {
-                let baseURL: String  = String(format:"%@",Constants.mainURL)
-                let params = "method=get_user_notification&gcm_id=\(DeviceToken)&page=\(strpage)"
                 
-                print(params)
                 
-                // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-                AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+                let strkey = Constants.ApiKey
+                let params = "api_key=\(strkey)&user_id=\(strUserID)&page=\(self.strpage)"
+                let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
+                
+                AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
                     
                     DispatchQueue.main.async {
                         AFWrapperClass.svprogressHudDismiss(view: self)
                         let responceDic:NSDictionary = jsonDic as NSDictionary
                         print(responceDic)
-                        
-                        
-                        if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                        if (responceDic.object(forKey: "status") as! NSNumber) == 1
                         {
-                            self.responsewithToken6(responceDic)
+                             self.responsewithToken7(responceDic)
                         }
                         else
                         {
                             
                         }
                     }
-                    
                 }) { (error) in
-                    
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
                     //print(error.localizedDescription)
@@ -605,6 +567,27 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             }
         }
     }
+    
+    
+    func responsewithToken7(_ responseDict: NSDictionary)
+    {
+        var responseDictionary : NSDictionary = [:]
+        responseDictionary = responseDict
+        
+        var arr = NSMutableArray()
+        arr = (responseDictionary.value(forKey: "NotificationList") as? NSMutableArray)!
+        arr=arr as AnyObject as! NSMutableArray
+        self.listArrayFoodBank.addObjects(from: arr as [AnyObject])
+        
+        let number = responseDict.object(forKey: "nextPage") as! NSNumber
+        self.strpage = String(describing: number)
+        
+      
+        
+        NotificationTableView.reloadData()
+    }
+    
+    
     
     
     func responsewithToken6(_ responseDict: NSDictionary)
@@ -691,7 +674,7 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
     
     func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
         if scrool == 1 {
-            footerview2.isHidden = true
+         //   footerview2.isHidden = true
             // loadLbl.isHidden = true
         }
     }

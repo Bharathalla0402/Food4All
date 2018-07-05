@@ -9,7 +9,7 @@
 #import "ChatingDetailsViewController.h"
 #import "Customcell4.h"
 #import "SWRevealViewController.h"
-
+#import "Food4All.pch"
 
 @interface ChatingDetailsViewController ()
 {
@@ -25,7 +25,7 @@
     int count,lastCount;
     
     int scrool;
-     UIActivityIndicatorView * actInd;
+    UIActivityIndicatorView * actInd;
     UILabel *loadLbl;
     UIView *footerview2;
 }
@@ -48,7 +48,8 @@
     NSTimeZone *timeZone = [NSTimeZone localTimeZone];
     tzName = [timeZone name];
     
-    NSLog(@"%@",tzName);
+   // NSLog(@"%@",tzName);
+    
     
     
     UIImage *buttonImage = [UIImage imageNamed:@"backButton"];
@@ -66,11 +67,16 @@
 
    // userlist = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
     
-    userlist=[[NSUserDefaults standardUserDefaults] objectForKey:@"UserId"];
+    NSUserDefaults *currentDefaults = [NSUserDefaults standardUserDefaults];
+    NSData *data = [currentDefaults objectForKey:@"UserId"];
+    userlist = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+    
+   // userlist=[[NSUserDefaults standardUserDefaults] objectForKey:@"UserId"];
     
     self.title=@"Chat";
     
     _TextMessage.delegate=self;
+    [_TextMessage setReturnKeyType:UIReturnKeyDone];
     
     arrmessage=[[NSMutableArray alloc]init];
     arrids=[[NSMutableArray alloc]init];
@@ -80,9 +86,11 @@
     self.ChatTable.separatorStyle = UITableViewCellSeparatorStyleNone;
   //  self.ChatTable.backgroundColor=[UIColor lightGrayColor];
     
-    UIImageView *tempImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Layer 1@2x.png"]];
+    UIImageView *tempImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Background"]];
     [tempImageView setFrame:self.ChatTable.frame];
     self.ChatTable.backgroundView = tempImageView;
+    _messageView.backgroundColor =  [UIColor colorWithPatternImage:[UIImage imageNamed:@"Background"]];
+    //self.messageView.backgroundView = tempImageView;
     self.ChatTable.rowHeight=UITableViewAutomaticDimension;
     _ChatTable.transform = CGAffineTransformMakeRotation(-M_PI);
     cell.transform = CGAffineTransformMakeRotation(M_PI);
@@ -99,7 +107,8 @@
     [[[self navigationController] navigationBar] setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor]}];
     self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
     
-   
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(Sendmessage) object:nil];
+    [self performSelector:@selector(Sendmessage) withObject:nil afterDelay:0.1];
     
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]
                                    
@@ -111,8 +120,71 @@
     
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method) object:nil];
     [self performSelector:@selector(method) withObject:nil afterDelay:0.1];
+    
+   
 
 }
+
+
+-(void)Sendmessage
+{
+    if([_StrChatMessageTypeId isEqualToString:@"1"])
+    {
+        _sendButt.userInteractionEnabled = NO;
+        
+        NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+      
+        NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+        
+        [parameters setValue:ApiKey forKey:@"api_key"];
+        [parameters setValue:struseridnum forKey:@"sender_id"];
+        [parameters setValue:_strConversionId forKey:@"chat_id"];
+        [parameters setValue:_StrChatMessage forKey:@"message"];
+        
+        NSString *jsonStringValues;
+        NSError *error;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:parameters
+                                                           options:NSJSONWritingPrettyPrinted // Pass 0 if you don't care about the readability of the generated string
+                                                             error:&error];
+        
+        if (! jsonData) {
+            NSLog(@"Got an error: %@", error);
+        } else {
+            jsonStringValues = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            NSLog(@"jsonString: %@",jsonStringValues);
+        }
+        
+        _TextMessage.text=@"";
+        
+        NSString *strurl=[NSString stringWithFormat:@"%@%@",BaseUrl,@"addChatDetails"];
+        NSData *postData = [jsonStringValues dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+        NSString *postLength = [NSString stringWithFormat:@"%lu", (unsigned long)[postData length]];
+        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+        [request setURL:[NSURL URLWithString:strurl]];
+        [request setHTTPMethod:@"POST"];
+        [request setValue:postLength forHTTPHeaderField:@"Content-Length"];
+        [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+        [request setHTTPBody:postData];
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+        [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            dispatch_async (dispatch_get_main_queue(), ^{
+                
+                if (error)
+                {
+                    
+                } else
+                {
+                    // NSError *err;
+                    // NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
+                    [self responsewithToken2:data];
+                    
+                }
+                
+            });
+        }] resume];
+    }
+}
+
 
 
 - (void) back
@@ -157,59 +229,13 @@
 
 -(void)method
 {
-    
     NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+    NSString *strUrl=[NSString stringWithFormat:@"%@%@?api_key=%@&chat_id=%@&user_id=%@&time_zone=%@",BaseUrl,@"chatDetail",ApiKey,_strConversionId,struseridnum,tzName];
+    NSLog(@"%@",strUrl);
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    
-    //Set Params
-    [request setHTTPShouldHandleCookies:NO];
-    [request setTimeoutInterval:60];
-    [request setHTTPMethod:@"POST"];
-    
-    //Create boundary, it can be anything
-    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
-    
-    // set Content-Type in HTTP header
-    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+    [request setURL:[NSURL URLWithString:strUrl]];
+    [request setHTTPMethod:@"GET"];
     [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
-    
-    // post body
-    NSMutableData *body = [NSMutableData data];
-    
-    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
-    
-    [parameters setValue:@"get_conversation" forKey:@"method"];
-    [parameters setValue:struseridnum forKey:@"user_id"];
-    [parameters setValue:_strConversionId forKey:@"conversation_id"];
-    [parameters setValue:tzName forKey:@"time_zone"];
-    
-    
-    
-    for (NSString *param in parameters)
-    {
-        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
-    }
-    
-    
-    //Close off the request with the boundary
-    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    // setting the body of the post to the request
-    [request setHTTPBody:body];
-    
-    
-    
-    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
-    
-    
-    // set URL
-    [request setURL:[NSURL URLWithString:strurl]];
-    
-    
-    
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
     [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         dispatch_async (dispatch_get_main_queue(), ^{
@@ -220,13 +246,89 @@
             } else
             {
                 if(data != nil) {
+                   // NSError *err;
+                  //  NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
                     [self responseOption4:data];
+                   
                 }
             }
         });
     }] resume];
-
     
+//
+//
+//
+//
+//
+//    NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+//    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+//
+//    //Set Params
+//    [request setHTTPShouldHandleCookies:NO];
+//    [request setTimeoutInterval:60];
+//    [request setHTTPMethod:@"POST"];
+//
+//    //Create boundary, it can be anything
+//    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+//
+//    // set Content-Type in HTTP header
+//    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+//    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+//    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+//
+//    // post body
+//    NSMutableData *body = [NSMutableData data];
+//
+//    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+//
+//    [parameters setValue:@"get_conversation" forKey:@"method"];
+//    [parameters setValue:struseridnum forKey:@"user_id"];
+//    [parameters setValue:_strConversionId forKey:@"conversation_id"];
+//    [parameters setValue:tzName forKey:@"time_zone"];
+//
+//
+//
+//    for (NSString *param in parameters)
+//    {
+//        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+//        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+//    }
+//
+//
+//    //Close off the request with the boundary
+//    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//
+//    // setting the body of the post to the request
+//    [request setHTTPBody:body];
+//
+//
+//
+//    NSString *strurl=[NSString stringWithFormat:@"%@",BaseUrl];
+//
+//
+//    // set URL
+//    [request setURL:[NSURL URLWithString:strurl]];
+//
+//
+//
+//    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+//    [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+//        dispatch_async (dispatch_get_main_queue(), ^{
+//
+//            if (error)
+//            {
+//
+//            } else
+//            {
+//                if(data != nil) {
+//
+//                }
+//            }
+//        });
+//    }] resume];
+//
+//
     
 
 //        NSString *struseridnum=[NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"userid"]];
@@ -252,59 +354,42 @@
     _sendButt.userInteractionEnabled = NO;
        
      NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
-    _TextMessage.text=[_TextMessage.text stringByReplacingOccurrencesOfString:@"&" withString:@"%26"];
-    _TextMessage.text=[_TextMessage.text stringByReplacingOccurrencesOfString:@"+" withString:@"%2B"];
+    //_TextMessage.text=[_TextMessage.text stringByReplacingOccurrencesOfString:@"&" withString:@"%26"];
+   // _TextMessage.text=[_TextMessage.text stringByReplacingOccurrencesOfString:@"+" withString:@"%2B"];
         
-        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-        
-        //Set Params
-        [request setHTTPShouldHandleCookies:NO];
-        [request setTimeoutInterval:60];
-        [request setHTTPMethod:@"POST"];
-        
-        //Create boundary, it can be anything
-        NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
-        
-        // set Content-Type in HTTP header
-        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-        [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
-        [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
-        
-        // post body
-        NSMutableData *body = [NSMutableData data];
+       
         
         NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
         
-        [parameters setValue:@"createchat" forKey:@"method"];
+        [parameters setValue:ApiKey forKey:@"api_key"];
         [parameters setValue:struseridnum forKey:@"sender_id"];
-        [parameters setValue:_strConversionId forKey:@"conversation_id"];
+        [parameters setValue:_strConversionId forKey:@"chat_id"];
         [parameters setValue:_TextMessage.text forKey:@"message"];
         
+        NSString *jsonStringValues;
+        NSError *error;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:parameters
+                                                           options:NSJSONWritingPrettyPrinted // Pass 0 if you don't care about the readability of the generated string
+                                                             error:&error];
         
-        for (NSString *param in parameters)
-        {
-            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+        if (! jsonData) {
+            NSLog(@"Got an error: %@", error);
+        } else {
+            jsonStringValues = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            NSLog(@"jsonString: %@",jsonStringValues);
         }
         
-    
-        //Close off the request with the boundary
-        [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+         _TextMessage.text=@"";
         
-        // setting the body of the post to the request
-        [request setHTTPBody:body];
-        
-        
-        
-        NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
-        
-        
-        // set URL
+         NSString *strurl=[NSString stringWithFormat:@"%@%@",BaseUrl,@"addChatDetails"];
+        NSData *postData = [jsonStringValues dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+        NSString *postLength = [NSString stringWithFormat:@"%lu", (unsigned long)[postData length]];
+        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
         [request setURL:[NSURL URLWithString:strurl]];
-        
-        
-        
+        [request setHTTPMethod:@"POST"];
+        [request setValue:postLength forHTTPHeaderField:@"Content-Length"];
+        [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+        [request setHTTPBody:postData];
         NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
         [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             dispatch_async (dispatch_get_main_queue(), ^{
@@ -314,13 +399,14 @@
                     
                 } else
                 {
-                    if(data != nil) {
-                        [self responsewithToken2:data];
-                    }
+                   // NSError *err;
+                   // NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
+                    [self responsewithToken2:data];
+                   
                 }
+                
             });
         }] resume];
-
     }
 }
 
@@ -343,58 +429,16 @@
     {
         _TextMessage.text=@"";
         
+        
+        
+        
         NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+        NSString *strUrl=[NSString stringWithFormat:@"%@%@?api_key=%@&chat_id=%@&user_id=%@&time_zone=%@",BaseUrl,@"chatDetail",ApiKey,_strConversionId,struseridnum,tzName];
+        NSLog(@"%@",strUrl);
         NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-        
-        //Set Params
-        [request setHTTPShouldHandleCookies:NO];
-        [request setTimeoutInterval:60];
-        [request setHTTPMethod:@"POST"];
-        
-        //Create boundary, it can be anything
-        NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
-        
-        // set Content-Type in HTTP header
-        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-        [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+        [request setURL:[NSURL URLWithString:strUrl]];
+        [request setHTTPMethod:@"GET"];
         [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
-        
-        // post body
-        NSMutableData *body = [NSMutableData data];
-        
-        NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
-        
-        [parameters setValue:@"get_conversation" forKey:@"method"];
-        [parameters setValue:struseridnum forKey:@"user_id"];
-        [parameters setValue:_strConversionId forKey:@"conversation_id"];
-        [parameters setValue:tzName forKey:@"time_zone"];
-       
-        
-        
-        for (NSString *param in parameters)
-        {
-            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
-        }
-        
-        
-        //Close off the request with the boundary
-        [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-        
-        // setting the body of the post to the request
-        [request setHTTPBody:body];
-        
-        
-        
-        NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
-        
-        
-        // set URL
-        [request setURL:[NSURL URLWithString:strurl]];
-        
-        
-        
         NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
         [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             dispatch_async (dispatch_get_main_queue(), ^{
@@ -405,11 +449,88 @@
                 } else
                 {
                     if(data != nil) {
+                        // NSError *err;
+                        //  NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
                         [self responseOption4:data];
+                        
                     }
                 }
             });
         }] resume];
+        
+        
+        
+        
+        
+        
+//
+//
+//        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+//
+//        //Set Params
+//        [request setHTTPShouldHandleCookies:NO];
+//        [request setTimeoutInterval:60];
+//        [request setHTTPMethod:@"POST"];
+//
+//        //Create boundary, it can be anything
+//        NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+//
+//        // set Content-Type in HTTP header
+//        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+//        [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+//        [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+//
+//        // post body
+//        NSMutableData *body = [NSMutableData data];
+//
+//        NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+//
+//        [parameters setValue:@"get_conversation" forKey:@"method"];
+//        [parameters setValue:struseridnum forKey:@"user_id"];
+//        [parameters setValue:_strConversionId forKey:@"conversation_id"];
+//        [parameters setValue:tzName forKey:@"time_zone"];
+//
+//
+//
+//        for (NSString *param in parameters)
+//        {
+//            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+//            [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+//        }
+//
+//
+//        //Close off the request with the boundary
+//        [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//
+//        // setting the body of the post to the request
+//        [request setHTTPBody:body];
+//
+//
+//
+//          NSString *strurl=[NSString stringWithFormat:@"%@",BaseUrl];
+//
+//
+//        // set URL
+//        [request setURL:[NSURL URLWithString:strurl]];
+//
+//
+//
+//        NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+//        [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+//            dispatch_async (dispatch_get_main_queue(), ^{
+//
+//                if (error)
+//                {
+//
+//                } else
+//                {
+//                    if(data != nil) {
+//                        [self responseOption4:data];
+//                    }
+//                }
+//            });
+//        }] resume];
         
     }
     else
@@ -431,14 +552,22 @@
     
     if (![[NSString stringWithFormat:@"%@",status] isEqualToString:[NSString stringWithFormat:@"200"]])
     {
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method2) object:nil];
-        [self performSelector:@selector(method2) withObject:nil afterDelay:0.1];
+        
+        NSString *strvalue=[NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"appear"]];
+        
+        if ([strvalue isEqualToString:@"1"])
+        {
+            [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method) object:nil];
+            [self performSelector:@selector(method) withObject:nil afterDelay:2.0];
+        }
+        
+       
     }
     else if([[NSString stringWithFormat:@"%@",status] isEqualToString:[NSString stringWithFormat:@"200"]])
     {
         NSString *strmessage=[responseDict valueForKey:@"responseMessage"];
         
-        if ([strmessage isEqualToString:@"No DATA_FOUND."])
+        if ([strmessage isEqualToString:@"Oops! Chat not found."])
         {
             
         }
@@ -452,7 +581,7 @@
             lastCount=1;
             
         _strpage= [NSString stringWithFormat:@"%@",[responseDict valueForKey:@"nextPage"]];
-        arrids=[responseDict valueForKey:@"List"];
+        arrids=[responseDict valueForKey:@"chatDetail"];
         
         [_ChatTable reloadData];
         
@@ -467,9 +596,17 @@
            // [_ChatTable scrollToRowAtIndexPath:lastIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:YES];
         }
        
+            
+            NSString *strvalue=[NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"appear"]];
+            
+            if ([strvalue isEqualToString:@"1"])
+            {
+                [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method) object:nil];
+                [self performSelector:@selector(method) withObject:nil afterDelay:2.0];
+            }
+            
         
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method2) object:nil];
-        [self performSelector:@selector(method2) withObject:nil afterDelay:0.1];
+      
         }
     }
 }
@@ -567,7 +704,7 @@
         
         
         label1.text=[arr valueForKey:@"message"];
-        label2.text=[arr valueForKey:@"dateTime"];
+        label2.text=[arr valueForKey:@"updated"];
         
         
         
@@ -636,7 +773,7 @@
         _bubbleImage.transform = CGAffineTransformMakeRotation(M_PI);
         
         label1.text=[arr valueForKey:@"message"];
-        label2.text=[arr valueForKey:@"dateTime"];
+        label2.text=[arr valueForKey:@"updated"];
         
         
         
@@ -693,75 +830,105 @@
             }
             else
             {
+                
                 NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+                NSString *strUrl=[NSString stringWithFormat:@"%@%@?api_key=%@&chat_id=%@&page=%@&user_id=%@&time_zone=%@",BaseUrl,@"chatDetail",ApiKey,_strConversionId,self.strpage,struseridnum,tzName];
+                NSLog(@"%@",strUrl);
                 NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-                
-                //Set Params
-                [request setHTTPShouldHandleCookies:NO];
-                [request setTimeoutInterval:60];
-                [request setHTTPMethod:@"POST"];
-                
-                //Create boundary, it can be anything
-                NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
-                
-                // set Content-Type in HTTP header
-                NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-                [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+                [request setURL:[NSURL URLWithString:strUrl]];
+                [request setHTTPMethod:@"GET"];
                 [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
-                
-                // post body
-                NSMutableData *body = [NSMutableData data];
-                
-                NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
-                
-                [parameters setValue:@"get_conversation" forKey:@"method"];
-                [parameters setValue:struseridnum forKey:@"user_id"];
-                [parameters setValue:_strConversionId forKey:@"conversation_id"];
-                [parameters setValue:tzName forKey:@"time_zone"];
-                [parameters setValue:_strpage forKey:@"page"];
-                
-                
-                
-                for (NSString *param in parameters)
-                {
-                    [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-                    [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-                    [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
-                }
-                
-                
-                //Close off the request with the boundary
-                [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-                
-                // setting the body of the post to the request
-                [request setHTTPBody:body];
-                
-                
-                
-                NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
-                
-                
-                // set URL
-                [request setURL:[NSURL URLWithString:strurl]];
-                
-                
-                
                 NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
                 [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                     dispatch_async (dispatch_get_main_queue(), ^{
-                        
+
                         if (error)
                         {
-                            
+
                         } else
                         {
                             if(data != nil) {
-                                [self responseLogin:data];
+                                // NSError *err;
+                                //  NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
+                               [self responseLogin:data];
+
                             }
                         }
                     });
                 }] resume];
 
+                
+                
+//
+//                NSString *struseridnum=[NSString stringWithFormat:@"%@",[userlist valueForKey:@"id"]];
+//                NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+//
+//                //Set Params
+//                [request setHTTPShouldHandleCookies:NO];
+//                [request setTimeoutInterval:60];
+//                [request setHTTPMethod:@"POST"];
+//
+//                //Create boundary, it can be anything
+//                NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+//
+//                // set Content-Type in HTTP header
+//                NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+//                [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+//                [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+//
+//                // post body
+//                NSMutableData *body = [NSMutableData data];
+//
+//                NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+//
+//                [parameters setValue:@"get_conversation" forKey:@"method"];
+//                [parameters setValue:struseridnum forKey:@"user_id"];
+//                [parameters setValue:_strConversionId forKey:@"conversation_id"];
+//                [parameters setValue:tzName forKey:@"time_zone"];
+//                [parameters setValue:_strpage forKey:@"page"];
+//
+//
+//
+//                for (NSString *param in parameters)
+//                {
+//                    [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//                    [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+//                    [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+//                }
+//
+//
+//                //Close off the request with the boundary
+//                [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//
+//                // setting the body of the post to the request
+//                [request setHTTPBody:body];
+//
+//
+//
+//                  NSString *strurl=[NSString stringWithFormat:@"%@",BaseUrl];
+//
+//
+//                // set URL
+//                [request setURL:[NSURL URLWithString:strurl]];
+//
+//
+//
+//                NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+//                [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+//                    dispatch_async (dispatch_get_main_queue(), ^{
+//
+//                        if (error)
+//                        {
+//
+//                        } else
+//                        {
+//                            if(data != nil) {
+//                                [self responseLogin:data];
+//                            }
+//                        }
+//                    });
+//                }] resume];
+//
             }
         }
 }
@@ -776,143 +943,162 @@
 
    // NSMutableDictionary *responseDictionary=[[NSMutableDictionary alloc]init];
   //  responseDictionary=responseDict;
-    NSLog(@"Dict Response: %@",responseDictionary);
+  //  NSLog(@"Dict Response: %@",responseDictionary);
     
-    if (count==1)
+     NSString *strsttus=[NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"status"]];
+    
+    if ([strsttus isEqualToString:@"1"])
     {
-        count=2;
-        if ([_strpage isEqualToString:@"2"])
-        {
-            NSArray *arr=[responseDictionary valueForKey:@"List"];
-            
-            arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
-            
-            [_ChatTable reloadData];
-        }
-        else
-        {
-            
-        }
+        NSArray *arr=[responseDictionary valueForKey:@"chatDetail"];
         
-        _strpage=[NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"nextPage"]];
+        arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
+        
+         _strpage= [NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"nextPage"]];
+        
+        [_ChatTable reloadData];
     }
-    else
-    {
-        
-        _strpage=[NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"nextPage"]];
-        
-        if ([_strpage isEqualToString:@"0"])
-        {
-            if (lastCount==1)
-            {
-                NSArray *arr=[responseDictionary valueForKey:@"List"];
-                
-                arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
-                
-                [_ChatTable reloadData];
-                lastCount=2;
-            }
-        }
-        else
-        {
-            NSArray *arr=[responseDictionary valueForKey:@"List"];
-            
-            arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
-            
-            [_ChatTable reloadData];
-        }
-    }
+    
+//
+//
+//    if (count==1)
+//    {
+//        count=2;
+//        if ([_strpage isEqualToString:@"2"])
+//        {
+//            NSArray *arr=[responseDictionary valueForKey:@"chatDetail"];
+//
+//            arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
+//
+//            [_ChatTable reloadData];
+//        }
+//        else
+//        {
+//
+//        }
+//
+//        _strpage=[NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"nextPage"]];
+//    }
+//    else
+//    {
+//
+//        _strpage=[NSString stringWithFormat:@"%@",[responseDictionary valueForKey:@"nextPage"]];
+//
+//        if ([_strpage isEqualToString:@"0"])
+//        {
+//            if (lastCount==1)
+//            {
+//                NSArray *arr=[responseDictionary valueForKey:@"List"];
+//
+//                arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
+//
+//                [_ChatTable reloadData];
+//                lastCount=2;
+//            }
+//        }
+//        else
+//        {
+//            NSArray *arr=[responseDictionary valueForKey:@"List"];
+//
+//            arrids=[[arrids arrayByAddingObjectsFromArray:arr] mutableCopy];
+//
+//            [_ChatTable reloadData];
+//        }
+//    }
 }
 
 
 #pragma mark  ActivityIndicator At Bottom:
 
--(void)initFooterView
+//-(void)initFooterView
+//{
+//    footerview2 = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, self.view.frame.size.width, 50.0)];
+//    actInd = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+//    actInd.tag = 10;
+//    actInd.frame = CGRectMake(self.view.frame.size.width/2-10, 5.0, 20.0, 20.0);
+//    actInd.hidden=YES;
+//    [actInd performSelector:@selector(removeFromSuperview) withObject:nil afterDelay:30.0];
+//    [footerview2 addSubview:actInd];
+//    loadLbl=[[UILabel alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-100, 25, 200, 20)];
+//    loadLbl.textAlignment=NSTextAlignmentCenter;
+//    loadLbl.textColor=[UIColor lightGrayColor];
+//    // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
+//    [loadLbl setFont:[UIFont systemFontOfSize:12]];
+//    [footerview2 addSubview:loadLbl];
+//    actInd = nil;
+//}
+//
+//-(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+//{
+//    if (scrool==1)
+//    {
+//        BOOL endOfTable = (scrollView.contentOffset.y >= 0);
+//        if ( endOfTable && !scrollView.dragging && !scrollView.decelerating)
+//        {
+//            if ([_strpage isEqualToString:@"0"])
+//            {
+//                _ChatTable.tableFooterView = footerview2;
+//                [(UIActivityIndicatorView *)[footerview2 viewWithTag:10] stopAnimating];
+//                loadLbl.text=@"No More List";
+//                [actInd stopAnimating];
+//            }
+//            else
+//            {
+//                _ChatTable.tableFooterView = footerview2;
+//                [(UIActivityIndicatorView *)[footerview2 viewWithTag:10] startAnimating];
+//            }
+//        }
+//
+//    }
+//}
+//
+//-(void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView
+//{
+//    if (scrool==1)
+//    {
+//        footerview2.hidden=YES;
+//        loadLbl.hidden=YES;
+//    }
+//}
+
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    footerview2 = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, self.view.frame.size.width, 50.0)];
-    actInd = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    actInd.tag = 10;
-    actInd.frame = CGRectMake(self.view.frame.size.width/2-10, 5.0, 20.0, 20.0);
-    actInd.hidden=YES;
-    [actInd performSelector:@selector(removeFromSuperview) withObject:nil afterDelay:30.0];
-    [footerview2 addSubview:actInd];
-    loadLbl=[[UILabel alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-100, 25, 200, 20)];
-    loadLbl.textAlignment=NSTextAlignmentCenter;
-    loadLbl.textColor=[UIColor lightGrayColor];
-    // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
-    [loadLbl setFont:[UIFont systemFontOfSize:12]];
-    [footerview2 addSubview:loadLbl];
-    actInd = nil;
-}
-
--(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
-{
-    if (scrool==1)
-    {
-        BOOL endOfTable = (scrollView.contentOffset.y >= 0);
-        if ( endOfTable && !scrollView.dragging && !scrollView.decelerating)
-        {
-            if ([_strpage isEqualToString:@"0"])
-            {
-                _ChatTable.tableFooterView = footerview2;
-                [(UIActivityIndicatorView *)[footerview2 viewWithTag:10] stopAnimating];
-                loadLbl.text=@"No More List";
-                [actInd stopAnimating];
-            }
-            else
-            {
-                _ChatTable.tableFooterView = footerview2;
-                [(UIActivityIndicatorView *)[footerview2 viewWithTag:10] startAnimating];
-            }
-        }
-        
-    }
-}
-
--(void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView
-{
-    if (scrool==1)
-    {
-        footerview2.hidden=YES;
-        loadLbl.hidden=YES;
-    }
-}
-
-
-
-
-
--(void)textFieldDidBeginEditing:(UITextField *)textField
-{
-    [UIView beginAnimations:nil context:nil];
-    [UIView setAnimationDuration:.3];
-    [UIView setAnimationBeginsFromCurrentState:TRUE];
-    self.view.frame = CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y -250., self.view.frame.size.width, self.view.frame.size.height);
-    
-    [UIView commitAnimations];
-}
-
-
--(void)textFieldDidEndEditing:(UITextField *)textField
-{
-    [UIView beginAnimations:nil context:nil];
-    [UIView setAnimationDuration:.3];
-    [UIView setAnimationBeginsFromCurrentState:TRUE];
-    self.view.frame = CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y +250., self.view.frame.size.width, self.view.frame.size.height);
-    
-    [UIView commitAnimations];
-}
-
--(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
-{
-    if([string isEqualToString:@"\n"])
-    {
-        [textField resignFirstResponder];
-        return NO;
-    }
-    
+    [textField resignFirstResponder];
     return YES;
 }
+
+
+//-(void)textFieldDidBeginEditing:(UITextField *)textField
+//{
+////    [UIView beginAnimations:nil context:nil];
+////    [UIView setAnimationDuration:.3];
+////    [UIView setAnimationBeginsFromCurrentState:TRUE];
+////    self.view.frame = CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y -250., self.view.frame.size.width, self.view.frame.size.height);
+////
+////    [UIView commitAnimations];
+//}
+//
+//
+//-(void)textFieldDidEndEditing:(UITextField *)textField
+//{
+////    [UIView beginAnimations:nil context:nil];
+////    [UIView setAnimationDuration:.3];
+////    [UIView setAnimationBeginsFromCurrentState:TRUE];
+////    self.view.frame = CGRectMake(self.view.frame.origin.x, self.view.frame.origin.y +250., self.view.frame.size.width, self.view.frame.size.height);
+////
+////    [UIView commitAnimations];
+//}
+//
+//-(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+//{
+//    if([string isEqualToString:@"\n"])
+//    {
+//        [textField resignFirstResponder];
+//        return NO;
+//    }
+//
+//    return YES;
+//}
 
 
 -(void)method2
@@ -962,7 +1148,7 @@
     
     
     
-    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
+      NSString *strurl=[NSString stringWithFormat:@"%@",BaseUrl];
     
     
     // set URL
@@ -1036,8 +1222,184 @@
 }
 
 
+- (void)next: (UIImage *)currentSelectedImage;
+{
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+    
+    //Set Params
+    [request setHTTPShouldHandleCookies:NO];
+    [request setTimeoutInterval:60];
+    [request setHTTPMethod:@"POST"];
+    
+    //Create boundary, it can be anything
+    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+    
+    // set Content-Type in HTTP header
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+    
+    // post body
+    NSMutableData *body = [NSMutableData data];
+    
+    //Populate a dictionary with all the regular values you would like to send.
+    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+    
+    [parameters setValue:ApiKey forKey:@"api_key"];
+    
+   
+    
+    
+    // add params (all params are strings)
+    for (NSString *param in parameters)
+    {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    
+    NSString *FileParamConstant = @"img";
+  
+    
+    
+    NSData *imageData = UIImageJPEGRepresentation(currentSelectedImage, 1);
+   
+    
+    //Assuming data is not nil we add this to the multipart form
+    if (imageData)
+    {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"image.jpg\"\r\n", FileParamConstant] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type:image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:imageData];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    
+    //Close off the request with the boundary
+    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    // setting the body of the post to the request
+    [request setHTTPBody:body];
+    
+    NSString *strRegurl=[NSString stringWithFormat:@"%@%@",BaseUrl,@"imageUpload"];
+     NSLog(@"%@",strRegurl);
+    // set URL
+    [request setURL:[NSURL URLWithString:strRegurl]];
+    
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        dispatch_async (dispatch_get_main_queue(), ^{
+            
+            if (error)
+            {
+                
+            } else
+            {
+                if(data != nil) {
+                  //  [self parseJSONResponse:data];
+                    
+                    NSError *err;
+                    
+                    NSMutableDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
+                     [_delegate responsewithToken:responseDict];
+                    //NSLog(@"%@",responseDict);
+                    
+                }
+            }
+        });
+    }] resume];
+}
 
 
+- (void)next2: (UIImage *)currentSelectedImage;
+{
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+    
+    //Set Params
+    [request setHTTPShouldHandleCookies:NO];
+    [request setTimeoutInterval:60];
+    [request setHTTPMethod:@"POST"];
+    
+    //Create boundary, it can be anything
+    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+    
+    // set Content-Type in HTTP header
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+    
+    // post body
+    NSMutableData *body = [NSMutableData data];
+    
+    //Populate a dictionary with all the regular values you would like to send.
+    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+    
+    [parameters setValue:ApiKey forKey:@"api_key"];
+    [parameters setValue:@"2" forKey:@"type"];
+    
+    
+    
+    
+    // add params (all params are strings)
+    for (NSString *param in parameters)
+    {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    
+    NSString *FileParamConstant = @"img";
+    
+    
+    
+    NSData *imageData = UIImageJPEGRepresentation(currentSelectedImage, 1);
+    
+    
+    //Assuming data is not nil we add this to the multipart form
+    if (imageData)
+    {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"image.jpg\"\r\n", FileParamConstant] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type:image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:imageData];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    
+    //Close off the request with the boundary
+    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    // setting the body of the post to the request
+    [request setHTTPBody:body];
+    
+    NSString *strRegurl=[NSString stringWithFormat:@"%@%@",BaseUrl,@"imageUpload"];
+    
+    NSLog(@"%@",strRegurl);
+    // set URL
+    [request setURL:[NSURL URLWithString:strRegurl]];
+    
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        dispatch_async (dispatch_get_main_queue(), ^{
+            
+            if (error)
+            {
+                
+            } else
+            {
+                if(data != nil) {
+                    //  [self parseJSONResponse:data];
+                    
+                    NSError *err;
+                    
+                    NSMutableDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
+                    [_delegate responsewithToken:responseDict];
+                    //NSLog(@"%@",responseDict);
+                    
+                }
+            }
+        });
+    }] resume];
+}
 
 
 
@@ -1046,7 +1408,8 @@
     [[NSUserDefaults standardUserDefaults]setObject:@"2" forKey:@"appear"];
     [[NSUserDefaults standardUserDefaults]synchronize];
     
-     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method2) object:nil];
+    // [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method2) object:nil];
+     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(method) object:nil];
 }
 
 

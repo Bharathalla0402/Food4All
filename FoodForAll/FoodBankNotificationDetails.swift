@@ -105,7 +105,8 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
@@ -133,7 +134,8 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
@@ -345,7 +347,7 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
         let baseURL: String  = String(format:"%@",Constants.mainURL)
         let params = "method=get_FoodBanks&fbank_id=\(foodbankID)&lat=\(currentLatitude)&longt=\(currentLongitude)&userid=\(strUserID)"
         
-        print(params)
+     //   print(params)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -356,7 +358,7 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
                 
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
-                    print(responceDic)
+                 //   print(responceDic)
                     self.listDicFoodBank = (responceDic.object(forKey: "FoodbankList") as? NSDictionary)!
                     
                     self.currentLatitude = Double(self.listDicFoodBank .value(forKey: "lat") as! String)!
@@ -501,7 +503,7 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
             let baseURL: String  = String(format:"%@",Constants.mainURL)
             let params = "method=set_conversation&buyer_id=\(strUserID)&post_id=\(foodbankID)&selling_id=\(self.UserID)&post_url=\(posturl)"
             
-            print(params)
+         //   print(params)
             
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
             AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -509,7 +511,7 @@ class FoodBankNotificationDetails: UIViewController,GMSMapViewDelegate,CLLocatio
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
-                    print(responceDic)
+                  //  print(responceDic)
                     if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                     {
                         let myVC = self.storyboard?.instantiateViewController(withIdentifier: "ChatingDetailsViewController") as? ChatingDetailsViewController

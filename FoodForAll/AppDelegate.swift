@@ -8,7 +8,7 @@
 
 import UIKit
 import IQKeyboardManagerSwift
-import GoogleMaps
+import GoogleMaps 
 import GooglePlaces
 import CoreLocation
 import FBSDKCoreKit
@@ -24,44 +24,53 @@ import PinterestSDK
 var appInstance : AppDelegate!
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,GIDSignInDelegate,UNUserNotificationCenterDelegate
+class AppDelegate: UIResponder,UIApplicationDelegate,CLLocationManagerDelegate,GIDSignInDelegate,UNUserNotificationCenterDelegate
 {
-
     var window: UIWindow?
-    
     var locationManager = CLLocationManager()
     var currentLatitude = Double()
     var currentLongitude = Double()
     var instagram = Instagram()
     var myArray = NSDictionary()
-    var strUserID = NSString()
-     var DeviceToken=String()
-
-
+    var strUserID = String()
+    var DeviceToken=String()
+    var NotificationCount = NSNumber()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-            strUserID=myArray.value(forKey: "id") as! NSString
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+            
+            //  myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            
+            if let quantity = myArray.value(forKey: "id") as? NSNumber
+            {
+                strUserID = String(describing: quantity)
+            }
+            else if let quantity = myArray.value(forKey: "id") as? String
+            {
+                strUserID = quantity
+            }
+           // strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
         {
             strUserID = ""
         }
         
-        locationManager.delegate=self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
-        locationManager.startUpdatingLocation()
-        
-        
-        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            
-        }
+//        locationManager.delegate=self
+//        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+//        locationManager.requestAlwaysAuthorization()
+//        locationManager.startUpdatingLocation()
+//        
+//        
+//        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
+//            currentLatitude = (locationManager.location?.coordinate.latitude)!
+//            currentLongitude = (locationManager.location?.coordinate.longitude)!
+//            
+//        }
 
         
         IQKeyboardManager.sharedManager().enable = true
@@ -108,6 +117,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
         defaults.removeObject(forKey: "NCount")
         
        // self.getDashBoardAPImethod()
+        
+        
+        
 
         
 //        let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -125,13 +137,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
     }
     
     
-    
-    
     func getDashBoardAPImethod () -> Void
     {
         let baseURL: String  = String(format:"%@",Constants.mainURL)
         let params = "method=get_sliderDashboard&gcm_id=\(DeviceToken)&device_type=ios&user_id=\(strUserID)&lat=\(currentLatitude)&lon=\(currentLongitude)"
-        print(params)
+       // print(params)
       
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
             
@@ -149,31 +159,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
             }
         }) { (error) in
             
-        
         }
     }
     
 
-    
-    
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
-        
-        
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool
+    {
+
         if Twitter.sharedInstance().application(app, open:url, options: options) {
             return true
         }
-        
-        
         
         if PDKClient.sharedInstance().handleCallbackURL(url)
         {
             return true
         }
-        
-        
-        
-        
         
         if !url.absoluteString.contains("160743847789712")
         {
@@ -186,8 +187,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
             }
            return false
         }
-        
-       
     }
 
     
@@ -206,19 +205,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
             UNUserNotificationCenter.current().requestAuthorization(options: [.badge, .sound, .alert], completionHandler: {(granted, error) in
                 if (granted)
                 {
-                    UIApplication.shared.registerForRemoteNotifications()
+                    DispatchQueue.main.async
+                    {
+                         UIApplication.shared.registerForRemoteNotifications()
+                    }
                 }
                 else{
                     //Do stuff if unsuccessful...
                 }
             })
         }
-            
         else{ //If user is not on iOS 10 use the old methods we've been using
            
-            
         }
-        
     }
     
     
@@ -245,7 +244,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
     // Called when APNs failed to register the device for push notifications
     @nonobjc func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         // Print the error to console (you should alert the user that registration failed)
-        print("APNs registration failed: \(error)")
+       // print("APNs registration failed: \(error)")
     }
     
     
@@ -257,25 +256,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
         
         if let aps = dic["aps"] as? [String: Any] {
             
-            if let alert = aps["type"] as? String
+            if let alert = aps["entity"] as? String
             {
-                print(alert) // Achievement Completed
+               // print(alert) // Achievement Completed
                 
-                if alert == "1"
+                if alert == "foodbanks"
                 {
-                    let userID:String = (aps["user_id"] as? String)!
+                    let userID:String = aps["user_id"] as? String ?? ""
                     if userID == strUserID as String
                     {
                         let storyboard = UIStoryboard(name: "Main", bundle: nil)
                         let home: MyFoodBankDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
+                           // let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.foodbankID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.foodbankID = quantity
                         }
@@ -292,12 +291,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let home: FoodBankDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                         
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
+                            //let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.foodbankID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.foodbankID = quantity
                         }
@@ -313,7 +312,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     
                     UserDefaults.standard.set("1", forKey: "fbState")
                 }
-                else if alert == "2"
+                else if alert == "foodsharings"
                 {
                     let userID:String = (aps["user_id"] as? String)!
                     if userID == strUserID as String
@@ -321,12 +320,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let storyboard = UIStoryboard(name: "Main", bundle: nil)
                         let home: MyFoodShareDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.SharedMealID = strval as String
+                           // let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.SharedMealID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.SharedMealID = quantity
                         }
@@ -344,12 +343,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let storyboard = UIStoryboard(name: "Main", bundle: nil)
                         let home: EventsDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "EventsDetailsVC") as? EventsDetailsVC)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                           let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.SharedMealID = strval as String
+                           //let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.SharedMealID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.SharedMealID = quantity
                         }
@@ -361,22 +360,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let smVC = UINavigationController(rootViewController: slidemenu!)
                         let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
                         window?.rootViewController = revealController
-                        
                     }
-                    
                     UserDefaults.standard.set("1", forKey: "fsState")
                 }
-                else if alert == "3"
+                else if alert == "chats"
                 {
                     let storyboard = UIStoryboard(name: "Main", bundle: nil)
                     let home: ChatingDetailsViewController? = (storyboard.instantiateViewController(withIdentifier: "ChatingDetailsViewController") as? ChatingDetailsViewController)
                     let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                    if let quantity = aps["type_id"] as? NSNumber
+                    if let quantity = aps["entity_id"] as? NSNumber
                     {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.strConversionId = strval as String
+                      //  let strval: String = String(describing: quantity)
+                        home?.strConversionId = String(describing: quantity)
                     }
-                    else if let quantity = aps["type_id"] as? String
+                    else if let quantity = aps["entity_id"] as? String
                     {
                         home?.strConversionId = quantity
                     }
@@ -389,7 +386,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     
                     UserDefaults.standard.set("1", forKey: "CState")
                 }
-                else if alert == "4"
+                else if alert == "events"
                 {
                     let userID:String = (aps["user_id"] as? String)!
                     if userID == strUserID as String
@@ -397,12 +394,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let storyboard = UIStoryboard(name: "Main", bundle: nil)
                         let home: MyEventsDetailsViewController? = (storyboard.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
+                           // let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.foodbankID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.foodbankID = quantity
                         }
@@ -421,12 +418,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                         let storyboard = UIStoryboard(name: "Main", bundle: nil)
                         let home: EventsDetailsViewController? = (storyboard.instantiateViewController(withIdentifier: "EventsDetailsViewController") as? EventsDetailsViewController)
                         let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        if let quantity = aps["type_id"] as? NSNumber
+                        if let quantity = aps["entity_id"] as? NSNumber
                         {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
+                            //let strval: String = (quantity: quantity.stringValue) as! String
+                            home?.foodbankID = String(describing: quantity)
                         }
-                        else if let quantity = aps["type_id"] as? String
+                        else if let quantity = aps["entity_id"] as? String
                         {
                             home?.foodbankID = quantity
                         }
@@ -443,182 +440,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
                     
                     UserDefaults.standard.set("1", forKey: "EVState")
                 }
-                else if alert == "5"
+                else if alert == "volunteers"
                 {
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let home: MyEventsDetailsViewController? = (storyboard.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController)
-                    let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                    if let quantity = aps["type_id"] as? NSNumber
-                    {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.foodbankID = strval as String
-                    }
-                    else if let quantity = aps["type_id"] as? String
-                    {
-                        home?.foodbankID = quantity
-                    }
-                   // let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                   // home?.foodbankID = NSString(format: "%@", useID) as String
-                    // home?.foodbankID = (aps["type_id"] as? String)!
-                    home?.checkString = "1"
-                    let nav = UINavigationController(rootViewController: home!)
-                    let smVC = UINavigationController(rootViewController: slidemenu!)
-                    let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                    window?.rootViewController = revealController
- 
-                }
-                else if alert == "6"
-                {
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let home: MyFoodShareDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC)
-                    let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                    if let quantity = aps["type_id"] as? NSNumber
-                    {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.SharedMealID = strval as String
-                    }
-                    else if let quantity = aps["type_id"] as? String
-                    {
-                        home?.SharedMealID = quantity
-                    }
-                   // let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                   // home?.SharedMealID = NSString(format: "%@", useID) as String
-                  //  home?.SharedMealID = (aps["type_id"] as? String)!
-                    home?.checkString = "1"
-                    let nav = UINavigationController(rootViewController: home!)
-                    let smVC = UINavigationController(rootViewController: slidemenu!)
-                    let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                    window?.rootViewController = revealController
- 
-                }
-                else if alert == "7"
-                {
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let home: MyFoodBankDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC)
-                    let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
                     
-                    if let quantity = aps["type_id"] as? NSNumber
-                    {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.foodbankID = strval as String
-                    }
-                    else if let quantity = aps["type_id"] as? String
-                    {
-                        home?.foodbankID = quantity
-                    }
-                    // let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                    //  home?.foodbankID = NSString(format: "%@", useID) as String
-                   // home?.foodbankID = (aps["type_id"] as? String)!
-                    home?.checkString = "1"
-                    let nav = UINavigationController(rootViewController: home!)
-                    let smVC = UINavigationController(rootViewController: slidemenu!)
-                    let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                    window?.rootViewController = revealController
-                }
-                else if alert == "8"
-                {
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let home: MyFoodShareDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC)
-                    let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                    if let quantity = aps["type_id"] as? NSNumber
-                    {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.SharedMealID = strval as String
-                    }
-                    else if let quantity = aps["type_id"] as? String
-                    {
-                        home?.SharedMealID = quantity
-                    }
-                  //  let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                  //  home?.SharedMealID = NSString(format: "%@", useID) as String
-                  //  home?.SharedMealID = (aps["type_id"] as? String)!
-                    home?.checkString = "1"
-                    let nav = UINavigationController(rootViewController: home!)
-                    let smVC = UINavigationController(rootViewController: slidemenu!)
-                    let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                    window?.rootViewController = revealController
-
-                }
-                else if alert == "9"
-                {
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let home: MyEventsDetailsViewController? = (storyboard.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController)
-                    let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                    if let quantity = aps["type_id"] as? NSNumber
-                    {
-                        let strval: String = (quantity: quantity.stringValue) as! String
-                        home?.foodbankID = strval as String
-                    }
-                    else if let quantity = aps["type_id"] as? String
-                    {
-                        home?.foodbankID = quantity
-                    }
-                   // let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                   // home?.foodbankID = NSString(format: "%@", useID) as String
-                  //  home?.foodbankID = (aps["type_id"] as? String)!
-                    home?.checkString = "1"
-                    let nav = UINavigationController(rootViewController: home!)
-                    let smVC = UINavigationController(rootViewController: slidemenu!)
-                    let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                    window?.rootViewController = revealController
-                }
-                else if alert == "10"
-                {
-                    let userID:String = (aps["user_id"] as? String)!
-                    if userID == strUserID as String
-                    {
-                        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                        let home: MyFoodBankDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC)
-                        let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        
-                        if let quantity = aps["type_id"] as? NSNumber
-                        {
-                            let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
-                        }
-                        else if let quantity = aps["type_id"] as? String
-                        {
-                            home?.foodbankID = quantity
-                        }
-                        // let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                        //  home?.foodbankID = NSString(format: "%@", useID) as String
-                        home?.checkString = "1"
-                        let nav = UINavigationController(rootViewController: home!)
-                        let smVC = UINavigationController(rootViewController: slidemenu!)
-                        let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                        window?.rootViewController = revealController
-                    }
-                    else{
-                        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                        let home: FoodBankDetailsVC? = (storyboard.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC)
-                        let slidemenu: RearViewController? = (storyboard.instantiateViewController(withIdentifier: "RearViewController") as? RearViewController)
-                        
-                        if let quantity = aps["type_id"] as? NSNumber
-                        {
-                           let strval: String = (quantity: quantity.stringValue) as! String
-                            home?.foodbankID = strval as String
-                        }
-                        else if let quantity = aps["type_id"] as? String
-                        {
-                            home?.foodbankID = quantity
-                        }
-                        //   let useID:NSNumber=(aps["type_id"] as? CVarArg)! as! NSNumber
-                        //   home?.foodbankID = NSString(format: "%@", useID) as String
-                        // home?.foodbankID = (aps["type_id"] as? String)!
-                        home?.checkString = "1"
-                        let nav = UINavigationController(rootViewController: home!)
-                        let smVC = UINavigationController(rootViewController: slidemenu!)
-                        let revealController = SWRevealViewController(rearViewController: smVC, frontViewController: nav)
-                        window?.rootViewController = revealController
-                    }
-                    
-                    UserDefaults.standard.set("1", forKey: "fbState")
                 }
                 else
                 {
                 
                 
                 }
+                
+                NotificationCount = aps["count"] as! NSNumber
+                UserDefaults.standard.set(NotificationCount, forKey: "NCount")
+                
+                let notificationName = Notification.Name("Notification")
+                NotificationCenter.default.post(name: notificationName, object: nil)
             }
         }
     }
@@ -634,6 +470,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
             if let alert = aps["foodshare"] as? String {
                 print(alert) // Achievement Completed
             }
+            
+            
+            
+            NotificationCount = aps["count"] as! NSNumber
+            UserDefaults.standard.set(NotificationCount, forKey: "NCount")
+            
+            let notificationName = Notification.Name("Notification")
+            NotificationCenter.default.post(name: notificationName, object: nil)
             
         }
     }
@@ -655,7 +499,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
     
     func application(_ application: UIApplication, didReceiveRemoteNotification data: [AnyHashable : Any]) {
         // Print notification payload data
-        print("Push notification received: \(data)")
+     //   print("Push notification received: \(data)")
     }
     
     
@@ -678,6 +522,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        application.applicationIconBadgeNumber = 0
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -695,7 +540,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate,
             //            let email = user.profile.email
             // ...
         } else {
-            print("\(error.localizedDescription)")
+           // print("\(error.localizedDescription)")
         }
     }
     

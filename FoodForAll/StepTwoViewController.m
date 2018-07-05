@@ -8,6 +8,7 @@
 
 #import "StepTwoViewController.h"
 #import "CategeoryViewCell2.h"
+#import "Food4All.pch"
 
 @interface StepTwoViewController ()<UITableViewDelegate,UITableViewDataSource>
 {
@@ -93,7 +94,7 @@
     
     
     
-    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
+    NSString *strurl=[NSString stringWithFormat:@"%@",BaseUrl];
     
     
     // set URL

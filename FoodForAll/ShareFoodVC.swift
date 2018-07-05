@@ -44,7 +44,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     var frontView = UIView()
     
     var myArray = NSDictionary()
-    var strUserID = NSString()
+    var strUserID = String()
     var UserID = NSString()
     
     var Stringlab = UILabel()
@@ -70,6 +70,8 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+           NotificationCenter.default.addObserver(self, selector: #selector(self.Notificationmethod), name: NSNotification.Name(rawValue: "Notification"), object: nil)
         
         self.setupAlertCtrl2()
         
@@ -137,8 +139,17 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-            strUserID=myArray.value(forKey: "id") as! NSString
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+            
+            if let quantity = myArray.value(forKey: "id") as? NSNumber
+            {
+                strUserID = String(describing: quantity)
+            }
+            else if let quantity = myArray.value(forKey: "id") as? String
+            {
+                strUserID = quantity
+            }
         }
         else
         {
@@ -167,15 +178,30 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
             
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+            //currentLatitude = (locationManager.location?.coordinate.latitude)!
+           // currentLongitude = (locationManager.location?.coordinate.longitude)!
+           // firstLatitude = (locationManager.location?.coordinate.latitude)!
+           // firstLongitude = (locationManager.location?.coordinate.longitude)!
+            
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
         }
         
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
@@ -199,7 +225,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
        
         
-        self.getAllShareMealAPImethod()
+      //  self.getAllShareMealAPImethod()
         
         
         perform(#selector(ShareFoodVC.showTableView), with: nil, afterDelay: 0.02)
@@ -238,53 +264,123 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         }
     }
     
+    func Notificationmethod()
+    {
+        if UserDefaults.standard.object(forKey: "NCount") != nil
+        {
+            let data = UserDefaults.standard.object(forKey: "NCount") as! NSNumber
+            let orderInt  = data.intValue
+            self.NoticationLab.text = String(describing: orderInt)
+        }
+    }
+    
+    
     
     
     @IBAction func NotificationButtonClicked(_ sender: Any)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
-        
-        print(params)
+        if strUserID == ""
+        {
+            
+        }
+        else{
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
                     myVC?.hidesBottomBarWhenPushed=true
                     self.navigationController?.pushViewController(myVC!, animated: true)
                     
-                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+                    myVC?.listArrayFoodBank = responceDic.object(forKey: "NotificationList") as! NSMutableArray
                     let number = responceDic.object(forKey: "nextPage") as! NSNumber
                     myVC?.strpage = String(describing: number)
                 }
                 else
                 {
-                    var Message=String()
-                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        }
         
         
+        
+        
+        //        let baseURL: String  = String(format:"%@",Constants.mainURL)
+        //        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
+        
+        //        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"get_user_notification")
+        //        let strkey = Constants.ApiKey
+        //
+        //        let PostDataValus = NSMutableDictionary()
+        //        PostDataValus.setValue(strkey, forKey: "api_key")
+        //        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        //
+        //        var jsonStringValues = String()
+        //        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        //        if jsonData == nil {
+        //
+        //        }
+        //        else {
+        //            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+        //            print("jsonString: \(jsonStringValues)")
+        //        }
+        //
+        //        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        //        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+        //
+        //            DispatchQueue.main.async {
+        //                AFWrapperClass.svprogressHudDismiss(view: self)
+        //                let responceDic:NSDictionary = jsonDic as NSDictionary
+        //              //  print(responceDic)
+        //
+        //                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+        //                {
+        //                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
+        //                    myVC?.hidesBottomBarWhenPushed=true
+        //                    self.navigationController?.pushViewController(myVC!, animated: true)
+        //
+        //                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+        //                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+        //                    myVC?.strpage = String(describing: number)
+        //                }
+        //                else
+        //                {
+        //                    var Message=String()
+        //                    Message = responceDic.object(forKey: "responseMessage") as! String
+        //
+        //                    AFWrapperClass.svprogressHudDismiss(view: self)
+        //                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        //
+        //                }
+        //            }
+        //
+        //        }) { (error) in
+        //
+        //            AFWrapperClass.svprogressHudDismiss(view: self)
+        //            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+        //            //print(error.localizedDescription)
+        //        }
     }
+    
 
     
     
@@ -338,68 +434,76 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     
     func getAllShareMealAPImethod () -> Void
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=allsharemeal&user_id=\(strUserID)&lat=\(currentLatitude)&longt=\(currentLongitude)"
-        print(params)
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listFoodsharings",params)
+        
+        print(baseURL)
+        
+        if self.listArrayFoodShare.count == 0
+        {
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        }
+        
+        
+       // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                
+                  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
-                    
                     self.timerArr.removeAllObjects()
                     self.secondsArr.removeAllObjects()
                     self.listArrayFoodShare.removeAllObjects()
-                
+                    
                     self.Stringlab.isHidden=true
                     self.FoodShareTableView.isHidden=false
                     
                     let number = responceDic.object(forKey: "nextPage") as! NSNumber
                     self.strpage = String(describing: number)
                     
-                   
                     
-                    self.listArrayFoodShare = (responceDic.object(forKey: "sharemeallist") as? NSArray)! as! NSMutableArray
+                    
+                    self.listArrayFoodShare = (responceDic.object(forKey: "foodSharingList") as? NSArray)! as! NSMutableArray
                     self.listArrayFoodShare=self.listArrayFoodShare as AnyObject as! NSMutableArray
-                    self.listSeconds=(responceDic.object(forKey: "sharemeallist") as? NSArray)!
+                    self.listSeconds=(responceDic.object(forKey: "foodSharingList") as? NSArray)!
                     
                     for i in 0..<self.listArrayFoodShare.count
                     {
-                        let doubleLat = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as! String)
-                        let doubleLong = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "longt") as! String)
+                        let doubleLat = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? "")
+                        let doubleLong = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? "")
                         
-                        let str: NSString = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as! String as NSString
+                        let str: String = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? ""
+                        let str1: String = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? ""
                         
-                        if str == ""
+                        if str == "" || str1 == ""
                         {
-                        
+                            
                         }
                         else
                         {
-                        self.marker = GMSMarker()
-                        self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
-                        self.marker.title = ((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "address") as! String)
-                        self.marker.userData = self.listArrayFoodShare.object(at: i) as? NSDictionary
-                        self.marker.icon = UIImage(named: "map_pin36.png")!.withRenderingMode(.alwaysTemplate)
-                        self.marker.map = self.mapView
+                            self.marker = GMSMarker()
+                            self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+                            self.marker.title = ((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "address") as? String ?? "")
+                            self.marker.userData = self.listArrayFoodShare.object(at: i) as? NSDictionary
+                            self.marker.icon = UIImage(named: "map_pin36.png")!.withRenderingMode(.alwaysTemplate)
+                            self.marker.map = self.mapView
                         }
                     }
-
-            
+                    
+                    
                     
                     for i in 0..<self.listArrayFoodShare.count
                     {
                         var newDate: Date?
                         var value = NSNumber()
-                        value=(self.listArrayFoodShare.object(at: i) as! NSDictionary).object(forKey: "seconds") as! NSNumber
+                        value=(self.listArrayFoodShare.object(at: i) as! NSDictionary).object(forKey: "remaining_time") as! NSNumber
                         newDate = Date(timeIntervalSinceNow: TimeInterval(value))
                         
-                      
+                        
                         self.timerArr.add(newDate!)
                         self.secondsArr.add(newDate!)
                     }
@@ -407,19 +511,17 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
                     print(self.timerArr)
                     print(self.secondsArr)
                     
-                   
-                    
                     self.FoodShareTableView.reloadData()
                     
-                     self.validateTimer()
+                    self.validateTimer()
                     
                 }
                 else
                 {
                     var Message=String()
                     Message = responceDic.object(forKey: "responseMessage") as! String
-                     self.listArrayFoodShare.removeAllObjects()
-                    if Message == "share meal list not found."
+                    self.listArrayFoodShare.removeAllObjects()
+                    if Message == "No Foodsharing found."
                     {
                         if self.segemnetBtn.selectedSegmentIndex == 0 {
                             
@@ -449,23 +551,152 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
                             }
                             
                         }
-
+                        
                     }
                     else
                     {
                         AFWrapperClass.svprogressHudDismiss(view: self)
                         AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                     }
-
+                    
                 }
             }
             
         }) { (error) in
-            
-            AFWrapperClass.svprogressHudDismiss(view: self)
+             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        
+//
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=allsharemeal&user_id=\(strUserID)&lat=\(currentLatitude)&longt=\(currentLongitude)"
+//        print(params)
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//                print(responceDic)
+//
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//
+//                    self.timerArr.removeAllObjects()
+//                    self.secondsArr.removeAllObjects()
+//                    self.listArrayFoodShare.removeAllObjects()
+//
+//                    self.Stringlab.isHidden=true
+//                    self.FoodShareTableView.isHidden=false
+//
+//                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+//                    self.strpage = String(describing: number)
+//
+//
+//
+//                    self.listArrayFoodShare = (responceDic.object(forKey: "sharemeallist") as? NSArray)! as! NSMutableArray
+//                    self.listArrayFoodShare=self.listArrayFoodShare as AnyObject as! NSMutableArray
+//                    self.listSeconds=(responceDic.object(forKey: "sharemeallist") as? NSArray)!
+//
+//                    for i in 0..<self.listArrayFoodShare.count
+//                    {
+//                        let doubleLat = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as! String)
+//                        let doubleLong = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "longt") as! String)
+//
+//                        let str: NSString = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as! String as NSString
+//
+//                        if str == ""
+//                        {
+//
+//                        }
+//                        else
+//                        {
+//                        self.marker = GMSMarker()
+//                        self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+//                        self.marker.title = ((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "address") as! String)
+//                        self.marker.userData = self.listArrayFoodShare.object(at: i) as? NSDictionary
+//                        self.marker.icon = UIImage(named: "map_pin36.png")!.withRenderingMode(.alwaysTemplate)
+//                        self.marker.map = self.mapView
+//                        }
+//                    }
+//
+//
+//
+//                    for i in 0..<self.listArrayFoodShare.count
+//                    {
+//                        var newDate: Date?
+//                        var value = NSNumber()
+//                        value=(self.listArrayFoodShare.object(at: i) as! NSDictionary).object(forKey: "seconds") as! NSNumber
+//                        newDate = Date(timeIntervalSinceNow: TimeInterval(value))
+//
+//
+//                        self.timerArr.add(newDate!)
+//                        self.secondsArr.add(newDate!)
+//                    }
+//
+//                    print(self.timerArr)
+//                    print(self.secondsArr)
+//
+//
+//
+//                    self.FoodShareTableView.reloadData()
+//
+//                     self.validateTimer()
+//
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//                     self.listArrayFoodShare.removeAllObjects()
+//                    if Message == "share meal list not found."
+//                    {
+//                        if self.segemnetBtn.selectedSegmentIndex == 0 {
+//
+//                            self.FoodShareTableView.isHidden=false
+//                            self.mapView.isHidden=true
+//                            self.Uselocationbutt2.isHidden=true
+//
+//                            if self.listArrayFoodShare.count == 0
+//                            {
+//                                self.Stringlab.text="No List"
+//                                self.Stringlab.isHidden=false
+//                                self.FoodShareTableView.isHidden=true
+//                            }
+//                        }
+//                        else if self.segemnetBtn.selectedSegmentIndex == 1 {
+//                            self.FoodShareTableView.isHidden=true
+//                            self.mapView.isHidden=false
+//                            self.Uselocationbutt2.isHidden=false
+//
+//                            self.Stringlab.text=""
+//                            self.Stringlab.isHidden=true
+//
+//                            if self.listArrayFoodShare.count == 0
+//                            {
+//                                self.mapView.clear()
+//
+//                            }
+//
+//                        }
+//
+//                    }
+//                    else
+//                    {
+//                        AFWrapperClass.svprogressHudDismiss(view: self)
+//                        AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                    }
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
         
         
     }
@@ -518,7 +749,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         let titlelabtext = UILabel()
         titlelabtext.frame = CGRect(x:70, y:5, width:Headview.frame.size.width-80, height:20)
-        titlelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "meal_title") as! CVarArg)
+        titlelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "title") as! CVarArg)
         titlelabtext.font =  UIFont(name:"Helvetica", size: 12)
         titlelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         titlelabtext.textAlignment = .left
@@ -534,7 +765,15 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         let Distancelabtext = UILabel()
         Distancelabtext.frame = CGRect(x:70, y:titlelab.frame.size.height+titlelab.frame.origin.y+1, width:Headview.frame.size.width-80, height:20)
-        Distancelabtext.text = String(format: ": %@ kms", markerDataAry.object(forKey: "distances") as! CVarArg)
+        if let quantity = markerDataAry.object(forKey: "distance") as? NSNumber
+        {
+            Distancelabtext.text =  String(format: ": %@ Kms",String(describing: quantity))
+        }
+        else if let quantity = markerDataAry.object(forKey: "distance") as? String
+        {
+            Distancelabtext.text = String(format: ": %@ Kms",quantity)
+        }
+        //Distancelabtext.text = String(format: ": %@ kms", markerDataAry.object(forKey: "distances") as! CVarArg)
         Distancelabtext.font =  UIFont(name:"Helvetica", size: 12)
         Distancelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         Distancelabtext.textAlignment = .left
@@ -589,7 +828,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         view.addSubview(downImage)
         
         Directionlatitude = markerDataAry.object(forKey: "lat") as! String as NSString
-        Directionlongitude = markerDataAry.object(forKey: "longt") as! String as NSString
+        Directionlongitude = markerDataAry.object(forKey: "long") as! String as NSString
         
         
         Uselocationbutt.frame = CGRect(x:0, y:0, width:view.frame.size.width, height:view.frame.size.height-65)
@@ -611,26 +850,30 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     
     func multipleParamSelector(_ sender: AnyObject, markerDataAry: AnyObject)
     {
-        let markerDataAry: NSDictionary = markerDataAry as! NSDictionary
+       
+        let markerDataAry: NSDictionary = marker.userData as! NSDictionary
         
-        let userID:String = markerDataAry.object(forKey: "user_id") as! String
+        let idStr : String = markerDataAry.value(forKey: "id") as! String
+        
+        print(idStr)
+        
+        
+        let userID:String = markerDataAry.value(forKey: "user_id") as! String
         if userID == strUserID as String
         {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodShareDetailsVC") as? MyFoodShareDetailsVC
             myVC?.hidesBottomBarWhenPushed=true
+            myVC?.SharedMealID=idStr as String
             self.navigationController?.pushViewController(myVC!, animated: true)
-            
-            myVC?.foodbankID = markerDataAry.object(forKey: "fbank_id") as! String
-            myVC?.percentStr = markerDataAry.object(forKey: "percentage") as! String
         }
-        else{
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC
+        else
+        {
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "EventsDetailsVC") as? EventsDetailsVC
             myVC?.hidesBottomBarWhenPushed=true
+            myVC?.SharedMealID=idStr as String
             self.navigationController?.pushViewController(myVC!, animated: true)
-            
-            myVC?.foodbankID = markerDataAry.object(forKey: "fbank_id") as! String
-            myVC?.percentStr = markerDataAry.object(forKey: "percentage") as! String
         }
+
     }
     
     func multipleParamSelector2(_ sender: AnyObject, markerDataAry: AnyObject)
@@ -654,7 +897,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         let markerDataAry: NSDictionary = marker.userData as! NSDictionary
         
-        let idStr : String = markerDataAry.value(forKey: "share_meal_id") as! String
+        let idStr : String = markerDataAry.value(forKey: "id") as! String
         
         print(idStr)
         
@@ -771,38 +1014,80 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         
         cell.selectionStyle = UITableViewCellSelectionStyle.none
         
-        let imageURL: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "share_meal_image") as! String
-        let url = NSURL(string:imageURL)
-        cell.foodbankImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
-        cell.foodbankName.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "meal_title") as! String
-        cell.foodBankUserName.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "username") as! String
-        cell.foodbankCity.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String
-        cell.foodbankDistance.text! = String(format:"%@ kms",(self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "distances") as! String)
-       
-        cell.categeory.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "category_name") as! String
-        cell.Quantity.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "no_of_meal_hidden") as! String
-        
-        
-        let Subcategeory: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type_name") as! String
-        if Subcategeory == ""
+        let imageURL: NSArray = ((self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "images") as? NSArray)!
+        if imageURL.count == 0
         {
-             cell.subCategeory.text! = "Food4All"
+            cell.foodbankImage.image = UIImage(named: "Logo")
         }
         else
         {
-             cell.subCategeory.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type_name") as! String
+            let strurl = imageURL.object(at: 0)
+            let url = NSURL(string: strurl as! String )
+            cell.foodbankImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        }
+        
+        cell.foodbankName.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as? String ?? ""
+        
+        let strname1 = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+        let strname2 = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+        cell.foodBankUserName.text! = strname1+" "+strname2
+    
+        let straddress =  (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as? String ?? ""
+        let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+        cell.foodbankCity.text! = stradd
+        
+        
+        
+        if let quantity = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? NSNumber
+        {
+            cell.foodbankDistance.text! =  String(format: "%@ Kms",String(describing: quantity))
+        }
+        else if let quantity = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance")  as? String
+        {
+            cell.foodbankDistance.text! = String(format: "%@ Kms",quantity)
+        }
+        
+        cell.subCategeory.text! = ((self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_category") as! NSDictionary).value(forKey: "name") as? String ?? "Food4All"
+        
+        let categeory: String = ((self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_category") as! NSDictionary).value(forKey: "image") as? String ?? ""
+        if categeory == ""
+        {
+            cell.SubCategeoryImage.image = UIImage(named: "PlcHldrSmall")
+        }
+        else
+        {
+            let url2 = NSURL(string:categeory)
+            cell.SubCategeoryImage.sd_setImage(with: (url2)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         }
         
         
-        let categeory: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type_image") as! String
-        let url2 = NSURL(string:categeory)
-        cell.SubCategeoryImage.sd_setImage(with: (url2)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+       
+        
+         let subcategeoryname: String = ((self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type") as! NSDictionary).value(forKey: "name") as? String ?? ""
+        if subcategeoryname == ""
+        {
+              cell.categeory.text! = "Food4All"
+        }
+        else
+        {
+            cell.categeory.text! = subcategeoryname
+        }
         
         
-        let categeory2: String = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "category_image") as! String
-        let url3 = NSURL(string:categeory2)
-        cell.CategeoryImage.sd_setImage(with: (url3)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        let categeoryc: String = ((self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "food_type") as! NSDictionary).value(forKey: "image") as? String ?? ""
+        if categeoryc == ""
+        {
+            cell.CategeoryImage.image = UIImage(named: "PlcHldrSmall")
+        }
+        else
+        {
+            let url2 = NSURL(string:categeoryc)
+            cell.CategeoryImage.sd_setImage(with: (url2)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        }
+        
+        
+        cell.Quantity.text! = (self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "quantity") as? String ?? ""
         
         Timemanager.configureCell(cell, withTimerArr: timerArr, withSecondsArr: secondsArr, forAt: indexPath)
         
@@ -811,7 +1096,7 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-        value=(self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "share_meal_id") as! String as NSString
+        value=(self.listArrayFoodShare.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String as NSString
         
         print(value)
         
@@ -887,34 +1172,26 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
             }
             else
             {
+                let strkey = Constants.ApiKey
+                let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&page=\(self.strpage)"
+                let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listFoodsharings",params)
                 
-                let baseURL: String  = String(format:"%@",Constants.mainURL)
-                let params = "method=allsharemeal&user_id=\(strUserID)&lat=\(currentLatitude)&longt=\(currentLongitude)&page=\(strpage)"
-                
-                print(params)
-                
-                // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-                AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+                AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
                     
                     DispatchQueue.main.async {
                         AFWrapperClass.svprogressHudDismiss(view: self)
                         let responceDic:NSDictionary = jsonDic as NSDictionary
-                        print(responceDic)
-                        
-                        
-                        
+                          print(responceDic)
                         if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                         {
-                            self.responsewithToken6(responceDic)
+                            self.responsewithToken7(responceDic)
                         }
                         else
                         {
                             
                         }
                     }
-                    
                 }) { (error) in
-                    
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
                     //print(error.localizedDescription)
@@ -925,6 +1202,65 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
         }
     
     }
+    
+    func responsewithToken7(_ responseDict: NSDictionary)
+    {
+        var responseDictionary : NSDictionary = [:]
+        responseDictionary = responseDict
+        
+        var arr = NSMutableArray()
+        arr = (responseDictionary.value(forKey: "foodSharingList") as? NSMutableArray)!
+        arr=arr as AnyObject as! NSMutableArray
+        self.listArrayFoodShare.addObjects(from: arr as [AnyObject])
+        
+        self.timerArr.removeAllObjects()
+        self.secondsArr.removeAllObjects()
+        
+        for i in 0..<self.listArrayFoodShare.count
+        {
+            let doubleLat = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? "")
+            let doubleLong = Double((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? "")
+            
+            let str: String = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? ""
+            let str1: String = (self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? ""
+            
+            if str == "" || str1 == ""
+            {
+                
+            }
+            else
+            {
+                self.marker = GMSMarker()
+                self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+                self.marker.title = ((self.listArrayFoodShare.object(at: i) as! NSDictionary).value(forKey: "address") as? String ?? "")
+                self.marker.userData = self.listArrayFoodShare.object(at: i) as? NSDictionary
+                self.marker.icon = UIImage(named: "map_pin36.png")!.withRenderingMode(.alwaysTemplate)
+                self.marker.map = self.mapView
+            }
+        }
+        
+        for i in 0..<self.listArrayFoodShare.count
+        {
+            var newDate: Date?
+            var value = NSNumber()
+            value=(self.listArrayFoodShare.object(at: i) as! NSDictionary).object(forKey: "remaining_time") as! NSNumber
+            newDate = Date(timeIntervalSinceNow: TimeInterval(value))
+            
+            
+            self.timerArr.add(newDate!)
+            self.secondsArr.add(newDate!)
+        }
+        self.validateTimer()
+        
+       
+        
+        let number = responseDictionary.object(forKey: "nextPage") as! NSNumber
+        self.strpage = String(describing: number)
+        
+         self.FoodShareTableView.reloadData()
+    }
+    
+    
     
     func responsewithToken6(_ responseDict: NSDictionary) {
         var responseDictionary : NSDictionary = [:]
@@ -1069,74 +1405,73 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
     
     
     
-    func initFooterView() {
-        footerview2 = UIView(frame: CGRect(x: CGFloat(0.0), y: CGFloat(0.0), width: CGFloat(view.frame.size.width), height: CGFloat(50.0)))
-        actInd = UIActivityIndicatorView(activityIndicatorStyle: .gray)
-        actInd.tag = 10
-        actInd.frame = CGRect(x: CGFloat(view.frame.size.width / 2 - 10), y: CGFloat(5.0), width: CGFloat(20.0), height: CGFloat(20.0))
-        actInd.isHidden = true
-        //actInd.performSelector(#selector(removeFromSuperview), withObject: nil, afterDelay: 30.0)
-        footerview2.addSubview(actInd)
-        loadLbl = UILabel(frame: CGRect(x: CGFloat(view.frame.size.width / 2 - 100), y: CGFloat(25), width: CGFloat(200), height: CGFloat(20)))
-        loadLbl.textAlignment = .center
-        loadLbl.textColor = UIColor.lightGray
-        // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
-        loadLbl.font = UIFont.systemFont(ofSize: CGFloat(12))
-        footerview2.addSubview(loadLbl)
-        actInd = nil
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        if scrool == 1 {
-            let endOfTable: Bool = (scrollView.contentOffset.y >= 0)
-            if endOfTable && !scrollView.isDragging && !scrollView.isDecelerating {
-                if (strpage == "0") {
-                    FoodShareTableView.tableFooterView = footerview2
-                  //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.stopAnimating()
-                   // loadLbl.text = "No More List"
-                  //  actInd.stopAnimating()
-                }
-                else {
-                  //  FoodShareTableView.tableFooterView = footerview2
-                  //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.startAnimating()
-                }
-            }
-        }
-    }
-    
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        if scrool == 1 {
-            footerview2.isHidden = true
-           // loadLbl.isHidden = true
-        }
-    }
+//    func initFooterView() {
+//        footerview2 = UIView(frame: CGRect(x: CGFloat(0.0), y: CGFloat(0.0), width: CGFloat(view.frame.size.width), height: CGFloat(50.0)))
+//        actInd = UIActivityIndicatorView(activityIndicatorStyle: .gray)
+//        actInd.tag = 10
+//        actInd.frame = CGRect(x: CGFloat(view.frame.size.width / 2 - 10), y: CGFloat(5.0), width: CGFloat(20.0), height: CGFloat(20.0))
+//        actInd.isHidden = true
+//        //actInd.performSelector(#selector(removeFromSuperview), withObject: nil, afterDelay: 30.0)
+//        footerview2.addSubview(actInd)
+//        loadLbl = UILabel(frame: CGRect(x: CGFloat(view.frame.size.width / 2 - 100), y: CGFloat(25), width: CGFloat(200), height: CGFloat(20)))
+//        loadLbl.textAlignment = .center
+//        loadLbl.textColor = UIColor.lightGray
+//        // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
+//        loadLbl.font = UIFont.systemFont(ofSize: CGFloat(12))
+//        footerview2.addSubview(loadLbl)
+//        actInd = nil
+//    }
+//    
+//    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+//        if scrool == 1 {
+//            let endOfTable: Bool = (scrollView.contentOffset.y >= 0)
+//            if endOfTable && !scrollView.isDragging && !scrollView.isDecelerating {
+//                if (strpage == "0") {
+//                    FoodShareTableView.tableFooterView = footerview2
+//                  //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.stopAnimating()
+//                   // loadLbl.text = "No More List"
+//                  //  actInd.stopAnimating()
+//                }
+//                else {
+//                  //  FoodShareTableView.tableFooterView = footerview2
+//                  //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.startAnimating()
+//                }
+//            }
+//        }
+//    }
+//    
+//    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+//        if scrool == 1 {
+//          //  footerview2.isHidden = true
+//           // loadLbl.isHidden = true
+//        }
+//    }
     
     
     
     
 
     
-    
-    
-    
+    // MARK:  Add Food Share
+
     
     @IBAction func addSharFdBnkBtnAction(_ sender: Any) {
         
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            let baseURL: String  = String(format:"%@",Constants.mainURL)
-            let params = "method=share_meal_category"
-            print(params)
+            let strkey = Constants.ApiKey
+            let params = "api_key=\(strkey)"
+            let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"foodCategory",params)
+            
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+            AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
                 
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
                     print(responceDic)
-                    
-                    if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                    if (responceDic.object(forKey: "status") as! NSNumber) == 1
                     {
                         let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SetpOneViewController") as? SetpOneViewController
                         myVC?.hidesBottomBarWhenPushed=true
@@ -1152,13 +1487,46 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
                         AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                     }
                 }
-                
             }) { (error) in
-                
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
                 //print(error.localizedDescription)
             }
+//
+//            let baseURL: String  = String(format:"%@",Constants.mainURL)
+//            let params = "method=share_meal_category"
+//            print(params)
+//            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//                DispatchQueue.main.async {
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    let responceDic:NSDictionary = jsonDic as NSDictionary
+//                    print(responceDic)
+//
+//                    if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                    {
+//                        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SetpOneViewController") as? SetpOneViewController
+//                        myVC?.hidesBottomBarWhenPushed=true
+//                        myVC?.arrChildCategory = (responceDic.value(forKey: "categoryList") as? NSMutableArray)!
+//                        self.navigationController?.pushViewController(myVC!, animated: true)
+//                    }
+//                    else
+//                    {
+//                        var Message=String()
+//                        Message = responceDic.object(forKey: "responseMessage") as! String
+//
+//                        AFWrapperClass.svprogressHudDismiss(view: self)
+//                        AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                    }
+//                }
+//
+//            }) { (error) in
+//
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//                //print(error.localizedDescription)
+//            }
         }
         else
         {

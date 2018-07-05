@@ -15,33 +15,46 @@ import UIKit
      fileprivate var labelPlaceholder : UILabel?
      fileprivate var labelErrorPlaceholder : UILabel?
      fileprivate var showingError : Bool = false
-    
+
+     /// Disable Floating Label when true.
      @IBInspectable open var disableFloatingLabel : Bool = false
     
-     @IBInspectable open var lineColor : UIColor = UIColor.black
+     /// Shake Bottom line when Showing Error ?
+     @IBInspectable open var shakeLineWithError : Bool = true
     
+     /// Change Bottom Line Color.
+     @IBInspectable open var lineColor : UIColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+    
+     /// Change line color when Editing in textfield
      @IBInspectable open var selectedLineColor : UIColor = UIColor(red: 19/256.0, green: 141/256.0, blue: 117/256.0, alpha: 1.0)
     
+     /// Change placeholder color.
      @IBInspectable open var placeHolderColor : UIColor = UIColor.lightGray
     
+     /// Change placeholder color while editing.
      @IBInspectable open var selectedPlaceHolderColor : UIColor = UIColor(red: 19/256.0, green: 141/256.0, blue: 117/256.0, alpha: 1.0)
     
-    @IBInspectable open var errorTextColor : UIColor = UIColor.red
+     /// Change Error Text color.
+     @IBInspectable open var errorTextColor : UIColor = UIColor.red
 
-    @IBInspectable open var errorLineColor : UIColor = UIColor.red
-
+     /// Change Error Line color.
+     @IBInspectable open var errorLineColor : UIColor = UIColor.red
     
     //MARK:- Set Text
     override open var text:String?  {
         didSet {
+            if showingError {
+                self.hideErrorPlaceHolder()
+            }
             floatTheLabel()
-            checkForDefaulLabel()
         }
     }
     
     override open var placeholder: String? {
         willSet {
-            self.labelPlaceholder?.text = newValue
+            if newValue != "" {
+                self.labelPlaceholder?.text = newValue
+            }
         }
     }
     
@@ -53,25 +66,20 @@ import UIKit
     
     //MARK:- UITtextfield Draw Method Override
     override open func draw(_ rect: CGRect) {
-        
         super.draw(rect)
         self.upadteTextField(frame: CGRect(x:self.frame.minX, y:self.frame.minY, width:rect.width, height:rect.height));
-
     }
 
     // MARK:- Loading From NIB
     override open func awakeFromNib() {
-        
         super.awakeFromNib()
          self.initialize()
     }
     
     // MARK:- Intialization
     override public init(frame: CGRect) {
-        
         super.init(frame: frame)
         self.initialize()
-    
     }
     
     required public init(coder aDecoder: NSCoder) {
@@ -81,19 +89,11 @@ import UIKit
 
     // MARK:- Text Rect Management
     override open func textRect(forBounds bounds: CGRect) -> CGRect {
-        if (showingError) {
-            return CGRect(x:0, y:0, width:bounds.size.width, height:bounds.size.height);
-        }else{
-            return CGRect(x:0, y:0, width:bounds.size.width, height:bounds.size.height);
-        }
+        return CGRect(x:4, y:4, width:bounds.size.width, height:bounds.size.height);
     }
 
     override open func editingRect(forBounds bounds: CGRect) -> CGRect {
-        if (showingError) {
-            return CGRect(x:0, y:0, width:bounds.size.width, height:bounds.size.height);
-        }else{
-            return CGRect(x:0, y:0, width:bounds.size.width, height:bounds.size.height);
-        }
+        return CGRect(x:4, y:4, width:bounds.size.width, height:bounds.size.height);
     }
 
     //MARK:- UITextfield Becomes First Responder
@@ -111,16 +111,19 @@ import UIKit
     }
 
     //MARK:- Show Error Label
-    func showError() {
+    public func showError() {
         showingError = true;
-        self.upadteTextField(frame: self.frame)
         self.showErrorPlaceHolder();
     }
-    
-    func showErrorWithText(errorText : String) {
+    public func hideError() {
+        showingError = false;
+        self.hideErrorPlaceHolder();
+        floatTheLabel()
+    }
+
+    public func showErrorWithText(errorText : String) {
         self.errorText = errorText;
         showingError = true;
-        self.upadteTextField(frame: self.frame)
         self.showErrorPlaceHolder();
     }
 
@@ -132,23 +135,13 @@ fileprivate extension ACFloatingTextfield {
     //MARK:- ACFLoating Initialzation.
     func initialize() -> Void {
         
-        /// HIDE DEFAULT PLACEHOLDER LABEL OF UITEXTFIELD
-        checkForDefaulLabel()
-        
+        self.clipsToBounds = true
         /// Adding Bottom Line
         addBottomLine()
         
         /// Placeholder Label Configuration.
         addFloatingLabel()
         
-        /// Adding Error Label
-        if (showingError) {
-            if (self.errorText == "" || self.errorText == nil) {
-                self.errorText = "Error";
-            }
-            self.addErrorPlaceholderLabel()
-        }
-
         /// Checking Floatibility
         if self.text != nil && self.text != "" {
             self.floatTheLabel()
@@ -159,12 +152,32 @@ fileprivate extension ACFloatingTextfield {
     //MARK:- ADD Bottom Line
     func addBottomLine(){
         
-        bottomLineView?.removeFromSuperview()
+        if bottomLineView?.superview != nil {
+            var bottomLineFrame = bottomLineView?.frame ?? CGRect.zero
+            bottomLineFrame.size.width = self.frame.width
+            bottomLineView?.frame = bottomLineFrame
+            return
+        }
         
+        bottomLineView?.removeFromSuperview()
         //Bottom Line UIView Configuration.
-        bottomLineView = UIView(frame: CGRect(x:0, y:self.frame.height-1, width:self.frame.width+25, height:1))
-        bottomLineView?.backgroundColor = lineColor;
-        bottomLineView?.tag = 20;
+        bottomLineView = UIView(frame: CGRect(x:0, y:self.frame.height-1, width:self.frame.width, height:2))
+        
+       
+        
+         let data = UserDefaults.standard.object(forKey: "txt") as! String
+        
+        if data == "no"
+        {
+            bottomLineView?.backgroundColor = lineColor;
+        }
+        else
+        {
+            bottomLineView?.backgroundColor = #colorLiteral(red: 0.6783729196, green: 0.6784700155, blue: 0.678342402, alpha: 1);
+        }
+            
+        
+        
         
         if bottomLineView != nil {
             self.addSubview(bottomLineView!)
@@ -175,109 +188,106 @@ fileprivate extension ACFloatingTextfield {
     //MARK:- ADD Floating Label
     func addFloatingLabel(){
         
+        if labelPlaceholder?.superview != nil {
+            var labelFrame = labelPlaceholder?.frame ?? CGRect.zero
+            labelFrame.origin.x = 5
+            labelFrame.size.width = self.frame.width
+            labelPlaceholder?.frame = labelFrame
+            return
+        }
         labelPlaceholder?.removeFromSuperview()
         
         var placeholderText : String? = labelPlaceholder?.text
         if self.placeholder != nil && self.placeholder != "" {
             placeholderText = self.placeholder!
         }
-        
-        labelPlaceholder = UILabel(frame: CGRect(x:0, y:0, width:self.frame.size.width-5, height:self.frame.height))
+        labelPlaceholder = UILabel()
+        labelPlaceholder?.frame = CGRect(x:5, y:0, width:self.frame.size.width-5, height:self.frame.height)
         labelPlaceholder?.text = placeholderText
         labelPlaceholder?.textAlignment = self.textAlignment
         labelPlaceholder?.textColor = placeHolderColor
         labelPlaceholder?.font = self.font
-        labelPlaceholder?.tag = 21
-        
+        labelPlaceholder?.isHidden = true
+        self.setValue(placeHolderColor, forKeyPath: "_placeholderLabel.textColor")
         if labelPlaceholder != nil {
             self.addSubview(labelPlaceholder!)
         }
+        
     }
     
+    
     func addErrorPlaceholderLabel() -> Void {
-        
-        self.endEditing(true)
+
         labelErrorPlaceholder?.removeFromSuperview()
-        
-        labelErrorPlaceholder = UILabel(frame: CGRect(x:0, y:0, width:self.frame.size.width-5, height:self.frame.height))
+        labelErrorPlaceholder = UILabel()
         labelErrorPlaceholder?.text = self.errorText
         labelErrorPlaceholder?.textAlignment = self.textAlignment
-        labelErrorPlaceholder?.textColor = placeHolderColor
+        labelErrorPlaceholder?.textColor = errorTextColor
         labelErrorPlaceholder?.font = UIFont(name: (self.font?.fontName ?? "helvetica")!, size: 12)
-        labelErrorPlaceholder?.tag = 21
-        
-        var frameError = labelErrorPlaceholder?.frame;
-        frameError?.size.height = 12;
-        frameError?.origin.y = self.bounds.size.height - (frameError?.size.height ?? 0)!;
-        frameError?.origin.x = 0;
-        
-        labelErrorPlaceholder?.frame = frameError ?? CGRect.zero;
-        
+        labelErrorPlaceholder?.sizeToFit()
+        labelErrorPlaceholder?.isHidden = true;
         if labelErrorPlaceholder != nil {
             self.addSubview(labelErrorPlaceholder!)
         }
-        labelErrorPlaceholder?.isHidden = true;
+
+        var frame = labelErrorPlaceholder!.frame
+        frame.origin.x = self.bounds.maxX - frame.width
+        labelErrorPlaceholder?.frame = frame
+
     }
     
     func showErrorPlaceHolder() {
         
-        labelErrorPlaceholder?.isHidden = false;
-        
-        var bottmLineFrame = bottomLineView?.frame ?? CGRect.zero;
-        bottmLineFrame.origin.y = (labelErrorPlaceholder?.frame.origin.y ?? 0)! - 1;
-        
-        labelErrorPlaceholder?.alpha = 0;
-        labelErrorPlaceholder?.frame = CGRect(x:(labelErrorPlaceholder?.frame.origin.x ?? 0)!, y:(labelErrorPlaceholder?.frame.origin.y ?? 0)!-5, width:labelErrorPlaceholder?.frame.size.width ?? 0, height:labelErrorPlaceholder?.frame.size.height ?? 0);
-        
-        var labelErrorFrame = labelErrorPlaceholder?.frame ?? CGRect.zero;
-        labelErrorFrame.origin.y = labelErrorFrame.origin.y + 6;
-        
-        UIView.animate(withDuration: 0.2) {
-            self.bottomLineView?.frame  =  bottmLineFrame;
-            self.bottomLineView?.backgroundColor = self.errorLineColor;
-            self.labelErrorPlaceholder?.alpha = 1;
-            self.labelErrorPlaceholder?.frame = labelErrorFrame;
+        var bottomLineFrame = bottomLineView?.frame
+        bottomLineFrame?.origin.y = self.frame.height-2
+        if self.errorText != nil && self.errorText != "" {
+            self.addErrorPlaceholderLabel()
+
+            labelErrorPlaceholder?.isHidden = false
+            var frame = labelErrorPlaceholder?.frame
+            let localFrame = frame;
+            frame?.origin.y -= (localFrame?.height ?? 0)!
+            labelErrorPlaceholder?.frame = frame!
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
+                self.bottomLineView?.backgroundColor = self.errorLineColor;
+                frame?.origin.y = 0
+                self.labelErrorPlaceholder?.frame = frame!
+                self.bottomLineView?.frame  =  bottomLineFrame!;
+
+                }, completion: nil)
+        }else{
+
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
+                self.bottomLineView?.backgroundColor = self.errorLineColor;
+                self.bottomLineView?.frame  =  bottomLineFrame!;
+                }, completion: nil)
         }
+        
+        if shakeLineWithError {
+            bottomLineView?.shake()
+        }
+        
     }
-    
     
     func hideErrorPlaceHolder(){
         showingError = false;
         
-        var labelErrorFrame = labelErrorPlaceholder?.frame;
-        labelErrorFrame?.origin.y = (labelErrorFrame?.origin.y ?? 0)! - 6;
-        
-        UIView.animate(withDuration: 0.2) {
-            self.labelErrorPlaceholder?.alpha = 0;
-            self.labelErrorPlaceholder?.frame = labelErrorFrame!;
+        if errorText == nil || errorText == "" {
+            return
         }
+        
+        var labelErrorFrame = labelErrorPlaceholder?.frame;
+        let localLabelErrorFrame = labelErrorFrame;
+        labelErrorFrame?.origin.y -= (localLabelErrorFrame?.height ?? 0)!
+        
+        UIView.animate(withDuration: 0.2, animations: { 
+            self.labelErrorPlaceholder?.frame = labelErrorFrame!
+            }) { (finished) in
+                self.labelErrorPlaceholder?.removeFromSuperview()
+        }
+        
     }
 
-    // Checks The Default Placeholder Label
-    func checkForDefaulLabel() -> Void {
-        
-        var aLabelView : UIView?
-        
-        for aView in self.subviews {
-            
-            if aView is UILabel {
-                
-                if aView.tag != 21 {
-                    
-                    aLabelView = aView
-                }
-            }
-        }
-        
-        
-        if self.text == nil || self.text == "" {
-            aLabelView?.isHidden = true;
-        }else{
-            aLabelView?.isHidden = false;
-        }
-        
-    }
-    
     //MARK:- Float & Resign
     func floatTheLabel() -> Void {
         
@@ -298,7 +308,6 @@ fileprivate extension ACFloatingTextfield {
             floatPlaceHolder(selected: true)
         }
         
-        self.checkForDefaulLabel()
     }
     
     //MARK:- Upadate and Manage Subviews
@@ -307,14 +316,27 @@ fileprivate extension ACFloatingTextfield {
         self.initialize()
     }
     
-    //MARK:- Float UITextfield Placeholder Label.
+    //MARK:- Float UITextfield Placeholder Label
     func floatPlaceHolder(selected:Bool) -> Void {
         
-        
+        labelPlaceholder?.isHidden = false
         var bottomLineFrame = bottomLineView?.frame
-        bottomLineFrame?.origin.y = self.frame.height-1
-        
-        if disableFloatingLabel {
+        bottomLineFrame?.size.width = self.frame.width
+        if selected {
+            bottomLineView?.backgroundColor = selectedLineColor
+            self.labelPlaceholder?.textColor = self.selectedPlaceHolderColor
+            bottomLineFrame?.origin.y = self.frame.height-2
+            self.setValue(self.selectedPlaceHolderColor, forKeyPath: "_placeholderLabel.textColor")
+
+        } else {
+            bottomLineView?.backgroundColor = lineColor;
+            bottomLineFrame?.origin.y = self.frame.height-1
+            self.labelPlaceholder?.textColor = self.placeHolderColor
+            self.setValue(placeHolderColor, forKeyPath: "_placeholderLabel.textColor")
+
+        }
+
+        if disableFloatingLabel == true {
             labelPlaceholder?.isHidden = true
             UIView.animate(withDuration: 0.2, animations: {
                 self.bottomLineView?.frame = bottomLineFrame!
@@ -324,66 +346,55 @@ fileprivate extension ACFloatingTextfield {
         }
         
         var labelFrame = labelPlaceholder?.frame
-        labelFrame?.size.height = 12
-        
-        if selected {
-            
-            bottomLineView?.backgroundColor = selectedLineColor
-            self.labelPlaceholder?.textColor = self.selectedPlaceHolderColor;
-            
-        } else {
-            
-            bottomLineView?.backgroundColor = lineColor;
-            bottomLineFrame?.origin.y = self.frame.height-1
-            self.labelPlaceholder?.textColor = self.placeHolderColor;
-            
-        }
-        
+        labelFrame?.size.height = 14.33
+
         UIView.animate(withDuration: 0.2, animations: {
-            
             self.labelPlaceholder?.frame = labelFrame!;
             self.labelPlaceholder?.font = UIFont(name: (self.font?.fontName)!, size: 12)
             self.bottomLineView?.frame  =  bottomLineFrame!;
         })
         
-        
     }
     
     //MARK:- Resign the Placeholder
     func resignPlaceholder() -> Void {
-        
+
+        self.setValue(self.placeHolderColor, forKeyPath: "_placeholderLabel.textColor")
+
         var bottomLineFrame = bottomLineView?.frame
         bottomLineFrame?.origin.y = self.frame.height-1
-        
         
         bottomLineView?.backgroundColor = lineColor;
         
         if disableFloatingLabel {
-            labelPlaceholder?.isHidden = false
+            labelPlaceholder?.isHidden = true
             self.labelPlaceholder?.textColor = self.placeHolderColor;
-            
             UIView.animate(withDuration: 0.2, animations: {
                 self.bottomLineView?.frame = bottomLineFrame!
             })
-            
             return
         }
         
-        let labelFrame = CGRect(x:0, y:0, width:self.frame.size.width-5, height:self.frame.size.height)
+        let labelFrame = CGRect(x:5, y:0, width:self.frame.size.width-5, height:self.frame.size.height)
         
-        UIView.animate(withDuration: 0.2, animations: {
-            self.labelPlaceholder?.frame = labelFrame;
+        UIView.animate(withDuration: 0.3, animations: {
+            self.labelPlaceholder?.frame = labelFrame
             self.labelPlaceholder?.font = self.font
-            self.labelPlaceholder?.textColor = self.placeHolderColor;
+            self.labelPlaceholder?.textColor = self.placeHolderColor
             self.bottomLineView?.frame  =  bottomLineFrame!;
-        })
-        
+        }) { (finished) in
+            self.labelPlaceholder?.isHidden = true
+            self.placeholder = self.labelPlaceholder?.text
+        }
     }
     
     //MARK:- UITextField Begin Editing.
     func textFieldDidBeginEditing() -> Void {
         if showingError {
             self.hideErrorPlaceHolder()
+        }
+        if !self.disableFloatingLabel {
+            self.placeholder = ""
         }
         self.floatTheLabel()
         self.layoutSubviews()
@@ -392,5 +403,16 @@ fileprivate extension ACFloatingTextfield {
     //MARK:- UITextField Begin Editing.
     func textFieldDidEndEditing() -> Void {
         self.floatTheLabel()
+    }
+}
+
+//MARK:- Shake
+extension UIView {
+    func shake() {
+        let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        animation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
+        animation.duration = 0.6
+        animation.values = [-20.0, 20.0, -20.0, 20.0, -10.0, 10.0, -5.0, 5.0, 0.0 ]
+        layer.add(animation, forKey: "shake")
     }
 }

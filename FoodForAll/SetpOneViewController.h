@@ -29,5 +29,10 @@
 
 @property (weak, nonatomic) IBOutlet UILabel *ensurelab;
 @property (weak, nonatomic) IBOutlet UIButton *nextbutt;
+@property (weak, nonatomic) IBOutlet UILabel *UpdateLab;
+
+@property (weak, nonatomic) IBOutlet NSArray *imagesArray;
+@property (weak, nonatomic) IBOutlet NSDictionary *listDetailBank;
+@property (weak, nonatomic) IBOutlet NSString *StrEditMode;
 
 @end

@@ -10,6 +10,8 @@ import UIKit
 import GoogleMaps
 import GooglePlaces
 import CoreLocation
+import Contacts
+import MessageUI
 
 class CollectionCell2: UICollectionViewCell {
     
@@ -19,7 +21,7 @@ class CollectionCell2: UICollectionViewCell {
 }
 
 
-class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSource,UICollectionViewDelegate,GMSMapViewDelegate,CLLocationManagerDelegate {
+class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSource,UICollectionViewDelegate,GMSMapViewDelegate,CLLocationManagerDelegate,MFMailComposeViewControllerDelegate {
 
     var VolunteerDetails = NSDictionary()
     var listArrayfoodbanks = NSArray()
@@ -83,8 +85,9 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     @IBOutlet weak var distancelab1: UILabel!
     @IBOutlet weak var distancelab2: UILabel!
     
-    
-    
+    var number=String()
+    var stremail=String()
+    var StrDistance=String()
     
     
     
@@ -105,10 +108,12 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         
         
         
-
+        let strname1 = self.VolunteerDetails.object(forKey: "first_name") as? String ?? ""
+        let strname2 = self.VolunteerDetails.object(forKey: "last_name") as? String ?? ""
+        userName.text = strname1+" "+strname2
        
-        userName.text = self.VolunteerDetails.object(forKey: "first_name") as? String
-        listArrayfoodbanks = (self.VolunteerDetails.object(forKey: "foodbank") as? NSArray)!
+        //userName.text = self.VolunteerDetails.object(forKey: "first_name") as? String
+        listArrayfoodbanks = (self.VolunteerDetails.object(forKey: "connected_foodbanks") as? NSArray)!
         
         if listArrayfoodbanks.count == 0
         {
@@ -119,13 +124,14 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         }
         
         
-        let stringUrl = self.VolunteerDetails.value(forKey: "image") as! NSString
-        let url = URL.init(string:stringUrl as String)
+        let stringUrl = self.VolunteerDetails.value(forKey: "image") as? String ?? ""
+        let url = URL.init(string:stringUrl)
         ProfilePic.sd_setImage(with: url , placeholderImage: UIImage(named: "applogo.png"))
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
@@ -148,7 +154,7 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         
         
         let boldAttributedString = NSAttributedString(string: "", attributes: boldAttribute)
-        var status: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "Volunteer_date") as? String)!) as NSString
+        var status: String = String(format:"%@",(self.VolunteerDetails.object(forKey: "created") as? String ?? ""))
         if status == ""
         {
             status = "NA"
@@ -158,12 +164,12 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         let regularAttributedString = NSAttributedString(string: status as String, attributes: regularAttribute)
         mutableAttributedString.append(boldAttributedString)
         mutableAttributedString.append(regularAttributedString)
-        VolunteerSince.attributedText = mutableAttributedString
+        VolunteerSince.text = status
 
         
         let mutableAttributedString2 = NSMutableAttributedString()
         let boldAttributedString2 = NSAttributedString(string: "", attributes: boldAttribute)
-        var status2: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "description") as? String)!) as NSString
+        var status2: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "description") as? String ?? "")) as NSString
         if status2 == ""
         {
             status2 = "NA"
@@ -177,7 +183,7 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         
         let mutableAttributedString3 = NSMutableAttributedString()
         let boldAttributedString3 = NSAttributedString(string: "", attributes: boldAttribute)
-        var status3: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "email") as? String)!) as NSString
+        var status3: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "email") as? String ?? "")) as NSString
         if status3 == ""
         {
             status3 = "NA"
@@ -189,9 +195,11 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         mutableAttributedString3.append(regularAttributedString3)
         EmailPhone.attributedText = mutableAttributedString3
         
+        stremail = self.VolunteerDetails.object(forKey: "email") as? String ?? ""
+        
         let mutableAttributedString4 = NSMutableAttributedString()
         let boldAttributedString4 = NSAttributedString(string: "", attributes: boldAttribute)
-        var status4: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "phone_no") as? String)!) as NSString
+        var status4: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "phone_no") as? String ?? "")) as NSString
         if status4 == ""
         {
              status4 = "NA"
@@ -203,10 +211,11 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         mutableAttributedString4.append(regularAttributedString4)
         phone.attributedText = mutableAttributedString4
         
+        number = self.VolunteerDetails.object(forKey: "phone_no") as? String ?? ""
         
         let mutableAttributedString5 = NSMutableAttributedString()
         let boldAttributedString5 = NSAttributedString(string: "", attributes: boldAttribute)
-        var status5: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "address") as? String)!) as NSString
+        var status5: NSString = String(format:"%@",(self.VolunteerDetails.object(forKey: "address") as? String ?? "")) as NSString
         if status5 == ""
         {
             status5 = "NA"
@@ -226,16 +235,27 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
            // let strval: String = ((quantity: quantity.stringValue) as! String)
             let strval = String(describing: quantity)
              status6 = String(format:"%@ Kms", strval) as NSString
+            StrDistance = String(describing: quantity)
         }
         else if let quantity = VolunteerDetails.object(forKey: "distance") as? String
         {
              status6 = String(format:"%@ Kms", quantity) as NSString
+             StrDistance = quantity
         }
         if status6 == ""
         {
             status6 = "NA"
            // distancelab1.isHidden = true
           //  distancelab2.isHidden = true
+        }
+        else
+        {
+//            let myDouble = Double(StrDistance)
+//            print(myDouble ?? 0)
+//            let x = myDouble?.rounded(toPlaces: 2)
+//            print(x ?? 0)
+//            let strval: String = String(describing: x)
+//            status6 = String(format:"%@ Kms", strval) as NSString
         }
         let regularAttributedString6 = NSAttributedString(string: status6 as String, attributes: regularAttribute)
         mutableAttributedString6.append(boldAttributedString6)
@@ -248,13 +268,29 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+          //  currentLatitude = (locationManager.location?.coordinate.latitude)!
+        //    currentLongitude = (locationManager.location?.coordinate.longitude)!
+       //     firstLatitude = (locationManager.location?.coordinate.latitude)!
+       //     firstLongitude = (locationManager.location?.coordinate.longitude)!
+            
+            
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
         }
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
         }else{
@@ -270,27 +306,119 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
             present(alertController, animated: true, completion: nil)
         }
         
+        
+        let str = self.VolunteerDetails.object(forKey: "lat") as? String ?? ""
+        let str2 = self.VolunteerDetails.object(forKey: "long") as? String ?? ""
+        
+        if str == "" || str2 == ""
+        {
+            myLatitude = 0
+            myLongitude = 0
+            
+        }
+        else
+        {
+            myLatitude = Double(self.VolunteerDetails.object(forKey: "lat") as? String ?? "")!
+            myLongitude = Double(self.VolunteerDetails.object(forKey: "long") as? String ?? "")!
+        }
+        
 
         self.perform(#selector(VolunteerDetailsViewController.showMapView), with: nil, afterDelay: 0.01)
 
     }
     
+    @IBAction func EmailButtClicked(_ sender: UIButton)
+    {
+        if stremail == ""
+        {
+            var Message=String()
+            Message = "Email Id Not Avalilable"
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        }
+        else
+        {
+        let mailComposeViewController = configuredMailComposeViewController()
+        if MFMailComposeViewController.canSendMail() {
+            self.present(mailComposeViewController, animated: true, completion: nil)
+        } else {
+            self.showSendMailErrorAlert()
+        }
+        }
+    }
     
+    func configuredMailComposeViewController() -> MFMailComposeViewController
+    {
+        
+        let mailComposerVC = MFMailComposeViewController()
+        mailComposerVC.mailComposeDelegate = self // Extremely important to set the --mailComposeDelegate-- property, NOT the --delegate-- property
+        
+        mailComposerVC.setToRecipients([stremail])
+        mailComposerVC.setSubject("Food4All")
+        mailComposerVC.setMessageBody("Sending e-mail from the app", isHTML: false)
+        
+        return mailComposerVC
+    }
+    
+    func showSendMailErrorAlert() {
+        
+    }
+    
+    // MARK: MFMailComposeViewControllerDelegate Method
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true, completion: nil)
+    }
+    
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    }
+    
+    
+    @IBAction func CallingButtClicked(_ sender: UIButton)
+    {
+        if self.number==""
+        {
+            var Message=String()
+            Message = "Mobile Number Not Avalilable"
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        }
+        else
+        {
+            guard let number = URL(string: "telprompt://" + (self.number as String) ) else { return }
+            UIApplication.shared.open(number)
+        }
+    }
     
     @objc private  func showMapView()
     {
-        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 17.0)
-        mapView = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: self.MapBgView.frame.size.width, height: self.MapBgView.frame.size.height), camera: camera)
-        mapView.delegate = self
-        self.mapView.settings.compassButton = true
+        if myLatitude == 0
+        {
+            camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 17.0)
+            mapView = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: self.MapBgView.frame.size.width, height: self.MapBgView.frame.size.height), camera: camera)
+            mapView.delegate = self
+            self.mapView.settings.compassButton = true
+            //self.mapView.isMyLocationEnabled = true
+            self.mapView.isUserInteractionEnabled = false
+            self.MapBgView.addSubview(mapView)
+        }
+        else
+        {
+            camera = GMSCameraPosition.camera(withLatitude: myLatitude, longitude: myLongitude, zoom: 17.0)
+            mapView = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: self.MapBgView.frame.size.width, height: self.MapBgView.frame.size.height), camera: camera)
+            mapView.delegate = self
+            self.mapView.settings.compassButton = true
         //self.mapView.isMyLocationEnabled = true
-        self.mapView.isUserInteractionEnabled = false
-        self.MapBgView.addSubview(mapView)
+            self.mapView.isUserInteractionEnabled = false
+            self.MapBgView.addSubview(mapView)
         
-        self.marker.position = CLLocationCoordinate2D(latitude: currentLatitude, longitude: currentLongitude)
-        self.marker.title = self.VolunteerDetails.value(forKey: "address") as? String
-        self.marker.icon = self.image(withReduce: UIImage(named:"map_pin96.png")!, scaleTo: CGSize(width: CGFloat(50), height: CGFloat(50)))
-        self.marker.map = self.mapView
+            self.marker.position = CLLocationCoordinate2D(latitude: myLatitude, longitude: myLongitude)
+            self.marker.title = self.VolunteerDetails.value(forKey: "address") as? String
+            self.marker.icon = self.image(withReduce: UIImage(named:"map_pin96.png")!, scaleTo: CGSize(width: CGFloat(50), height: CGFloat(50)))
+            self.marker.map = self.mapView
+        }
         
     }
     
@@ -337,11 +465,11 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         
         
         
-        cell.foodbankName.text! = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "fbank_title") as! String
+        cell.foodbankName.text! = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as? String ?? ""
         
-        let imageURL: String = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "Foodbank_image") as! String
+        let imageURL: String = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "header_image") as? String ?? ""
         let url = NSURL(string:imageURL)
-        cell.foodbankImage.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.foodbankImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         
         return cell
@@ -358,18 +486,17 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "fbank_id") as! String
-            myVC?.percentStr = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "percentage") as! String
+            myVC?.foodbankID = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+            myVC?.percentStr = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "capacity_status") as! String
         }
         else{
             let myVC = self.storyboard?.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "fbank_id") as! String
-            myVC?.percentStr = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "percentage") as! String
+            myVC?.foodbankID = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+            myVC?.percentStr = (self.listArrayfoodbanks.object(at: indexPath.row) as! NSDictionary).object(forKey: "capacity_status") as! String
         }
-
     }
     
     

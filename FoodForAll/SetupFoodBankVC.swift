@@ -40,8 +40,11 @@ fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 
 
-class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,UICollectionViewDelegate,UICollectionViewDataSource,UITextViewDelegate,UITextFieldDelegate,UISearchBarDelegate,UITableViewDataSource,UITableViewDelegate,HMDiallingCodeDelegate
+class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,UICollectionViewDelegate,UICollectionViewDataSource,UITextViewDelegate,UITextFieldDelegate,UISearchBarDelegate,UITableViewDataSource,UITableViewDelegate,HMDiallingCodeDelegate,SecondDelegate
 {
+   
+    var CategoryListArray = NSMutableArray()
+    
     var camera = GMSCameraPosition()
     var lastCameraPosition = GMSCameraPosition()
     var mapView = GMSMapView()
@@ -57,31 +60,52 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     var locationManager = CLLocationManager()
     var searchViewController = ABCGooglePlacesSearchViewController()
     
+    var CropperView = BABCropperView()
+    var CroppedImageView = UIImageView()
+    
     var SliderVal2 = WOWMarkSlider()
     
     var myArray = NSDictionary()
-    var strUserID = NSString()
+    var strUserID = String()
     var strManageUser = NSString()
+    
+    var classObject = ChatingDetailsViewController()
+    
+    
+    @IBOutlet weak var HeaderImage: UIImageView!
+    @IBOutlet weak var LogoImage: UIImageView!
+    @IBOutlet weak var HeaderImageButt: UIButton!
+    @IBOutlet weak var LogoImageButt: UIButton!
     
     @IBOutlet weak var locationTF: UITextField!
     @IBOutlet weak var locationButton: UIButton!
     @IBOutlet weak var nameTextFieds: ACFloatingTextfield!
     @IBOutlet weak var mapBkrndView: UIView!
     @IBOutlet weak var descriptionTextView: UITextView!
+    @IBOutlet weak var SetUpFoodBankButt: UIButton!
     
+    @IBOutlet var txtLabImage: UILabel!
     
     var imagePicker = UIImagePickerController()
     var currentSelectedImage = UIImage()
+    var cropSelectedImage = UIImage()
     var imageTakeArray = NSMutableArray()
     var imagPathArray = NSMutableArray()
     var imgFolderAry = NSMutableArray()
+    var HeaderimagPathArray = NSMutableArray()
+    var logoimagPathArray = NSMutableArray()
+    var logoimgFolderAry = NSMutableArray()
     var DeleteFolderAry = NSMutableArray()
     var responseString = String()
     var responseString2 = String()
+     var HeaderresponseString = String()
+    var logoresponseString = String()
+    var logoresponseString2 = String()
     var deletePathStr = String()
     var foodBankIDStr = String()
     var locationlab = UILabel()
     var sliderString = String()
+     var responseCatIdString = String()
     
     var popview = UIView()
     var footerView = UIView()
@@ -93,7 +117,13 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     var txtemailfield = UITextField()
     var Headview2 = UIView()
     
+    var popview3 = UIView()
+    var footerView3 = UIView()
     
+    var popview4 = UIView()
+    var footerView4 = UIView()
+    
+    @IBOutlet weak var AddPhotosLab: UILabel!
     @IBOutlet weak var collectionViewSetUp: UICollectionView!
     var cell = SetupCVCell()
     
@@ -102,8 +132,14 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     @IBOutlet weak var backScrlView: UIScrollView!
     lazy var geocoder = CLGeocoder()
     
+    @IBOutlet weak var txtSelectCategory: ACFloatingTextfield!
     
+    @IBOutlet weak var CategoryButt: UIButton!
     
+    var Fbcell: UITableViewCell?
+    
+     var arryCatDatalistids = NSMutableArray()
+     var arryCatDatalistnames = NSMutableArray()
     
     var arryDatalistids = NSMutableArray()
     var arryDatalistids2 = NSMutableArray()
@@ -133,20 +169,42 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     // data
     var contactStore = CNContactStore()
     var contacts = [ContactEntry]()
+    var CameraInt:Int = 0
     
+    var imagesArray = NSArray()
+    var listDetailBank = NSDictionary()
+    var StrEditMode = String()
+    var StrFoodbankId = String()
+    
+    @IBOutlet weak var SetupFoodbankLab: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+         classObject.delegate = self
+        
+      //  AddPhotosLab.isHidden = true
+      //  collectionViewSetUp.isHidden = true
+      //  cameraButton.isHidden = true
+        
         mapView2.delegate = self
-        myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-        strUserID=myArray.value(forKey: "id") as! NSString
+        let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+        myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+        if let quantity = myArray.value(forKey: "id") as? NSNumber
+        {
+            strUserID = String(describing: quantity)
+        }
+        else if let quantity = myArray.value(forKey: "id") as? String
+        {
+            strUserID = quantity
+        }
 
         self.tabBarController?.tabBar.isHidden = true
         
          self.diallingCode.delegate=self;
         
         imagePicker.delegate = self
+       // imagePicker.allowsEditing = true
         descriptionTextView.delegate = self
         descriptionTextView.text = "Enter your text here.."
         descriptionTextView.textColor = UIColor.lightGray
@@ -155,7 +213,8 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
 
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
@@ -186,17 +245,209 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         
       //  perform(#selector(SetupFoodBankVC.showMapView), with: nil, afterDelay: 0.02)
         
-       self.setUsersClosestCity()
+      
+        if StrEditMode == "1"
+        {
+            SetupFoodbankLab.text = "UPDATE FOOD BANK"
+            
+            self.currentLatitude = Double(self.listDetailBank .value(forKey: "lat") as! String)!
+            self.currentLongitude = Double(self.listDetailBank.value(forKey: "long") as! String)!
+            self.nameTextFieds.text! = (self.listDetailBank.value(forKey: "title") as! String)
+            self.descriptionTextView.text = self.listDetailBank.value(forKey: "desc") as? String ?? ""
+            self.descriptionTextView.textColor = UIColor.black
+            let straddress = self.listDetailBank.value(forKey: "address") as? String ?? ""
+            let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+            self.locationTF.text! = stradd
+            self.locationlab.text = stradd
+            self.imagPathArray = (self.listDetailBank.value(forKey: "images") as? NSMutableArray)!
+           
+            
+            if self.imagPathArray.count == 0
+            {
+                txtLabImage.isHidden = false
+            }
+            else
+            {
+                txtLabImage.isHidden = true
+            }
+            
+            SetUpFoodBankButt.setTitle("UPDATE FOOD BANK", for: .normal)
+            
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+            self.responseString = String(data: jsonData!, encoding: .utf8)!
+            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+            
+            if let quantity = self.listDetailBank.value(forKey: "id") as? NSNumber
+            {
+                StrFoodbankId = String(describing: quantity)
+            }
+            else if let quantity = self.listDetailBank.value(forKey: "id") as? String
+            {
+                StrFoodbankId = quantity
+            }
+            
+            self.HeaderimagPathArray.removeAllObjects()
+            self.HeaderresponseString = self.listDetailBank.value(forKey: "header_image") as? String ?? ""
+            let strpath =  self.listDetailBank.value(forKey: "header_image") as? String ?? ""
+            var arrUrl = [Any]()
+            arrUrl.append(strpath)
+            self.HeaderimagPathArray.addObjects(from: arrUrl)
+            
+            self.logoimagPathArray.removeAllObjects()
+            self.logoresponseString = self.listDetailBank.value(forKey: "logo_image") as? String ?? ""
+            let strpath2 =  self.listDetailBank.value(forKey: "logo_image") as? String ?? ""
+            var arrUrl2 = [Any]()
+            arrUrl2.append(strpath2)
+            self.logoimagPathArray.addObjects(from: arrUrl2)
+            
+            if HeaderresponseString == ""
+            {
+               
+            }
+            else
+            {
+                let url = NSURL(string:HeaderresponseString)
+                HeaderImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "Logo"))
+            }
+            
+            if logoresponseString == ""
+            {
+                
+            }
+            else
+            {
+                let url = NSURL(string:logoresponseString)
+                LogoImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "Logo"))
+            }
+            
+            let arraylist: NSMutableArray = (self.listDetailBank.value(forKey: "food_categories") as? NSMutableArray)!
+            for i in 0..<arraylist.count
+            {
+                let str = (arraylist.object(at: i) as! NSDictionary).value(forKey: "name") as? String ?? ""
+                arryCatDatalistnames.add(str)
+            }
+            
+            self.responseCatIdString = self.listDetailBank.value(forKey: "food_category") as? String ?? ""
+            print(self.responseCatIdString)
+            let str = self.listDetailBank.value(forKey: "food_category") as? String ?? ""
+            let array: NSArray = str.components(separatedBy: ",") as NSArray
+            
+            print(array)
+           
+            for i in 0..<array.count
+            {
+                var strVal = String()
+                
+                if let quantity = array.object(at: i) as? NSNumber
+                {
+                    strVal = String(describing: quantity)
+                }
+                else if let quantity = array.object(at: i) as? String
+                {
+                    strVal = quantity
+                }
+                
+                let strname: String = strVal.replacingOccurrences(of: " ", with: "")
+                arryCatDatalistids.add(strname)
+            }
+            
+            txtSelectCategory.text = arryCatDatalistnames.componentsJoined(by: ",")
         
+            print(arryCatDatalistnames)
+            print(arryCatDatalistids)
+        }
+        else
+        {
+            self.nameTextFieds.text = ""
+            self.descriptionTextView.text = "Enter your text here.."
+
+            self.setUsersClosestCity()
+        }
         
+        self.addDoneButtonOnKeyboard()
+    }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
         
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
         
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.nameTextFieds.inputAccessoryView = doneToolbar
+        self.descriptionTextView.inputAccessoryView = doneToolbar
+    }
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
     }
    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-           self.navigationController?.isNavigationBarHidden = true
+        self.navigationController?.isNavigationBarHidden = true
+        
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"foodCategories",params)
+        
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                  print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    self.CategoryListArray = ((responceDic.value(forKey: "foodCategories") as? NSDictionary)?.value(forKey: "get_category") as? NSMutableArray)!
+                }
+                else
+                {
+                    
+                }
+            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+        
+//
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=foodCategories"
+//        print(params)
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//                print(responceDic)
+//
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    self.CategoryListArray = ((responceDic.value(forKey: "foodCategories") as? NSDictionary)?.value(forKey: "get_category") as? NSMutableArray)!
+//                }
+//                else
+//                {
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     
     }
     
@@ -247,7 +498,6 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
 //        }
 //        
         
-        
         let geoCoder = CLGeocoder()
         let location = CLLocation(latitude: currentLatitude, longitude: currentLongitude)
         
@@ -261,7 +511,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
             
             // Print fully formatted address
             if let formattedAddress = addressDict["FormattedAddressLines"] as? [String] {
-                print(formattedAddress.joined(separator: ", "))
+              //  print(formattedAddress.joined(separator: ", "))
                 
                 self.locationTF.text! = formattedAddress.joined(separator: ", ")
                 self.locationlab.text = formattedAddress.joined(separator: ", ")
@@ -280,7 +530,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         do {
             let newdata = try Data(contentsOf: searchURL as URL)
             if let responseDictionary = try JSONSerialization.jsonObject(with: newdata, options: []) as? NSDictionary {
-                print(responseDictionary)
+              //  print(responseDictionary)
                 let array = responseDictionary.object(forKey: "results") as! NSArray
                 let dic = array[0] as! NSDictionary
                 let locationDic = (dic.object(forKey: "geometry") as! NSDictionary).object(forKey: "location") as! NSDictionary
@@ -306,7 +556,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         var center = CLLocationCoordinate2D()
         center.latitude = latitude
         center.longitude = longitude
-        print("\(currentLatitude) \n \(currentLongitude)")
+      //  print("\(currentLatitude) \n \(currentLongitude)")
         
         return center
     }
@@ -482,7 +732,8 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     {
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
@@ -508,24 +759,163 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         
         self.setUsersClosestCity()
     }
+    
+    //MARK:  -> HeaderImage butt Clicked
+    
+    @IBAction func HeaderImageButtClicked(_ sender: UIButton)
+    {
+        CameraInt = 0
+        self.CameraView()
+    }
+    
+    //MARK:  -> LogoImage butt Clicked
+    
+    @IBAction func LogoImageButtClicked(_ sender: UIButton)
+    {
+        CameraInt = 1
+        self.CameraView()
+    }
+    
+    //MARK:  -> Select Category butt Clicked
+    
+    @IBAction func SelectCategoryButtClicked(_ sender: UIButton)
+    {
+        if CategoryListArray.count == 0
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: "No Category Found", view: self)
+        }
+        else
+        {
+             self.CategorylistView()
+        }
+    }
+    
+    func CategorylistView ()
+    {
+        popview3.isHidden=false
+        footerView3.isHidden=false
+        
+        popview3.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview3.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview3)
+        
+        footerView3.frame = CGRect(x:self.view.frame.size.width/2-150, y:self.view.frame.size.height/2-200, width:300, height:400)
+        footerView3.backgroundColor = UIColor.white
+         footerView3.layer.cornerRadius = 4.0
+        footerView3.clipsToBounds = true
+        popview3.addSubview(footerView3)
+        
+        let bglab = UILabel()
+        bglab.frame = CGRect(x:0, y:0, width:footerView3.frame.size.width, height:60)
+        bglab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        footerView3.addSubview(bglab)
+        
+        let forgotlab = UILabel()
+        forgotlab.frame = CGRect(x:10, y:10, width:footerView3.frame.size.width-60, height:40)
+        forgotlab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        forgotlab.text="Accepted food categories"
+        forgotlab.font =  UIFont(name:"Helvetica-Bold", size: 18)
+        forgotlab.textColor=UIColor.white
+        forgotlab.textAlignment = .left
+        footerView3.addSubview(forgotlab)
+        
+        
+        let crossbutt = UIButton()
+        crossbutt.frame = CGRect(x:footerView3.frame.size.width-35, y:20, width:20, height:20)
+        crossbutt.setImage( UIImage.init(named: "cancel-music.png"), for: .normal)
+        crossbutt.addTarget(self, action: #selector(self.CloseBAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView3.addSubview(crossbutt)
+        
+        let crossbutt2 = UIButton()
+        crossbutt2.frame = CGRect(x:footerView3.frame.size.width-50, y:10, width:50, height:40)
+        crossbutt2.addTarget(self, action: #selector(self.CloseBAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView3.addSubview(crossbutt2)
+        
+        
+//        let cancelbutt = UIButton()
+//        Donebutt.frame = CGRect(x:footerView3.frame.size.width-70, y:15, width:65, height:30)
+//        Donebutt.setTitle("Done", for: UIControlState.normal)
+//        Donebutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+//        Donebutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+//        Donebutt.layer.cornerRadius = 4.0
+//        Donebutt.addTarget(self, action: #selector(self.DoneButtAction(_:)), for: UIControlEvents.touchUpInside)
+//        footerView3.addSubview(Donebutt)
+        
+        volunterFbTblView = UITableView()
+        volunterFbTblView.frame = CGRect(x: 0, y: bglab.frame.origin.y+bglab.frame.size.height, width: footerView3.frame.size.width, height: footerView3.frame.size.height-110)
+        volunterFbTblView.delegate = self
+        volunterFbTblView.dataSource = self
+        volunterFbTblView.tag = 5
+        volunterFbTblView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
+        volunterFbTblView.backgroundColor = UIColor.clear
+        footerView3.addSubview(volunterFbTblView)
+        
+        let Donebutt = UIButton()
+        Donebutt.frame = CGRect(x:10, y:volunterFbTblView.frame.origin.y+volunterFbTblView.frame.size.height+5, width:280, height:40)
+        Donebutt.setTitle("Done", for: UIControlState.normal)
+        Donebutt.backgroundColor = #colorLiteral(red: 0.186588645, green: 0.6638349891, blue: 0.8730256557, alpha: 1)
+        Donebutt.setTitleColor(UIColor.white, for: UIControlState.normal)
+        Donebutt.layer.cornerRadius = 4.0
+        Donebutt.addTarget(self, action: #selector(self.DoneButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView3.addSubview(Donebutt)
+    }
+    
+    func CloseBAction(_ sender: UIButton!)
+    {
+//        if arryCatDatalistids.count == 0
+//        {
+//            AFWrapperClass.alert(Constants.applicationName, message: "Please select atleast one category.", view: self)
+//        }
+        popview3.isHidden=true
+        footerView3.isHidden=true
+        volunterFbTblView.removeFromSuperview()
+    }
+    func DoneButtAction(_ sender: UIButton!)
+    {
+        if arryCatDatalistids.count == 0
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: "Please select atleast one category.", view: self)
+        }
+        else
+        {
+            popview3.isHidden=true
+            footerView3.isHidden=true
+            volunterFbTblView.removeFromSuperview()
+            
+         //   let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.arryCatDatalistids, options: [])
+         //   self.responseCatIdString = String(data: jsonData!, encoding: .utf8)!
+        //    self.responseCatIdString = self.responseCatIdString.replacingOccurrences(of: " ", with: "%20")
+            
+            self.responseCatIdString = self.arryCatDatalistids.componentsJoined(by: ",")
+            print(self.responseCatIdString)
+            txtSelectCategory.text = arryCatDatalistnames.componentsJoined(by: ",")
+        }
+    }
+    
 
     
     //MARK:  -> ImagePicker Controller Delegates
-    @IBAction func cameraButtonAction(_ sender: Any) {
-        
-       if self.imagPathArray.count == 5
-       {
-           AFWrapperClass.alert(Constants.applicationName, message: "You can add up to five images only.", view: self)
-       }else{
-        let optionMenu = UIAlertController(title: nil, message: "Choose Option", preferredStyle: .actionSheet)
-        
-        let pibraryAction = UIAlertAction(title: "From Photo Library", style: .default, handler:
+    @IBAction func cameraButtonAction(_ sender: Any)
+    {
+       CameraInt = 2
+        self.CameraView()
+   }
+    
+    func CameraView ()
+    {
+        if self.imagPathArray.count == 5
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: "You can add up to five images only.", view: self)
+        }else{
+            let optionMenu = UIAlertController(title: nil, message: "Choose Option", preferredStyle: .actionSheet)
+            
+            let pibraryAction = UIAlertAction(title: "From Photo Library", style: .default, handler:
             {(alert: UIAlertAction!) -> Void in
                 self.imagePicker.sourceType = .photoLibrary
                 self.imagePicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary)!
                 self.present(self.imagePicker, animated: true, completion: nil)
-        })
-        let cameraction = UIAlertAction(title: "Camera", style: .default, handler:
+            })
+            let cameraction = UIAlertAction(title: "Camera", style: .default, handler:
             {(alert: UIAlertAction!) -> Void in
                 
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -537,108 +927,499 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
                 } else {
                     AFWrapperClass.alert(Constants.applicationName, message: "Sorry, this device has no camera", view: self)
                 }
-        })
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler:
+            })
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler:
             {
                 (alert: UIAlertAction!) -> Void in
-        })
-        optionMenu.addAction(pibraryAction)
-        optionMenu.addAction(cameraction)
-        optionMenu.addAction(cancelAction)
-        self.present(optionMenu, animated: true, completion: nil)
-        
-        if UI_USER_INTERFACE_IDIOM() == .pad {
-            let popOverPresentationController : UIPopoverPresentationController = optionMenu.popoverPresentationController!
-            popOverPresentationController.sourceView                = cameraButton
-            popOverPresentationController.sourceRect                = cameraButton.bounds
-            popOverPresentationController.permittedArrowDirections  = UIPopoverArrowDirection.any
+            })
+           // self.imagePicker.allowsEditing = true
+            optionMenu.addAction(pibraryAction)
+            optionMenu.addAction(cameraction)
+            optionMenu.addAction(cancelAction)
+            self.present(optionMenu, animated: true, completion: nil)
+            
+            if UI_USER_INTERFACE_IDIOM() == .pad {
+                let popOverPresentationController : UIPopoverPresentationController = optionMenu.popoverPresentationController!
+                if CameraInt == 2
+                {
+                    popOverPresentationController.sourceView = cameraButton
+                    popOverPresentationController.sourceRect = cameraButton.bounds
+                }
+                else if  CameraInt == 1
+                {
+                    popOverPresentationController.sourceView = LogoImageButt
+                    popOverPresentationController.sourceRect = LogoImageButt.bounds
+                }
+                else
+                {
+                    popOverPresentationController.sourceView = HeaderImageButt
+                    popOverPresentationController.sourceRect = HeaderImageButt.bounds
+                }
+                popOverPresentationController.permittedArrowDirections  = UIPopoverArrowDirection.any
+            }
         }
-      }
-   }
-    func image(withReduce imageName: UIImage, scaleTo newsize: CGSize) -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(newsize, false, 12.0)
-        imageName.draw(in: CGRect(x: CGFloat(0), y: CGFloat(0), width: CGFloat(newsize.width), height: CGFloat(newsize.height)))
-        let newImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
-        return newImage!
     }
     
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+    func image(withReduce imageName: UIImage, scaleTo newsize: CGSize) -> UIImage
+    {
+        
+        var scaledImageRect = CGRect.zero;
+        
+        let aspectWidth:CGFloat = newsize.width / currentSelectedImage.size.width;
+        let aspectHeight:CGFloat = newsize.height / currentSelectedImage.size.height;
+        let aspectRatio:CGFloat = min(aspectWidth, aspectHeight);
+        
+        scaledImageRect.size.width = currentSelectedImage.size.width * aspectRatio;
+        scaledImageRect.size.height = currentSelectedImage.size.height * aspectRatio;
+        scaledImageRect.origin.x = (newsize.width - scaledImageRect.size.width) / 2.0;
+        scaledImageRect.origin.y = (newsize.height - scaledImageRect.size.height) / 2.0;
+        
+        UIGraphicsBeginImageContextWithOptions(newsize, false, 12.0)
+        
+        imageName.draw(in: CGRect(x: scaledImageRect.origin.x, y: scaledImageRect.origin.y, width: scaledImageRect.size.width, height: scaledImageRect.size.height))
+       
+        let scaledImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        
+        return scaledImage!
         
         
-        currentSelectedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-        currentSelectedImage = self.image(withReduce: currentSelectedImage, scaleTo: CGSize(width: CGFloat(25), height: CGFloat(25)))
+//        UIGraphicsBeginImageContextWithOptions(newsize, false, 12.0)
+//        imageName.draw(in: CGRect(x: CGFloat(0), y: CGFloat(0), width: CGFloat(newsize.width), height: CGFloat(newsize.height)))
+//        let newImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
+//        return newImage!
+    }
+    
+    
+    func compressImage(_ image: UIImage) -> UIImage
+    {
+        //  let imgData: NSData = UIImageJPEGRepresentation(image, 1)! as NSData
+        
+        var actualHeight = Float(image.size.height)
+        var actualWidth = Float(image.size.width)
+        let maxHeight: Float = 1200.0
+        let maxWidth: Float = 600.0
+        var imgRatio: Float = actualWidth / actualHeight
+        let maxRatio: Float = maxWidth / maxHeight
+        let compressionQuality: Float = 1.0
+        
+        
+        if actualHeight > maxHeight || actualWidth > maxWidth {
+            if imgRatio < maxRatio {
+                //adjust width according to maxHeight
+                imgRatio = maxHeight / actualHeight
+                actualWidth = imgRatio * actualWidth
+                actualHeight = maxHeight
+            }
+            else if imgRatio > maxRatio {
+                //adjust height according to maxWidth
+                imgRatio = maxWidth / actualWidth
+                actualHeight = imgRatio * actualHeight
+                actualWidth = maxWidth
+            }
+            else {
+                actualHeight = maxHeight
+                actualWidth = maxWidth
+            }
+        }
+        
+        let Rwidth = CGFloat(actualWidth)
+        let Rheight = CGFloat(actualHeight)
+        let rect = CGRect(origin: CGPoint(x: 0.0,y :0.0), size: CGSize(width: Rwidth, height: Rheight))
+        UIGraphicsBeginImageContext(rect.size)
+        image.draw(in: rect)
+        let img = UIGraphicsGetImageFromCurrentImageContext()
+        let imageData = UIImageJPEGRepresentation(img!, CGFloat(compressionQuality))! as NSData
+     //   print("Size of Image(bytes):\(imageData.length)")
+        UIGraphicsEndImageContext()
+        return UIImage(data: imageData as Data)!
+    }
+    
 
-        self.uploadImageAPIMethod()
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any])
+    {
+        currentSelectedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+        //  currentSelectedImage = self.image(withReduce: currentSelectedImage, scaleTo: CGSize(width: currentSelectedImage.size.width, height: currentSelectedImage.size.height))
+        
+      //  let imgData: NSData = UIImageJPEGRepresentation(currentSelectedImage, 1)! as NSData
+    //    print("Size of Image(bytes):\(imgData.length)")
+        
+      //  currentSelectedImage = self.compressImage(currentSelectedImage)
+        
+        if CameraInt == 0
+        {
+          //  HeaderImage.image = currentSelectedImage
+            
+            self.ImageCropView()
+        }
+        else if CameraInt == 1
+        {
+           // LogoImage.image = currentSelectedImage
+            
+              self.ImageCropView()
+            
+           // self.uploadImageAPIMethod()
+        }
+        else
+        {
+             self.ImageCropView()
+        }
+
+        
         
         dismiss(animated: true, completion: nil)
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController)
     {
-        
         dismiss(animated: true, completion: nil)
     }
+    
+    
+    
+    func ImageCropView ()
+    {
+        popview4.isHidden=false
+        footerView4.isHidden=false
+        
+        popview4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview4.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview4)
+        
+        footerView4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        footerView4.backgroundColor = UIColor.black
+        popview4.addSubview(footerView4)
+        
+        CropperView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        CropperView.backgroundColor = UIColor.white
+        CropperView.image = currentSelectedImage
+        footerView4.addSubview(CropperView)
+        
+        CroppedImageView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        
+        footerView4.addSubview(CroppedImageView)
+        
+        
+        let Cancelbutt = UIButton()
+        Cancelbutt.frame = CGRect(x:0, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Cancelbutt.setTitle("Retake", for: UIControlState.normal)
+        Cancelbutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Cancelbutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Cancelbutt.addTarget(self, action: #selector(self.RetakeButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Cancelbutt)
+        
+        let Donebutt = UIButton()
+        Donebutt.frame = CGRect(x:self.view.frame.size.width/2+1, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Donebutt.setTitle("Crop", for: UIControlState.normal)
+        Donebutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Donebutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Donebutt.addTarget(self, action: #selector(self.CropButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Donebutt)
+        
+        if CameraInt == 1
+        {
+            CropperView.cropSize = CGSize(width: 300, height: 300)
+        }
+        else if CameraInt == 2
+        {
+            CropperView.cropSize = CGSize(width: 400, height: 300)
+        }
+        else
+        {
+             CropperView.cropSize = CGSize(width: 400, height: 200)
+        }
+       
+    }
+    
+    func RetakeButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        self.CameraView()
+    }
+    
+    func CropButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        
+        CropperView.renderCroppedImage({(_ croppedImage: UIImage?, _ cropRect: CGRect) -> Void in
+            
+            if self.CameraInt == 0
+            {
+                 self.HeaderImage.image = croppedImage
+                 self.cropSelectedImage = croppedImage!
+                 self.classObject.next(croppedImage)
+                 AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+               //  self.uploadImageAPIMethod()
+            }
+            else if self.CameraInt == 1
+            {
+                self.LogoImage.image = croppedImage
+                self.cropSelectedImage = croppedImage!
+                self.classObject.next(croppedImage)
+                AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+            }
+            else
+            {
+                self.cropSelectedImage = croppedImage!
+                self.classObject.next(croppedImage)
+                AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+               //  self.uploadImageAPIMethod()
+            }
+        })
+    }
+    
+    func responsewithToken(_ responseToken: NSMutableDictionary!)
+    {
+        print(responseToken)
+        AFWrapperClass.svprogressHudDismiss(view: self)
+        
+        if responseToken == nil
+        {
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: "Server is not responding.Please try again later", view: self)
+        }
+        else
+        {
+        
+        if (responseToken.object(forKey: "status") as! NSNumber) == 1
+        {
+            if self.CameraInt == 0
+            {
+                self.HeaderimagPathArray.removeAllObjects()
+                self.HeaderresponseString = responseToken.value(forKey: "path") as? String ?? ""
+                let strpath =  responseToken.value(forKey: "path") as? String ?? ""
+                
+                var arrUrl = [Any]()
+                arrUrl.append(strpath)
+                self.HeaderimagPathArray.addObjects(from: arrUrl)
+            }
+             else if self.CameraInt == 1
+            {
+                self.logoimagPathArray.removeAllObjects()
+                self.logoresponseString = responseToken.value(forKey: "path") as? String ?? ""
+                let strpath =  responseToken.value(forKey: "path") as? String ?? ""
+                
+                var arrUrl = [Any]()
+                arrUrl.append(strpath)
+                self.logoimagPathArray.addObjects(from: arrUrl)
+            }
+            else
+            {
+                if StrEditMode == "1"
+                {
+                    var arrUrl = [Any]()
+                    arrUrl.append(responseToken.value(forKey: "url") as? String ?? "")
+                    self.imagPathArray.addObjects(from: arrUrl)
+                    
+                    print(self.imagPathArray)
+                    self.collectionViewSetUp.reloadData()
+                    
+                    let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+                    self.responseString = String(data: jsonData!, encoding: .utf8)!
+                    self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+                    
+                    if self.imagPathArray.count == 0
+                    {
+                        txtLabImage.isHidden = false
+                    }
+                    else
+                    {
+                        txtLabImage.isHidden = true
+                    }
+                }
+                else
+                {
+                    let strurl =  responseToken.value(forKey: "url") as? String ?? ""
+                    let strpath =  responseToken.value(forKey: "path") as? String ?? ""
+                
+                    var arrUrl = [Any]()
+                    arrUrl.append(strurl)
+                    self.imagPathArray.addObjects(from: arrUrl)
+                
+                    var arrPath = [Any]()
+                    arrPath.append(strpath)
+                    self.imgFolderAry.addObjects(from: arrPath)
+                
+                    var postDict = [AnyHashable: Any]()
+                    postDict["locations"] = self.imgFolderAry
+                
+                    let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+                    self.responseString = String(data: jsonData!, encoding: .utf8)!
+                    self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+                
+                    if self.imagPathArray.count == 0
+                    {
+                        txtLabImage.isHidden = false
+                    }
+                    else
+                    {
+                        txtLabImage.isHidden = true
+                    }
+                
+                    self.collectionViewSetUp.reloadData()
+                }
+            }
+        }
+        else
+        {
+            let strerror = responseToken.object(forKey: "error") as? String ?? "Server error"
+            let Message = responseToken.object(forKey: "responseMessage") as? String ?? strerror
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        }
+        }
+    }
+    
 
     
  //MARK: Upload image Method API:
     
+//    func uploadImageAPIMethod () -> Void
+//    {
+//        if self.CameraInt == 0
+//        {
+//            self.imagPathArray.removeAllObjects()
+//            self.imgFolderAry.removeAllObjects()
+//
+//
+//            var arrUrl = [Any]()
+//            arrUrl.append("http://arghyathakur.in/assets/file-upload/No_Image.jpg")
+//            self.imagPathArray.addObjects(from: arrUrl)
+//
+//            var arrPath = [Any]()
+//            arrPath.append("http://arghyathakur.in/assets/file-upload/No_Image.jpg")
+//            self.imgFolderAry.addObjects(from: arrPath)
+//
+//            var postDict = [AnyHashable: Any]()
+//            postDict["locations"] = self.imgFolderAry
+//
+//            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+//            self.responseString = String(data: jsonData!, encoding: .utf8)!
+//            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+//        }
+//        else
+//        {
+//            self.logoimagPathArray.removeAllObjects()
+//            self.logoimgFolderAry.removeAllObjects()
+//
+//            var arrUrl = [Any]()
+//            arrUrl.append("http://arghyathakur.in/assets/file-upload/No_Image.jpg")
+//            self.logoimagPathArray.addObjects(from: arrUrl)
+//
+//            var arrPath = [Any]()
+//            arrPath.append("http://arghyathakur.in/assets/file-upload/No_Image.jpg")
+//            self.logoimgFolderAry.addObjects(from: arrPath)
+//
+//            var postDict = [AnyHashable: Any]()
+//            postDict["locations"] = self.logoimgFolderAry
+//
+//            self.logoresponseString = self.logoimgFolderAry.componentsJoined(by: ",")
+//
+//            // let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.logoimgFolderAry, options: [])
+//            // self.logoresponseString = String(data: jsonData!, encoding: .utf8)!
+//            // self.logoresponseString = self.logoresponseString.replacingOccurrences(of: " ", with: "%20")
+//        }
+//
+//
+//    }
+//
+//
+    
+    
+    
+    
+
     func uploadImageAPIMethod () -> Void
     {
-       
+
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        
-        let imageData: Data? = UIImageJPEGRepresentation(currentSelectedImage, 1)
+       // let imageData: Data? = UIImageJPEGRepresentation(currentSelectedImage, 1)
+         let imageData: Data? = UIImageJPEGRepresentation(cropSelectedImage, 1)
         if imageData == nil {
 //            let imgData: Data? = UIImageJPEGRepresentation(cell.imageViewColctn.image!, 1)
 //            self.currentSelectedImage = UIImage(data: imgData! as Data)!
-            
+
             AFWrapperClass.alert(Constants.applicationName, message: "Please choose images", view: self)
                     }
-        
-        let parameters = ["method":"imageupload"] as [String : String]
+         let strkey = Constants.ApiKey
+        let parameters = ["api_key":strkey] as [String : String]
+        print(parameters)
         Alamofire.upload(multipartFormData: { (multipartFormData) in
-        let image = self.currentSelectedImage
+        let image = self.cropSelectedImage
         multipartFormData.append(UIImageJPEGRepresentation(image, 1)!, withName: "img", fileName: "uploadedPic.jpeg", mimeType: "image/jpeg")
             for (key, value) in parameters {
             multipartFormData.append(value.data(using: String.Encoding.utf8)!, withName: key)
             }
-        }, to:String(format: "%@",Constants.mainURL))
+        }, to:String(format: "%@%@&",Constants.mainURL,"imageUpload"))
         { (result) in
             switch result {
             case .success(let upload, _, _):
                 upload.uploadProgress(closure: { (progress) in
                 })
                 upload.responseJSON { response in
-                    print(Progress())
+                    print(response)
                     if response.result.isSuccess
-                        //print(response.result.value as! NSDictionary)
                     {
                     AFWrapperClass.svprogressHudDismiss(view: self)
-                        
+
                     let dataDic : NSDictionary = response.result.value as! NSDictionary
                         if (dataDic.object(forKey: "responseCode") as! NSNumber) == 200
                         {
-                            
-                var arrUrl = [Any]()
-                arrUrl.append((dataDic.object(forKey: "imagepath") as? String)!)
-                self.imagPathArray.addObjects(from: arrUrl)
-                        
-                var arrPath = [Any]()
-                arrPath.append((dataDic.object(forKey: "imgfolderpath") as? String)!)
-                self.imgFolderAry.addObjects(from: arrPath)
-                            
-               var postDict = [AnyHashable: Any]()
-               postDict["locations"] = self.imgFolderAry
-                            
-            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
-            self.responseString = String(data: jsonData!, encoding: .utf8)!
-            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
-                            
+
+                            if self.CameraInt == 0
+                            {
+                                self.imagPathArray.removeAllObjects()
+                                self.imgFolderAry.removeAllObjects()
+
+
+                                var arrUrl = [Any]()
+                                arrUrl.append((dataDic.object(forKey: "imagepath") as? String)!)
+                                self.imagPathArray.addObjects(from: arrUrl)
+
+                                var arrPath = [Any]()
+                                arrPath.append((dataDic.object(forKey: "imgfolderpath") as? String)!)
+                                self.imgFolderAry.addObjects(from: arrPath)
+
+                                var postDict = [AnyHashable: Any]()
+                                postDict["locations"] = self.imgFolderAry
+
+                                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+                                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                                self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+                            }
+                            else
+                            {
+                                self.logoimagPathArray.removeAllObjects()
+                                self.logoimgFolderAry.removeAllObjects()
+
+                                var arrUrl = [Any]()
+                                arrUrl.append((dataDic.object(forKey: "imagepath") as? String)!)
+                                self.logoimagPathArray.addObjects(from: arrUrl)
+
+                                var arrPath = [Any]()
+                                arrPath.append((dataDic.object(forKey: "imgfolderpath") as? String)!)
+                                self.logoimgFolderAry.addObjects(from: arrPath)
+
+                                var postDict = [AnyHashable: Any]()
+                                postDict["locations"] = self.logoimgFolderAry
+
+                                self.logoresponseString = self.logoimgFolderAry.componentsJoined(by: ",")
+
+                               // let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.logoimgFolderAry, options: [])
+                               // self.logoresponseString = String(data: jsonData!, encoding: .utf8)!
+                               // self.logoresponseString = self.logoresponseString.replacingOccurrences(of: " ", with: "%20")
+                            }
+
+
 //          print("Before JsonString: \(self.responseString)")
 //          print("Before deleted Array \(self.imgFolderAry)")
-                            
-            self.collectionViewSetUp.reloadData()
-            AFWrapperClass.alert(Constants.applicationName, message: "Image Uplaod Successfully", view: self)
+
+       //     self.collectionViewSetUp.reloadData()
+        //    AFWrapperClass.alert(Constants.applicationName, message: "Image Uplaod Successfully", view: self)
             }
             else
                 {
@@ -650,15 +1431,15 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
                     {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                         let error : NSError = response.result.error! as NSError
-                        
+
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                        print(error.localizedDescription)
+                     //   print(error.localizedDescription)
                     }
                 }
             case .failure(let error):
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                print(error.localizedDescription)
+              //  print(error.localizedDescription)
                 break
             }
         }
@@ -692,7 +1473,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         
         
         let imageURL: String = self.imagPathArray.object(at: indexPath.row) as! String
-        print(imageURL)
+     //   print(imageURL)
         let url = NSURL(string:imageURL)
         cell.imageViewColctn.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
@@ -715,22 +1496,44 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         let indexPath: IndexPath? = self.collectionViewSetUp.indexPath(for: myCell!)
         if sender.tag == indexPath?.row
         {
-           deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
+            if StrEditMode == "1"
+            {
+               // deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
+                
+                self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
+                
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
+            }
+            else
+            {
+                deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
             
-           self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
-           self.imgFolderAry.removeObject(at: indexPath?.row ?? Int())
+                self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
+                self.imgFolderAry.removeObject(at: indexPath?.row ?? Int())
             
-            var postDict = [AnyHashable: Any]()
-            postDict["locations"] = self.imgFolderAry
-            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
-            self.responseString = String(data: jsonData!, encoding: .utf8)!
-            self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
+                if self.imagPathArray.count == 0
+                {
+                    txtLabImage.isHidden = false
+                }
+                else
+                {
+                    txtLabImage.isHidden = true
+                }
             
-            print("After JsonString: \(self.responseString)")
+                var postDict = [AnyHashable: Any]()
+                postDict["locations"] = self.imgFolderAry
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
+            }
+            
+          //  print("After JsonString: \(self.responseString)")
             //print("after deleted Array \(self.imagPathArray)")
             //print(self.imagPathArray.count)
             
-            self.ImageDeleteAPImethod ()
+          //  self.ImageDeleteAPImethod ()
             
            self.collectionViewSetUp.reloadData()
         }
@@ -763,7 +1566,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
                 
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
-                    print(responceDic)
+                  //  print(responceDic)
                 }
                 else
                 {
@@ -795,9 +1598,21 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         {
             message = "Please enter description"
         }
+        else if (HeaderimagPathArray.count == 0)
+        {
+            message = "Please choose Foodbank Header image"
+        }
+        else if (logoimagPathArray.count == 0)
+        {
+            message = "Please choose Foodbank Logo image"
+        }
         else if (imagPathArray.count == 0)
         {
-            message = "Please choose Foodbank images"
+            message = "Please choose Atleasst one Image"
+        }
+        else if (txtSelectCategory.text?.isEmpty)!
+        {
+            message = "Please choose Foodbank Category"
         }
         if message.characters.count > 1 {
             
@@ -812,31 +1627,91 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     
     @objc private  func saveFoodbankAPImethod () -> Void
     {
-        let latStr: String = String(currentLatitude)
-        let longStr: String = String(currentLongitude)
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=add_foodbanks&user_id=\(strUserID)&fbank_title=\(nameTextFieds.text!)&fbank_desc=\(descriptionTextView.text!)&images=\(responseString)&lat=\(latStr)&longt=\(longStr)&address=\(locationTF.text!)"
-        print(params)
+        
+        let strlat = "\(currentLatitude)"
+        let strlong = "\(currentLongitude)"
+        
+        
+        var baseURL = String()
+        if StrEditMode == "1"
+        {
+            baseURL = String(format:"%@%@",Constants.mainURL,"updateFoodbankDetail")
+        }
+        else
+        {
+            baseURL = String(format:"%@%@",Constants.mainURL,"addFoodbank")
+        }
+        
+        
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        if StrEditMode == "1"
+        {
+            PostDataValus.setValue(StrFoodbankId, forKey: "foodbank_id")
+        }
+        else
+        {
+            PostDataValus.setValue(strUserID, forKey: "user_id")
+        }
+        PostDataValus.setValue(nameTextFieds.text!, forKey: "title")
+        PostDataValus.setValue(descriptionTextView.text!, forKey: "desc")
+        PostDataValus.setValue(locationTF.text!, forKey: "address")
+        PostDataValus.setValue(strlat, forKey: "lat")
+        PostDataValus.setValue(strlong, forKey: "long")
+        PostDataValus.setValue(responseCatIdString, forKey: "food_category")
+        PostDataValus.setValue(logoresponseString, forKey: "logo_image")
+        PostDataValus.setValue(HeaderresponseString, forKey: "header_image")
+        PostDataValus.setValue(responseString, forKey: "images")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+        
+        
+        
+      //  let latStr: String = String(currentLatitude)
+      //  let longStr: String = String(currentLongitude)
+     //   let baseURL: String  = String(format:"%@",Constants.mainURL)
+     //   let params = "method=add_foodbanks&user_id=\(strUserID)&fbank_title=\(nameTextFieds.text!)&fbank_desc=\(descriptionTextView.text!)&images=\(responseString)&lat=\(latStr)&longt=\(longStr)&address=\(locationTF.text!)&logo_image=\(logoresponseString)&food_category=\(responseCatIdString)"
+       // print(params)
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                 print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    print(responceDic)
                    // let myVC = self.storyboard?.instantiateViewController(withIdentifier: "CongratulationVC") as? CongratulationVC
                    // self.navigationController?.pushViewController(myVC!, animated: false)
                   //  let number = responceDic.object(forKey: "foodbankid") as! NSNumber
                   //  myVC?.foodBankIDStr  = String(describing: number)
                     
-                    
-                    let number = responceDic.object(forKey: "foodbankid") as! NSNumber
-                    self.foodBankIDStr = String(describing: number)
-                    
-                    self.UpdateFoodBank()
-                    
+                    if self.StrEditMode == "1"
+                    {
+                        _ = self.navigationController?.popViewController(animated: true)
+                    }
+                    else
+                    {
+                        let number = responceDic.object(forKey: "foodbank_id") as! NSNumber
+                        self.foodBankIDStr = String(describing: number)
+                        
+                        self.UpdateFoodBank()
+                    }
                 }
                 else
                 {
@@ -858,7 +1733,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     
     func UpdateFoodBank()
     {
-        strManageUser = "2"
+        strManageUser = "1"
         
         sliderString = String(format:"0") 
         popview2.isHidden=false
@@ -1017,19 +1892,36 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         okbutt.backgroundColor=#colorLiteral(red: 0.1807585061, green: 0.6442081332, blue: 0.8533658385, alpha: 1)
         footerView2.addSubview(okbutt)
 
-        
+        self.addDoneButtonOnKeyboard2()
     }
     
+    func addDoneButtonOnKeyboard2()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.txtemailfield.inputAccessoryView = doneToolbar
+       
+    }
     
-    
+   
     
     func _sldComponentChangedValue(sender: UISlider!) {
         
         self.SliderVal2.setValue((round(sender.value / 5) * 5), animated: false)
         let integere: Int = Int((round(sender.value / 5) * 5))
-        print(integere)
+      //  print(integere)
         
-        
+         percentlab.text = ""
         let aStr = String(format: "Percent(%d)", integere)
         percentlab.text=aStr
         
@@ -1155,7 +2047,31 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         submitbutt.frame = CGRect(x:0, y:0, width:bottomView.frame.size.width, height:bottomView.frame.size.height)
         submitbutt.addTarget(self, action: #selector(SetupFoodBankVC.SubmitButtonAction(_:)), for: UIControlEvents.touchUpInside)
         bottomView.addSubview(submitbutt)
+        
+        self.addDoneButtonOnKeyboard3()
     }
+    
+    
+    func addDoneButtonOnKeyboard3()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.theSearchBar?.inputAccessoryView = doneToolbar
+        
+    }
+    
+  
+
 
     
     func MobileNumbermethod()
@@ -1238,8 +2154,28 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         submitbutt.frame = CGRect(x:0, y:0, width:bottomView.frame.size.width, height:bottomView.frame.size.height)
         submitbutt.addTarget(self, action: #selector(SetupFoodBankVC.SubmitButtonAction2(_:)), for: UIControlEvents.touchUpInside)
         bottomView.addSubview(submitbutt)
+        
+        self.addDoneButtonOnKeyboard4()
     }
-
+    
+  
+    func addDoneButtonOnKeyboard4()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.theSearchBar?.inputAccessoryView = doneToolbar
+    }
+    
     
     
     func SubmitButtonAction(_ sender: UIButton!)
@@ -1385,7 +2321,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         
         if strCCodeCheck == "1"
         {
-            print(diallingCode)
+          //  print(diallingCode)
             let str1:String = "+"
             
             strCountryCode = String(format: "+%@",diallingCode) as NSString
@@ -1402,7 +2338,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         }
         else
         {
-            print(diallingCode)
+          //  print(diallingCode)
         
             strCountryCode = String(format: "+%@",diallingCode) as NSString
             strMobileNumber = (String(format: "%@",txtemailfield.text!) as NSString) as String
@@ -1426,12 +2362,12 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         if switchlab.isOn
         {
              Headview2.isHidden=true
-            strManageUser = "2"
+            strManageUser = "1"
         }
         else
         {
              Headview2.isHidden=false
-            strManageUser = "1"
+            strManageUser = "0"
         }
     }
 
@@ -1568,17 +2504,45 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         }
         else
         {
-            let baseURL: String  = String(format:"%@",Constants.mainURL)
-            let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)"
-            print(params)
+           // let baseURL: String  = String(format:"%@",Constants.mainURL)
+           // let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)"
+          //  print(params)
+            
+            
+            let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateFoodbank")
+            let strkey = Constants.ApiKey
+            
+            let PostDataValus = NSMutableDictionary()
+            PostDataValus.setValue(strkey, forKey: "api_key")
+            PostDataValus.setValue(strUserID, forKey: "user_id")
+            PostDataValus.setValue(foodBankIDStr, forKey: "foodbank_id")
+            PostDataValus.setValue(sliderString, forKey: "capacity_status")
+            PostDataValus.setValue(strManageUser, forKey: "manage_user")
+            PostDataValus.setValue("", forKey: "manage_other_contact")
+          
+            
+            var jsonStringValues = String()
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+            if jsonData == nil {
+                
+            }
+            else {
+                jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                print("jsonString: \(jsonStringValues)")
+            }
+            
+            
+            print(baseURL)
+            print(jsonStringValues)
+            
+            
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
-                    
                     print(responceDic)
-                    if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                    if (responceDic.object(forKey: "status") as! NSNumber) == 1
                     {
                         self.popview2.isHidden=true
                         self.footerView2.isHidden=true
@@ -1613,16 +2577,42 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         }
         else
         {
-            let baseURL: String  = String(format:"%@",Constants.mainURL)
-            let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)&manage_otheremail=\(txtemailfield.text!)"
-            print(params)
+          //  let baseURL: String  = String(format:"%@",Constants.mainURL)
+          //  let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)&manage_otheremail=\(txtemailfield.text!)"
+        //    print(params)
+            
+            
+            let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateFoodbank")
+            let strkey = Constants.ApiKey
+            
+            let PostDataValus = NSMutableDictionary()
+            PostDataValus.setValue(strkey, forKey: "api_key")
+            PostDataValus.setValue(strUserID, forKey: "user_id")
+            PostDataValus.setValue(foodBankIDStr, forKey: "foodbank_id")
+            PostDataValus.setValue(sliderString, forKey: "capacity_status")
+            PostDataValus.setValue(strManageUser, forKey: "manage_user")
+            PostDataValus.setValue("", forKey: "manage_other_contact")
+            
+            
+            var jsonStringValues = String()
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+            if jsonData == nil {
+                
+            }
+            else {
+                jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                print("jsonString: \(jsonStringValues)")
+            }
+            
+            
+            
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
                     
-                    print(responceDic)
+                //    print(responceDic)
                     if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                     {
                         self.popview2.isHidden=true
@@ -1655,24 +2645,55 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         }
         else
         {
+            // Ccode2 = strMobileNumber.replacingOccurrences(of: "+", with: "%2B")
+            
             var Ccode=String()
-            Ccode = strCountryCode.replacingOccurrences(of: "+", with: "%2B")
+            Ccode = strCountryCode.replacingOccurrences(of: "+", with: "+")
             
             var Ccode2=String()
-            Ccode2 = strMobileNumber.replacingOccurrences(of: "+", with: "%2B")
+            Ccode2 = strMobileNumber.replacingOccurrences(of: "+", with: "+")
             
-            let trimmedString = Ccode2.trimmingCharacters(in: .whitespaces)
+            let strcode = (strCountryCode as String)+strMobileNumber
             
-            let baseURL: String  = String(format:"%@",Constants.mainURL)
-            let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)&manage_otheremail=\(trimmedString)&country_code=\(Ccode)"
-            print(params)
+          //  let trimmedString = Ccode2.trimmingCharacters(in: .whitespaces)
+            
+        //    let baseURL: String  = String(format:"%@",Constants.mainURL)
+        //    let params = "method=update_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)&manage_user=\(strManageUser)&manage_otheremail=\(trimmedString)&country_code=\(Ccode)"
+         //   print(params)
+            
+            
+            let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateFoodbank")
+            let strkey = Constants.ApiKey
+            
+            let PostDataValus = NSMutableDictionary()
+            PostDataValus.setValue(strkey, forKey: "api_key")
+            PostDataValus.setValue(strUserID, forKey: "user_id")
+            PostDataValus.setValue(foodBankIDStr, forKey: "foodbank_id")
+            PostDataValus.setValue(sliderString, forKey: "capacity_status")
+            PostDataValus.setValue(strManageUser, forKey: "manage_user")
+            PostDataValus.setValue(strcode, forKey: "manage_other_contact")
+            
+            
+            var jsonStringValues = String()
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+            if jsonData == nil {
+                
+            }
+            else {
+                jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                print("jsonString: \(jsonStringValues)")
+            }
+            
+            
+            
+            
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
                     
-                    print(responceDic)
+                //    print(responceDic)
                     if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                     {
                         self.popview2.isHidden=true
@@ -1735,7 +2756,6 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String)
     {
-        
         if (searchBar.tag==2)
         {
             if searchResults.count != 0 {
@@ -1817,8 +2837,14 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
     {
-        return 80
-        
+        if tableView.tag == 5
+        {
+            return 50
+        }
+        else
+        {
+            return 80
+        }
     }
     
     
@@ -1836,22 +2862,77 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         {
             return ContactList.count
         }
+        else if tableView.tag == 5
+        {
+            return CategoryListArray.count
+        }
         else
         {
            return searchResults2.count
         }
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
+    {
+        
+        if tableView.tag == 5
+        {
+            let cellIdetifier: String = "Cell"
+            Fbcell = UITableViewCell(style: .default, reuseIdentifier: cellIdetifier)
+            
+            Fbcell?.selectionStyle = .none
+            
+            let userName = UILabel()
+            userName.frame = CGRect(x:10, y:10, width:((Fbcell?.frame.size.width)!-120), height:30)
+            userName.text=(self.CategoryListArray.object(at: indexPath.row) as! NSDictionary).value(forKey: "name") as? String
+            userName.font =  UIFont(name:"Helvetica", size: 15)
+            userName.textColor=UIColor.black
+            userName.textAlignment = .left
+            userName.numberOfLines = 0
+            Fbcell?.addSubview(userName)
+            
+            
+            let checkImage = UIImageView()
+            checkImage.frame = CGRect(x:(Fbcell?.frame.size.width)!-65, y:10, width:30, height:30)
+            if let quantity = (self.CategoryListArray.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as? NSNumber
+            {
+                let VolunteerID: String = (quantity: quantity.stringValue) as! String
+                
+                if arryCatDatalistids.contains(VolunteerID)
+                {
+                    checkImage.image = UIImage(named: "ck2.png")
+                }
+                else
+                {
+                    checkImage.image = UIImage(named: "checkbox.png")
+                }
+            }
+            else if let VolunteerID = (self.CategoryListArray.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as? String
+            {
+                if arryCatDatalistids.contains(VolunteerID)
+                {
+                    checkImage.image = UIImage(named: "ck2.png")
+                }
+                else
+                {
+                    checkImage.image = UIImage(named: "checkbox.png")
+                }
+                
+            }
+            Fbcell?.addSubview(checkImage)
+            
+            
+             return Fbcell!
+        }
+        else
+        {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "ContactTableViewCell", for: indexPath) as! ContactTableViewCell
         // let entry = contacts[(indexPath as NSIndexPath).row]
         // cell.configureWithContactEntry(entry)
         // cell.layoutIfNeeded()
         
-        
-        
-        
-        
+    
         if tableView.tag == 2
         {
             cell.contactNameLabel.text = ((self.EmailList.object(at: indexPath.row) as! NSDictionary).value(forKey: "name") as! String)
@@ -1936,12 +3017,46 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
         
         
         return cell
+        }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-       
+        if tableView.tag == 5
+        {
+            let VolunteerID:String = (self.CategoryListArray.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as! String
+            let Volunteername:String = (self.CategoryListArray.object(at: indexPath.row) as! NSDictionary).value(forKey: "name") as! String
+            
+            if arryCatDatalistids.contains(VolunteerID)
+            {
+                arryCatDatalistids.remove(VolunteerID)
+            }
+            else
+            {
+                arryCatDatalistids.add(VolunteerID)
+            }
+            
+            if arryCatDatalistnames.contains(Volunteername)
+            {
+                arryCatDatalistnames.remove(Volunteername)
+            }
+            else
+            {
+                arryCatDatalistnames.add(Volunteername)
+            }
+            
+            volunterFbTblView.reloadData()
+        }
     }
+    
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 0.01
+    }
+    
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        return UIView()
+    }
+    
     
     func favoritelistClicked(_ sender: UIButton!)
     {
@@ -2054,6 +3169,9 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
                         
                         self.contacts = contacts!
                         
+                        self.ContactList.removeAllObjects()
+                        self.EmailList.removeAllObjects()
+                        
                         for i in 0..<self.contacts.count
                         {
                             let entry = contacts?[i]
@@ -2148,6 +3266,7 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
     
     
     
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -2159,9 +3278,9 @@ extension SetupFoodBankVC: GMSAutocompleteViewControllerDelegate {
     
     // Handle the user's selection.
     func viewController(_ viewController: GMSAutocompleteViewController, didAutocompleteWith place: GMSPlace) {
-        print("Place name: \(place.name)")
-        print("Place address: \(String(describing: place.formattedAddress))")
-        print("Place attributions: \(String(describing: place.attributions))")
+     //   print("Place name: \(place.name)")
+     //   print("Place address: \(String(describing: place.formattedAddress))")
+     //   print("Place attributions: \(String(describing: place.attributions))")
         
         locationTF.text! = place.name as String
         geoCodeUsingAddress(address: place.name as NSString)
@@ -2170,7 +3289,7 @@ extension SetupFoodBankVC: GMSAutocompleteViewControllerDelegate {
     
     func viewController(_ viewController: GMSAutocompleteViewController, didFailAutocompleteWithError error: Error) {
         // TODO: handle the error.
-        print("Error: ", error.localizedDescription)
+     //   print("Error: ", error.localizedDescription)
     }
     
     // User canceled the operation.
@@ -2221,14 +3340,14 @@ extension SetupFoodBankVC: GMSMapViewDelegate
     
     private func mapView(mapView:GMSMapView!,idleAtCameraPosition position:GMSCameraPosition!)
     {
-        print(position)
+       // print(position)
         
     }
 
     private func processResponse(withPlacemarks placemarks: [CLPlacemark]?, error: Error?) {
        
         if let error = error {
-            print("Unable to Reverse Geocode Location (\(error))")
+          //  print("Unable to Reverse Geocode Location (\(error))")
             self.locationTF.text! = "Unable to Find Address for Location"
             locationlab.text = "Unable to Find Address for Location"
             
@@ -2236,7 +3355,7 @@ extension SetupFoodBankVC: GMSMapViewDelegate
             if let placemarks = placemarks, let placemark = placemarks.first {
                 self.locationTF.text! = placemark.compactAddress!
                 locationlab.text = placemark.compactAddress!
-                print(self.locationTF.text!)
+              //  print(self.locationTF.text!)
             } else {
                 self.locationTF.text! = "No Matching Addresses Found"
                 locationlab.text = "No Matching Addresses Found"

@@ -45,8 +45,13 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-            userName.text=myArray.value(forKey: "first_name") as! String?
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+            
+            let str1 = myArray.value(forKey: "first_name") as? String ?? ""
+            let str2 = myArray.value(forKey: "last_name") as? String ?? ""
+            let strname = str1+" "+str2
+            userName.text=strname
             strUserID=myArray.value(forKey: "id") as! NSString
             
             let stringUrl = myArray.value(forKey: "image") as! NSString
@@ -71,8 +76,14 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
             CategroScrool.isScrollEnabled=true
             CategroScrool.contentSize = CGSize(width: CGFloat(view.frame.size.width), height: CGFloat(780))
             
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-            userName.text=myArray.value(forKey: "first_name") as! String?
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+            print(myArray)
+            
+            let str1 = myArray.value(forKey: "first_name") as? String ?? ""
+            let str2 = myArray.value(forKey: "last_name") as? String ?? ""
+            let strname = str1+" "+str2
+            userName.text=strname
             strUserID=myArray.value(forKey: "id") as! NSString
             
             let stringUrl = myArray.value(forKey: "image") as! NSString
@@ -135,7 +146,7 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
     
     @IBAction func ContactClicked(_ sender: Any)
     {
-        let url = URL(string: "https://www.food4all.org/#contact")!
+        let url = URL(string: "http://food4all.org/contact")!
         if #available(iOS 10.0, *) {
             UIApplication.shared.open(url, options: [:], completionHandler: nil)
         } else {
@@ -146,7 +157,7 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
     
     @objc private  func ProfileSettinglistAPIMethod (baseURL:String , params: String)
     {
-        print(params);
+      //  print(params);
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -154,7 +165,7 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+               // print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     let proVC = self.storyboard?.instantiateViewController(withIdentifier: "SettingsVC") as! SettingsVC
@@ -237,9 +248,11 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
     
     @IBAction func LogoutButtonAction(_ sender: Any)
     {
-        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-        self.navigationController?.pushViewController(myVC!, animated: true)
-        self.revealViewController().revealToggle(animated: true)
+//        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+//        self.navigationController?.pushViewController(myVC!, animated: true)
+//        self.revealViewController().revealToggle(animated: true)
+        
+        self.navigationController?.popViewController(animated: true)
         
         UserDefaults.standard.removeObject(forKey: "UserId")
         AFWrapperClass.svprogressHudDismiss(view: self)
@@ -315,7 +328,7 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
             }
             else
             {
-                let url = URL(string: "https://www.food4all.org/#contact")!
+                let url = URL(string: "http://food4all.org/contact")!
                 if #available(iOS 10.0, *) {
                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 } else {
@@ -370,7 +383,7 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
         }
         else if indexPath.row == 7
         {
-            let url = URL(string: "https://www.food4all.org/#contact")!
+            let url = URL(string: "http://food4all.org/contact")!
             if #available(iOS 10.0, *) {
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
             } else {

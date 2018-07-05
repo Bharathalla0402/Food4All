@@ -15,8 +15,9 @@ import InstagramKit
 import Alamofire
 import PinterestSDK
 import SwiftyJSON
+import CoreLocation
 
-class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GIDSignInUIDelegate,UIWebViewDelegate
+class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GIDSignInUIDelegate,UIWebViewDelegate,HMDiallingCodeDelegate,CLLocationManagerDelegate
 {
 
     
@@ -37,6 +38,9 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     var forgotPassWordTF = ACFloatingTextfield()
     var NewPassWordTF = ACFloatingTextfield()
     var ConfirmPassWordTF = ACFloatingTextfield()
+     var countryCodeTF = ACFloatingTextfield()
+     var CountryPicker = UIButton()
+    
     var userNMimg = UIImageView()
     var passwordNMimg = UIImageView()
     var ResponseMessage=String()
@@ -73,20 +77,45 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     var strUserId = String()
     var DeviceToken=String()
     
+    var popview4 = UIView()
+    var footerView4 = UIView()
+    var CancelButton4 = UIButton()
+    var DoneButton4 = UIButton()
+    
     var Inpopview = UIView()
     var InfooterView = UIView()
     
     var InstagramLoginbtn = UIButton()
     
-    
+    var imageURL = NSURL()
+    var emailChkStr = String()
+    var socialID = String()
+    var emailGet = String()
+    var nameGet = String()
+    var socialRegistaerStr = String()
+    var imgURL = NSURL()
+    var mobileFullString = String()
+    var diallingCode = HMDiallingCode()
     @IBOutlet var activityIndicator: UIActivityIndicatorView!
     
     var user = PDKUser()
     var accessToken = ""
     let story = UIStoryboard(name: "Main", bundle: nil)
     
+     var strApiCheck = String()
+    var name1Get = String()
+    var name2Get = String()
+    
+    var locationManager = CLLocationManager()
+    var currentLatitude = Double()
+    var currentLongitude = Double()
+    
     override func viewDidLoad() {
-        super.viewDidLoad() 
+        super.viewDidLoad()
+        
+       
+        
+       self.diallingCode.delegate = self
         
         if UserDefaults.standard.object(forKey: "DeviceToken") != nil
         {
@@ -94,8 +123,38 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         }
         else
         {
-            DeviceToken = ""
+            DeviceToken = "bnhj"
         }
+        
+        
+        
+        
+        locationManager.delegate=self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
+        
+        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
+            
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+            }else {
+                
+            }
+            
+            
+        }
+        
+        
+        
+        
 //        
 //        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "HomeVC") as? HomeVC
 //        self.navigationController?.pushViewController(myVC!, animated: true)
@@ -123,11 +182,13 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
             UserDefaults.standard.set("notSaved", forKey: "passWrdsave")
         }
         else{
-            print("User ID PW :\(userID) \n \(pw)")
+          //  print("User ID PW :\(userID) \n \(pw)")
             if UserDefaults.standard.object(forKey: "userIDsave") as! String == "notSaved" && UserDefaults.standard.object(forKey: "passWrdsave") as! String == "notSaved"
             {
                 rememberButton.isSelected = true
                 rememberButton.setImage(UIImage(named: "UncheckBox"), for: .normal)
+                
+                
             }else{
                 userNameTF.text! =  UserDefaults.standard.object(forKey: "userIDsave") as! String
                 passWordTF.text! = UserDefaults.standard.object(forKey: "passWrdsave") as! String
@@ -135,8 +196,6 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                 rememberButton.setImage(UIImage(named: "CheckRightbox"), for: .normal)
             }
         }
-        
-        
     }
     
     
@@ -146,10 +205,10 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     func LOGINView ()
     {
         userNameTF = ACFloatingTextfield()
-        userNameTF.frame = CGRect(x:15, y:loginSegmentBtn.frame.origin.y+55, width:self.view.frame.size.width-55, height:45)
+        userNameTF.frame = CGRect(x:15, y:loginSegmentBtn.frame.origin.y+55, width:self.view.frame.size.width-30, height:45)
         userNameTF.delegate = self
         //userNameTF.text!="chunchuswamy80@gmail.com"
-        userNameTF.placeholder = "Email/Mobile number"
+        userNameTF.placeholder = "Email/Mobile number with Country code(e.g: +971)"
         userNameTF.placeHolderColor=UIColor.lightGray
         userNameTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
         userNameTF.lineColor=UIColor.lightGray
@@ -161,7 +220,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         self.scrollViewLogin.addSubview(userNameTF)
         
         passWordTF = ACFloatingTextfield()
-        passWordTF.frame = CGRect(x:15, y:userNameTF.frame.origin.y+70, width:self.view.frame.size.width-55, height:45)
+        passWordTF.frame = CGRect(x:15, y:userNameTF.frame.origin.y+70, width:self.view.frame.size.width-30, height:45)
         passWordTF.delegate = self
         //passWordTF.text!="123456"
         passWordTF.placeholder = "Password"
@@ -225,6 +284,9 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         twitterLoginbtn.layer.cornerRadius = 4
         self.scrollViewLogin.addSubview(twitterLoginbtn)
         
+        twitterLoginbtn.isHidden = true
+        
+        
         googleSigninButton.frame =  CGRect(x:twitterLoginbtn.frame.origin.x+50, y:orLabe.frame.origin.y+50, width:40, height:40)
         googleSigninButton.setImage(#imageLiteral(resourceName: "GoogleSignIn icon"), for: UIControlState.normal)
         googleSigninButton.addTarget(self, action: #selector(ViewController.googleloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
@@ -266,7 +328,38 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
 
         
         self.scrollViewLogin.contentSize = CGSize(width: self.view.frame.size.width, height: 800)
+        
+        self.userNameTF.text = ""
+        self.passWordTF.text = ""
+       
+        
+        self.addDoneButtonOnKeyboard()
     }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.userNameTF.inputAccessoryView = doneToolbar
+        self.passWordTF.inputAccessoryView = doneToolbar
+    }
+    
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
+    }
+
     
     
     
@@ -409,14 +502,14 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         do {
             if let url = request.url {
                 
-                print(url)
+              //  print(url)
                 
                 if String(describing: url).range(of: "#access_token") != nil {
                     
                     try InstagramEngine.shared().receivedValidAccessToken(from: url)
                     
                     if let accessToken = InstagramEngine.shared().accessToken {
-                        print("accessToken: \(accessToken)")
+                       // print("accessToken: \(accessToken)")
                         //start
                         
                         let URl =  "https://api.instagram.com/v1/users/self/?access_token=\(accessToken)"
@@ -429,7 +522,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                         Alamofire.request(URl, method: .get, parameters: parameter, encoding: JSONEncoding.default, headers: nil)
                             .responseJSON { response in
                                 appInstance.hideLoader()
-                                print(response.result.value!)
+                              //  print(response.result.value!)
                                 
                                 if response.result.isSuccess {
                                     
@@ -443,7 +536,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                                         
                                         if let json = NSString(data: data, encoding:  String.Encoding.utf8.rawValue){
                                             
-                                            print(json)
+                                           // print(json)
                                             result["result"] = json
                                             
                                             let responceDic:NSDictionary = ((dict as AnyObject).object(forKey: "meta") as? NSDictionary)!
@@ -579,6 +672,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         footerView.isHidden=false
         forgotPassWordTF.text=""
         forgotPassWordTF.placeholder=""
+        forgotPassWordTF.removeFromSuperview()
         
         popview.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
         popview.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -608,9 +702,9 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         
         
         forgotPassWordTF = ACFloatingTextfield()
-        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:250, height:45)
+        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
         forgotPassWordTF.delegate = self
-        forgotPassWordTF.placeholder = "Email Id or Mobile Number"
+        forgotPassWordTF.placeholder = "Email/Mobile number with Country code(e.g: +971)"
         forgotPassWordTF.placeHolderColor=UIColor.lightGray
         forgotPassWordTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
         forgotPassWordTF.lineColor=UIColor.lightGray
@@ -640,6 +734,27 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         DoneButton2.titleLabel?.textAlignment = .center
         DoneButton2.addTarget(self, action: #selector(ViewController.forgotDoneButtonAction(_:)), for: UIControlEvents.touchUpInside)
         footerView.addSubview(DoneButton2)
+        
+        self.forgotPassWordTF.text = ""
+        
+        self.addDoneButtonOnKeyboard2()
+    }
+    
+    func addDoneButtonOnKeyboard2()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.forgotPassWordTF.inputAccessoryView = doneToolbar
     }
     
     
@@ -667,7 +782,52 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         }
         else
         {
-            self.ForgotAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=forgetPassword&email=\(forgotPassWordTF.text!)")
+            let str2 = forgotPassWordTF.text!
+            var trimmedString = str2.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            let firstCharacter = trimmedString.characters.first
+            
+            
+            if str2.isNumber == true
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid mobile number with country code (e.g: +971)", view: self)
+                
+//                strApiCheck = "2"
+//                let vc = SLCountryPickerViewController()
+//                vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+//                    self.diallingCode.getForCountry(code!)
+//                }
+//                self.navigationController?.pushViewController(vc, animated: true)
+            }
+            else if firstCharacter == "+"
+            {
+                let strnumber = str2.replacingOccurrences(of: "+", with: "")
+                
+                if strnumber.isNumber == true
+                {
+                    mobileFullString = forgotPassWordTF.text!
+                    self.ForgotAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=forgetPassword&email=\(forgotPassWordTF.text!)")
+                }
+                else
+                {
+                    AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid Email/mobile number with country code (e.g: +971)", view: self)
+                }
+            }
+            else if str2.isNumber == false
+            {
+                if !AFWrapperClass.isValidEmail(userNameTF.text!)
+                {
+                    AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid Email", view: self)
+                }
+                else
+                {
+                    mobileFullString = forgotPassWordTF.text!
+                    self.ForgotAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=forgetPassword&email=\(forgotPassWordTF.text!)")
+                }
+            }
+            else
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter Email/Mobile Number", view: self)
+            }
         }
 
     }
@@ -675,15 +835,41 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
     @objc private  func ForgotAPIMethod (baseURL:String , params: String)
     {
-        print(params);
+      //  print(params);
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"forgetPassword")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(mobileFullString, forKey: "login_key")
+       
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+             //   print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.popview.isHidden=true
@@ -697,11 +883,11 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                     {
                         let responceDic2:NSDictionary=responceDic.object(forKey: "userDetails") as! NSDictionary
                         
-                        self.strUserId = responceDic2.object(forKey: "user_id")  as! String
+                        self.strUserId = responceDic2.object(forKey: "id")  as! String
                     }
                     else
                     {
-                        self.strUserId = responceDic.object(forKey: "user_id")  as! String
+                        self.strUserId = responceDic.object(forKey: "id")  as! String
                     }
                     
                   
@@ -722,6 +908,19 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                         self.strUserId = responceDic.object(forKey: "user_id")  as! String
                         
                         self.VerifyView()
+                    }
+                    else if (Message.isEqual("Oops! Your account does not exist. Kindly register first!"))
+                    {
+                        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SocialRegistrationVC") as? SocialRegistrationVC
+                        self.navigationController?.pushViewController(myVC!, animated: true)
+                        
+                        myVC?.emailGet = self.emailGet
+                        myVC?.nameGet = self.nameGet
+                        myVC?.socialID = self.socialID
+                        myVC?.emailChkStr = self.emailChkStr
+                        myVC?.imgURL = self.imgURL
+                        myVC?.socialRegistaerStr = self.socialRegistaerStr
+                        
                     }
                     else
                     {
@@ -747,6 +946,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         footerView2.isHidden=false
         forgotPassWordTF.text=""
         forgotPassWordTF.placeholder=""
+          forgotPassWordTF.removeFromSuperview()
         
         popview2.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
         popview2.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -776,7 +976,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         
         
         forgotPassWordTF = ACFloatingTextfield()
-        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:250, height:45)
+        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
         forgotPassWordTF.delegate = self
         forgotPassWordTF.placeholder = "Enter Your Verification Code"
         forgotPassWordTF.placeHolderColor=UIColor.lightGray
@@ -817,8 +1017,10 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         ResendButton.titleLabel?.textAlignment = .center
         ResendButton.addTarget(self, action: #selector(ViewController.ResendButtonAction(_:)), for: UIControlEvents.touchUpInside)
         footerView2.addSubview(ResendButton)
-
         
+        self.forgotPassWordTF.text = ""
+
+        self.addDoneButtonOnKeyboard2()
     }
     
     // MARK: Verify Cancel Button Action :
@@ -836,15 +1038,37 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
     @objc private   func ReverifyotpAPIMethod2 (baseURL:String , params: String)
     {
-        print(params);
+      //  print(params);
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"resendotp")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(strUserId, forKey: "user_id")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+              //  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     
@@ -888,7 +1112,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
             }
             else
             {
-                self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=verifyotpSocial&social_id=\(TwitterCheckId)&otp=\(forgotPassWordTF.text!)&&id=\(strUserId)")
+                self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=verifyotpSocial&social_id=\(TwitterCheckId)&otp=\(forgotPassWordTF.text!)&id=\(strUserId)")
             }
         }
         
@@ -897,34 +1121,53 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
     @objc private  func Veify2APIMethod (baseURL:String , params: String)
     {
+      //  print(params);
         
-        print(params);
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"verifyOtp")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(strUserId, forKey: "user_id")
+        PostDataValus.setValue(forgotPassWordTF.text!, forKey: "otp")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+              //  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
-                    
                     self.popview2.isHidden=true
                     self.footerView2.isHidden=true
                     
-                     self.ResetPasswordView()
-                    
+                    self.ResetPasswordView()
                 }
                 else
                 {
-                    
                     var Message=String()
                     Message = responceDic.object(forKey: "responseMessage") as! String
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
             
@@ -946,8 +1189,10 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         footerView3.isHidden=false
         NewPassWordTF.text=""
         NewPassWordTF.placeholder=""
-        forgotPassWordTF.text=""
-        forgotPassWordTF.placeholder=""
+        ConfirmPassWordTF.text=""
+        ConfirmPassWordTF.placeholder=""
+        ConfirmPassWordTF.removeFromSuperview()
+        NewPassWordTF.removeFromSuperview()
         
         popview3.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
         popview3.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -977,7 +1222,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         
         
         NewPassWordTF = ACFloatingTextfield()
-        NewPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:250, height:45)
+        NewPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
         NewPassWordTF.delegate = self
         NewPassWordTF.placeholder = "New Password"
         NewPassWordTF.placeHolderColor=UIColor.lightGray
@@ -990,7 +1235,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         
         
         ConfirmPassWordTF = ACFloatingTextfield()
-        ConfirmPassWordTF.frame = CGRect(x:10, y:NewPassWordTF.frame.size.height+NewPassWordTF.frame.origin.y+15, width:250, height:45)
+        ConfirmPassWordTF.frame = CGRect(x:10, y:NewPassWordTF.frame.size.height+NewPassWordTF.frame.origin.y+15, width:280, height:45)
         ConfirmPassWordTF.delegate = self
         ConfirmPassWordTF.placeholder = "Confirm New Password"
         ConfirmPassWordTF.placeHolderColor=UIColor.lightGray
@@ -1021,10 +1266,29 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         DoneButton3.addTarget(self, action: #selector(ViewController.ResetButtonAction(_:)), for: UIControlEvents.touchUpInside)
         footerView3.addSubview(DoneButton3)
         
+        self.NewPassWordTF.text = ""
+        self.ConfirmPassWordTF.text = ""
         
+        self.addDoneButtonOnKeyboard3()
     }
 
-    
+    func addDoneButtonOnKeyboard3()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.NewPassWordTF.inputAccessoryView = doneToolbar
+        self.ConfirmPassWordTF.inputAccessoryView = doneToolbar
+    }
     
     // MARK: Resset Cancel Button Action :
     func ResetcancelButtonAction(_ sender: UIButton!)
@@ -1038,9 +1302,9 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     func ResetButtonAction(_ sender: UIButton!)
     {
         var message = String()
-        if (NewPassWordTF.text?.characters.count)! < 6
+        if (NewPassWordTF.text?.isEmpty)!
         {
-             message = "Password sould be minimum six characters"
+             message = "Please Enter New Password"
         }
         else if !(NewPassWordTF.text == ConfirmPassWordTF.text)
         {
@@ -1063,16 +1327,39 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     @objc private  func ResetPasswordAPIMethod (baseURL:String , params: String)
     {
         
-        print(params);
+      //  print(params);
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"changePassword")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(strUserId, forKey: "user_id")
+        PostDataValus.setValue(NewPassWordTF.text!, forKey: "new_pwd")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
         
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+             //   print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.popview3.isHidden=true
@@ -1107,51 +1394,239 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
 
     
+    // MARK: DialingCodeDelegates:
     
+    func didGetDiallingCode(_ diallingCode: String!, forCountry countryCode: String!) {
+        let countryCode = String(format: "+%@",diallingCode)
+        
+        
+        if strApiCheck == "1"
+        {
+            mobileFullString = String(format: "%@%@",countryCode,userNameTF.text!)
+          //  mobileFullString = String(mobileFullString.replacingOccurrences(of: "+", with: "%2B"))
+            
+            self.simpleLoginMethod()
+        }
+        else if strApiCheck == "3"
+        {
+            mobileFullString = String(format: "%@%@",countryCode,forgotPassWordTF.text!)
+           // mobileFullString = String(mobileFullString.replacingOccurrences(of: "+", with: "%2B"))
+            
+           self.AddMobileapi()
+        }
+        else if strApiCheck == "4"
+        {
+            self.countryCodeTF.text!  = countryCode
+        }
+        else
+        {
+            mobileFullString = String(format: "%@%@",countryCode,forgotPassWordTF.text!)
+          //  mobileFullString = String(mobileFullString.replacingOccurrences(of: "+", with: "%2B"))
+            
+             self.ForgotAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=forgetPassword&email=\(forgotPassWordTF.text!)")
+        }
+        
+        
+    }
+    public func failedToGetDiallingCode() {
+        
+        AFWrapperClass.alert(Constants.applicationName, message: "Country Code not available", view: self)
+    }
+    
+    func validatePhone(_ phoneNumber: String) -> Bool {
+        let phoneRegex = "^((\\+)|(00))[0-9]{6,14}$"
+        let phoneTest = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
+        return phoneTest.evaluate(with: phoneNumber)
+    }
     
     
     // MARK: Login Button Action :
-    func loginButtonAction(_ sender: UIButton!) {
-  
-        
-        
+    func loginButtonAction(_ sender: UIButton!)
+    {
         var message = String()
          if (userNameTF.text?.isEmpty)!
         {
-            message = "Please enter valid Email/Mobile"
+            message = "Please enter Email Id/Mobile Number"
         }
         else if (passWordTF.text?.isEmpty)!
         {
-            message = "Password sould be minimum 6 characters"
+            message = "Please enter password"
         }
         if message.characters.count > 1 {
             
             AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
         }else{
             
-            self.simpleLoginMethod()
+           // let str: String = userNameTF.text!
+            
+            let str2 = userNameTF.text!
+            var trimmedString = str2.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            let firstCharacter = trimmedString.characters.first
+            
+            
+            if str2.isNumber == true
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid mobile number with country code (e.g: +971)", view: self)
+                
+//                strApiCheck = "1"
+//                let vc = SLCountryPickerViewController()
+//                vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+//                    self.diallingCode.getForCountry(code!)
+//                }
+//                self.navigationController?.pushViewController(vc, animated: true)
+            }
+            else if firstCharacter == "+"
+            {
+                let strnumber = str2.replacingOccurrences(of: "+", with: "")
+                
+                if strnumber.isNumber == true
+                {
+                    mobileFullString = userNameTF.text!
+                    self.simpleLoginMethod()
+                }
+                else
+                {
+                     AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid Email/mobile number with country code (e.g: +971)", view: self)
+                }
+               
+            }
+            else if str2.isNumber == false
+            {
+                if !AFWrapperClass.isValidEmail(userNameTF.text!)
+                {
+                     AFWrapperClass.alert(Constants.applicationName, message: "Please enter valid Email", view: self)
+                }
+                else
+                {
+                    mobileFullString = userNameTF.text!
+                    self.simpleLoginMethod()
+                }
+            }
+            else
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter Email/Mobile Number", view: self)
+            }
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
     }
     
     func simpleLoginMethod () -> Void
     {
-    
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=login&email=\(userNameTF.text!)&pwd=\(passWordTF.text!)&gcm_id=\(DeviceToken)&device_type=ios"
         
-        print(params)
+       // let baseURL: String  = String(format:"%@",Constants.mainURL)
+      //  let params = "method=login&email=\(userNameTF.text!)&pwd=\(passWordTF.text!)&gcm_id=\(DeviceToken)&device_type=ios"
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"login")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        PostDataValus.setValue("ios", forKey: "device_type")
+        PostDataValus.setValue(mobileFullString, forKey: "login_key")
+        PostDataValus.setValue(passWordTF.text!, forKey: "pwd")
+       
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+      //  print(params)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                
+                var strcode = String()
+                if let quantity = responceDic.object(forKey: "code") as? NSNumber
+                {
+                    strcode =  String(describing: quantity)
+                }
+                else if let quantity = responceDic.object(forKey: "code") as? String
+                {
+                    strcode = quantity
+                }
+                
+                if strcode == "0"
                 {
                     self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
-                    UserDefaults.standard.set(self.dataDic, forKey: "UserId")
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: self.dataDic)
+                    currentDefaults?.set(data, forKey: "UserId")
+                    
+                    // UserDefaults.standard.set(self.dataDic, forKey: "UserId")
+                    
+                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+                    self.navigationController?.pushViewController(myVC!, animated: true)
+                }
+                else if strcode == "1"
+                {
+                    if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? NSNumber
+                    {
+                        self.strUserId =  String(describing: quantity)
+                    }
+                    else if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? String
+                    {
+                        self.strUserId = String(describing: quantity)
+                    }
+                    
+                    self.AddMobileNumber()
+                }
+                else if strcode == "2"
+                {
+                    if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? NSNumber
+                    {
+                        self.strUserId =  String(describing: quantity)
+                    }
+                    else if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? String
+                    {
+                        self.strUserId = String(describing: quantity)
+                    }
+                    
+                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "ConfirmOTPVC") as? ConfirmOTPVC
+                    foodVC?.UsearID = String(describing: self.strUserId)
+                    self.navigationController?.pushViewController(foodVC!, animated: true)
+                }
+                else if strcode == "3"
+                {
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+                else
+                {
+                
+                
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: self.dataDic)
+                    currentDefaults?.set(data, forKey: "UserId")
                     
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
                     self.navigationController?.pushViewController(myVC!, animated: true)
@@ -1177,6 +1652,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                         AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                         
                     }
+                    }
 
                 }
             }
@@ -1191,9 +1667,10 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
     // MARK: faceBook Login Button Action :
     func faceBookloginButtonAction(_ sender: UIButton!) {
-        
         let fbLoginManager : FBSDKLoginManager = FBSDKLoginManager()
-        fbLoginManager.logIn(withReadPermissions: ["email"], from: self) { (result, error) in
+       // fbLoginManager.loginBehavior = FBSDKLoginBehavior.web
+        
+        fbLoginManager.logIn(withReadPermissions: ["public_profile","email"], from: self) { (result, error) in
             if (error == nil){
                 
                 
@@ -1208,12 +1685,11 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                 }
             }
         }
-
     }
     
     func getFBUserData(){
         if((FBSDKAccessToken.current()) != nil){
-            FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
+            FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "email, name, first_name, last_name, picture.type(large), id"]).start(completionHandler: { (connection, result, error) -> Void in
                 if (error == nil){
                     
                     self.faceBookDic = result as! [String : AnyObject] as NSDictionary
@@ -1227,6 +1703,19 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                     var fbid=String()
                     fbid = self.faceBookDic.object(forKey: "id") as! String
                     
+                    self.emailGet = self.faceBookDic.object(forKey: "email") as! String
+                    self.nameGet = self.faceBookDic.object(forKey: "name") as! String
+                    self.name1Get = self.faceBookDic.object(forKey: "first_name") as! String
+                    self.name2Get = self.faceBookDic.object(forKey: "last_name") as! String
+                    self.socialID = self.faceBookDic.object(forKey: "id") as! String
+                    let info : NSDictionary =  self.faceBookDic.object(forKey: "picture") as! NSDictionary
+                    let info2 : NSDictionary =  info.object(forKey: "data") as! NSDictionary
+                    let url: NSString = (info2.object(forKey: "url") as? NSString)!
+                    //  print(url)
+                    self.imgURL = NSURL(string: url as String)!
+                    self.emailChkStr = "YES"
+                    self.socialRegistaerStr = "facebook"
+                    
                     
                     self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=fblogin&email=\(email)&fb_id=\(fbid)&gcm_id=\(self.DeviceToken)&device_type=ios")
                     
@@ -1239,19 +1728,139 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     @objc private   func FbLoginAPIMethod (baseURL:String , params: String)
     {
         
-        print(params);
+      //  print(params);
+       
+        
+        var strSocialParameter = String()
+        if socialRegistaerStr == "facebook"
+        {
+            strSocialParameter = "facebook_id"
+        }
+        else if socialRegistaerStr == "google"
+        {
+             strSocialParameter = "google_id"
+        }
+        else if socialRegistaerStr == "twitter"
+        {
+            strSocialParameter = "twitter_id"
+        }
+        
+       
+        let urlString: String = self.imgURL.absoluteString!
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"socialLogin")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(socialRegistaerStr, forKey: "social_entity")
+        PostDataValus.setValue(self.nameGet, forKey: "username")
+        PostDataValus.setValue(self.emailGet, forKey: "email")
+        PostDataValus.setValue(self.name1Get, forKey: "first_name")
+        PostDataValus.setValue(self.name2Get, forKey: "last_name")
+        PostDataValus.setValue(self.socialID, forKey: strSocialParameter)
+        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        PostDataValus.setValue("ios", forKey: "device_type")
+        PostDataValus.setValue("1", forKey: "is_social")
+        PostDataValus.setValue(urlString, forKey: "image")
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
+                var strcode = String()
+                if let quantity = responceDic.object(forKey: "code") as? NSNumber
+                {
+                    strcode =  String(describing: quantity)
+                }
+                else if let quantity = responceDic.object(forKey: "code") as? String
+                {
+                    strcode = quantity
+                }
+                
+                if strcode == "0"
+                {
+                    self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: self.dataDic)
+                    currentDefaults?.set(data, forKey: "UserId")
+                    
+                    
+                     self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile")
+                    
+                    // UserDefaults.standard.set(self.dataDic, forKey: "UserId")
+                    
+                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+                    self.navigationController?.pushViewController(myVC!, animated: true)
+                }
+                else if strcode == "1"
+                {
+                    
+                    if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? NSNumber
+                    {
+                        self.strUserId =  String(describing: quantity)
+                    }
+                    else if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? String
+                    {
+                       self.strUserId = String(describing: quantity)
+                    }
+                    
+                    self.AddMobileNumber()
+                }
+                else if strcode == "2"
+                {
+                    if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? NSNumber
+                    {
+                        self.strUserId =  String(describing: quantity)
+                    }
+                    else if let quantity =  (responceDic.object(forKey: "userDetails") as? NSDictionary)?.value(forKey: "id") as? String
+                    {
+                        self.strUserId = String(describing: quantity)
+                    }
+                    
+                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "ConfirmOTPVC") as? ConfirmOTPVC
+                    foodVC?.UsearID = String(describing: self.strUserId)
+                    self.navigationController?.pushViewController(foodVC!, animated: true)
+                }
+                else if strcode == "3"
+                {
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+                else
+                {
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
-                    UserDefaults.standard.set(self.dataDic, forKey: "UserId")
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: self.dataDic)
+                    currentDefaults?.set(data, forKey: "UserId")
+                    
+                    self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile")
+                    
+                   // UserDefaults.standard.set(self.dataDic, forKey: "UserId")
                     
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
                     self.navigationController?.pushViewController(myVC!, animated: true)
@@ -1275,11 +1884,25 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                         foodVC?.UsearID = String(describing: self.strUserId)
                         self.navigationController?.pushViewController(foodVC!, animated: true)
                     }
+                    else if (Message.isEqual("Oops! Your account does not exist. Kindly register first!"))
+                    {
+                        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SocialRegistrationVC") as? SocialRegistrationVC
+                        self.navigationController?.pushViewController(myVC!, animated: true)
+                        
+                        myVC?.emailGet = self.emailGet
+                        myVC?.nameGet = self.nameGet
+                        myVC?.socialID = self.socialID
+                        myVC?.emailChkStr = self.emailChkStr
+                        myVC?.imgURL = self.imgURL
+                        myVC?.socialRegistaerStr = self.socialRegistaerStr
+                        
+                    }
                     else
                     {
                         AFWrapperClass.svprogressHudDismiss(view: self)
                         AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                         
+                    }
                     }
                 }
             }
@@ -1293,6 +1916,330 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     }
     
     
+    
+    
+    @objc private  func getProfileAPIMethod (baseURL:String , params: String)
+    {
+        
+        let data2 = UserDefaults.standard.object(forKey: "UserId") as? Data
+        let myArray: NSDictionary = (NSKeyedUnarchiver.unarchiveObject(with: data2!) as? NSDictionary)!
+        let strUserID: String = myArray.value(forKey: "id") as! String
+        
+        //  print(params);
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"userProfile",params)
+        
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    let UserResponse:NSDictionary = responceDic.object(forKey: "profileDetail")  as! NSDictionary
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: UserResponse)
+                    currentDefaults?.set(data, forKey: "UserId")
+                }
+                else
+                {
+                  
+                }
+            }
+        }) { (error) in
+          //  AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    func AddMobileNumber()
+    {
+        popview4.isHidden=false
+        footerView4.isHidden=false
+        countryCodeTF.text = ""
+        countryCodeTF.placeholder = ""
+        forgotPassWordTF.text=""
+        forgotPassWordTF.placeholder=""
+        countryCodeTF.removeFromSuperview()
+        forgotPassWordTF.removeFromSuperview()
+        
+        popview4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview4.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview4)
+        
+        footerView4.frame = CGRect(x:self.view.frame.size.width/2-150, y:self.view.frame.size.height/2-100, width:300, height:200)
+        footerView4.backgroundColor = UIColor.white
+        popview4.addSubview(footerView4)
+        
+        
+        let forgotlab = UILabel()
+        forgotlab.frame = CGRect(x:0, y:0, width:footerView4.frame.size.width, height:40)
+        forgotlab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        forgotlab.text="Add Mobile Number"
+        forgotlab.font =  UIFont(name:"Helvetica-Bold", size: 15)
+        forgotlab.textColor=UIColor.white
+        forgotlab.textAlignment = .center
+        footerView4.addSubview(forgotlab)
+        
+        
+        let labUnderline = UILabel()
+        labUnderline.frame = CGRect(x:0, y:forgotlab.frame.origin.y+forgotlab.frame.size.height+1, width:footerView4.frame.size.width, height:2)
+        labUnderline.backgroundColor = UIColor.darkGray
+        labUnderline.isHidden=true
+        footerView4.addSubview(labUnderline)
+        
+        
+        
+        
+        
+        countryCodeTF = ACFloatingTextfield()
+        countryCodeTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:60, height:45)
+        countryCodeTF.delegate = self
+        countryCodeTF.placeholder = "CCode"
+        countryCodeTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        countryCodeTF.lineColor=UIColor.lightGray
+        countryCodeTF.keyboardType=UIKeyboardType.numberPad
+        countryCodeTF.autocorrectionType = UITextAutocorrectionType.no
+        countryCodeTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        countryCodeTF.isUserInteractionEnabled=false
+        self.footerView4.addSubview(countryCodeTF)
+        
+        CountryPicker.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:65, height:45)
+        CountryPicker.addTarget(self, action: #selector(self.CountryPickerButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        self.footerView4.addSubview(CountryPicker)
+        
+      
+        
+        
+
+        forgotPassWordTF = ACFloatingTextfield()
+      //  forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:250, height:45)
+        forgotPassWordTF.frame = CGRect(x:75, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:215, height:45)
+        forgotPassWordTF.delegate = self
+        forgotPassWordTF.placeholder = "Mobile Number"
+        forgotPassWordTF.placeHolderColor=UIColor.lightGray
+        forgotPassWordTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.lineColor=UIColor.lightGray
+        forgotPassWordTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.keyboardType=UIKeyboardType.numberPad
+        forgotPassWordTF.autocorrectionType = .no
+        forgotPassWordTF.autocapitalizationType = .none
+        forgotPassWordTF.spellCheckingType = .no
+        footerView4.addSubview(forgotPassWordTF)
+        
+        
+        CancelButton4.frame = CGRect(x:10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView4.frame.size.width/2-15, height:40)
+        CancelButton4.backgroundColor=#colorLiteral(red: 0.9137254902, green: 0.9137254902, blue: 0.9137254902, alpha: 1)
+        CancelButton4.setTitle("Cancel", for: .normal)
+        CancelButton4.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        CancelButton4.setTitleColor(#colorLiteral(red: 0.4980392157, green: 0.4980392157, blue: 0.4980392157, alpha: 1), for: .normal)
+        CancelButton4.titleLabel?.textAlignment = .center
+        CancelButton4.addTarget(self, action: #selector(ViewController.cancelButtonAction4(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(CancelButton4)
+        
+        
+        DoneButton4.frame = CGRect(x:CancelButton4.frame.size.width+CancelButton4.frame.origin.x+10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView4.frame.size.width/2-15, height:40)
+        DoneButton4.backgroundColor=#colorLiteral(red: 0.1097696498, green: 0.6676027775, blue: 0.8812960982, alpha: 1)
+        DoneButton4.setTitle("Done", for: .normal)
+        DoneButton4.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        DoneButton4.setTitleColor(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1), for: .normal)
+        DoneButton4.titleLabel?.textAlignment = .center
+        DoneButton4.addTarget(self, action: #selector(self.AddMobileDoneButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(DoneButton4)
+        
+        
+        
+        self.forgotPassWordTF.text = ""
+        self.countryCodeTF.text = ""
+        
+        self.setUsersClosestCity()
+        
+        self.addDoneButtonOnKeyboard6()
+    }
+    
+    
+    func setUsersClosestCity()
+    {
+        let geoCoder = CLGeocoder()
+        let location = CLLocation(latitude: currentLatitude, longitude: currentLongitude)
+        geoCoder.reverseGeocodeLocation(location)
+        {
+            (placemarks, error) -> Void in
+            
+            if ((error) != nil)
+            {
+                self.countryCodeTF.text! = ""
+                // print("Locarion Error :\((error?.localizedDescription)! as String)")
+                //     AFWrapperClass.alert(Constants.applicationName, message: String(format: "+%@",diallingCode), view: self)
+            }
+            else{
+                let placeArray = placemarks as [CLPlacemark]!
+                var placeMark: CLPlacemark!
+                placeMark = placeArray?[0]
+                
+                if placeMark.isoCountryCode != nil
+                {
+                    //  print(placeMark.isoCountryCode! as String)
+                    
+                    self.strApiCheck = "4"
+                    let iosCode = placeMark.isoCountryCode! as String
+                    self.diallingCode.getForCountry(iosCode)
+                }
+            }
+        }
+    }
+    
+    
+    func addDoneButtonOnKeyboard6()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.forgotPassWordTF.inputAccessoryView = doneToolbar
+    }
+    
+    // MARK: Country picker Button Action :
+    func CountryPickerButtonAction(_ sender: UIButton!)
+    {
+        let vc = SLCountryPickerViewController()
+        vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+            self.strApiCheck = "4"
+            self.diallingCode.getForCountry(code!)
+            
+        }
+        
+        self.navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    
+    
+    // MARK: Cancel Button Action :
+    func cancelButtonAction4(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+    }
+    
+    
+    // MARK: Done Button Action :
+    func AddMobileDoneButtonAction(_ sender: UIButton!)
+    {
+        var message = String()
+        if (forgotPassWordTF.text?.isEmpty)!
+        {
+            message = "Please enter Mobile Number"
+        }
+        
+        if message.characters.count > 1
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
+        }
+        else
+        {
+            
+            let str: String = forgotPassWordTF.text!
+            if str.isNumber == true
+            {
+                self.AddMobileapi()
+                
+//                strApiCheck = "3"
+//                let vc = SLCountryPickerViewController()
+//                vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+//                    self.diallingCode.getForCountry(code!)
+//                }
+//                self.navigationController?.pushViewController(vc, animated: true)
+            }
+            else
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter Mobile Number", view: self)
+            }
+        }
+        
+    }
+    
+    func AddMobileapi()
+    {
+        
+        var Ccode=String()
+        Ccode = countryCodeTF.text!
+        var mobileString = String()
+        mobileString = String(format: "%@%@",Ccode,forgotPassWordTF.text!)
+        
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"addPhoneNo")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(self.strUserId, forKey: "user_id")
+        PostDataValus.setValue(mobileString, forKey: "phone_no")
+   
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+        //  print(params)
+        
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                   // self.strUserId = responceDic.object(forKey: "user_id")  as! String
+                    
+                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "ConfirmOTPVC") as? ConfirmOTPVC
+                    foodVC?.UsearID = String(describing: self.strUserId)
+                    self.navigationController?.pushViewController(foodVC!, animated: true)
+                }
+                else
+                {
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+            
+        }) { (error) in
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+    
+    
     // MARK: Twitter Check one  Action :
     
     func TwitterCheckAction()
@@ -1302,6 +2249,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     footerViewTwit.isHidden=false
     CheckEmail.text=""
     CheckEmail.placeholder=""
+        CheckEmail.removeFromSuperview()
     
     popviewTwit.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
     popviewTwit.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -1362,6 +2310,26 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     DoneButton2.titleLabel?.textAlignment = .center
     DoneButton2.addTarget(self, action: #selector(ViewController.TwitterCheckButtonAction(_:)), for: UIControlEvents.touchUpInside)
     footerViewTwit.addSubview(DoneButton2)
+        
+        CheckEmail.text = ""
+        self.addDoneButtonOnKeyboard5()
+    }
+    
+    func addDoneButtonOnKeyboard5()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.CheckEmail.inputAccessoryView = doneToolbar
     }
     
     
@@ -1436,13 +2404,33 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         
         //print("\(user.profile.name) \n \(user.profile.email) \n \(user.authentication.idToken) \n \(user.userID)")
         
+       //  print(user.profile.givenName)
+       //  print(user.profile.familyName)
+       //  print(user.profile.name)
         
+        print(user.profile)
         var email=String()
         email = user.profile.email
         
         var fbid=String()
         fbid = user.userID
         
+        if GIDSignIn.sharedInstance().currentUser.profile.hasImage
+        {
+            imageURL = user.profile.imageURL(withDimension: UInt(120)) as NSURL
+            //  print("Image Url : \(imageURL)")
+        }
+    
+        emailGet = user.profile.email
+        name1Get = user.profile.givenName
+        name2Get = user.profile.familyName
+        nameGet = user.profile.name
+        socialID = user.userID
+        emailChkStr = "YES"
+        imgURL = imageURL
+        socialRegistaerStr = "google"
+        print(name1Get)
+        print(name2Get)
         
         self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=googlelogin&email=\(email)&google_id=\(fbid)&gcm_id=\(self.DeviceToken)&device_type=ios")
         
@@ -1483,16 +2471,74 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
      {
        //  AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         
+        
+      
+        
         Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 AFWrapperClass.svprogressHudDismiss(view: self)
-                print("signed in as \(session?.userName)")
-                print("signed in as \(session?.userID)")
+        
+                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
+                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_ user: TWTRUser?, _ error: Error?) -> Void in
+                    //    print("\(user?.profileImageURL)")
+                    
+                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
+                    
+                    //  print(self.imageURL)
+                    
+                    
+                  
+                })
+                
+                
+                
+                
+                
+                let stores = Twitter.sharedInstance().sessionStore
+                if let userID = stores.session()?.userID {
+                    stores.logOutUserID(userID)
+                    Twitter.sharedInstance().sessionStore.logOutUserID(userID)
+                }
+            } else {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
+                //   print("error: \(String(describing: error?.localizedDescription))")
+            }
+        }
+        
+        
+        Twitter.sharedInstance().logIn { session, error in
+            if (session != nil) {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+              //  print("signed in as \(session?.)")
+              //  print("signed in as \(session?.userID)")
                 
                 var fbid=String()
                 fbid = (session?.userID)!
                 
                 self.TwitterCheckId = (session?.userID)!
+                
+             //   self.imageURL = NSURL(string:  (session?.profileImageURL)!)!
+                self.emailChkStr = "NO"
+                self.nameGet = (session?.userName)!
+                 self.name1Get = (session?.userName)!
+                self.name2Get = ""
+                self.socialID = (session?.userID)!
+                self.imgURL = self.imageURL
+                self.socialRegistaerStr = "twitter"
+                
+              
+                
+                
+//                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
+//                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_, user: TWTRUser?, _, error: Error?) ->
+//                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
+//                    emailChkStr = "NO"
+//                    nameGet = (session?.userName)!
+//                    socialID = (session?.userID)!
+//                    imgURL = self.imageURL
+//                    socialRegistaerStr = "Twitter"
+//                })
                 
                // var email=String()
               //  email = "Bharath@hmail.com"
@@ -1508,7 +2554,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
             } else {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
-                print("error: \(error?.localizedDescription)")
+              //  print("error: \(String(describing: error?.localizedDescription))")
             }
         }
 

@@ -9,7 +9,7 @@
 #import "SetpOneViewController.h"
 #import "CategeoryViewCell.h"
 #import "CategeoryViewCell2.h"
-
+#import "Food4All.pch"
 
 
 @interface SetpOneViewController ()
@@ -40,7 +40,7 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
-    CheckStr=@"1";
+   
     
     arrcategeorys=[[NSMutableArray alloc]init];
     
@@ -104,12 +104,86 @@
     _safetybutt.hidden=true;
     _nextbutt.hidden=true;
     
-    checked = NO;
-    
-    saftyString = @"0";
-    UIImage *btnImage2 = [UIImage imageNamed:@"UncheckBox"];
-    [_safetybutt setImage:btnImage2 forState:UIControlStateNormal];
-    
+   
+    if ([_StrEditMode isEqualToString:@"1"])
+    {
+        _UpdateLab.text = @"UPDATE FOOD SHARE";
+        
+        [_safetybutt setImage:[UIImage imageNamed:@"CheckRightbox"] forState:UIControlStateNormal];
+        checked =YES;
+        
+        strCategeotyId = [NSString stringWithFormat:@"%@",[_listDetailBank valueForKey:@"food_category_id"]];
+        subCategeoryId = [NSString stringWithFormat:@"%@",[_listDetailBank valueForKey:@"food_type_id"]];
+        
+        [self customtoggleview];
+        
+        for (int i=0; i<_arrChildCategory.count; i++)
+        {
+            NSString *str = [NSString stringWithFormat:@"%@",[[_arrChildCategory objectAtIndex:i]valueForKey:@"id"]];
+            if ([strCategeotyId isEqualToString:str])
+            {
+                NSIndexPath *tmpIndexPath = [NSIndexPath indexPathForRow:0
+                                                               inSection:i];
+                [self.arryDatalistids addObject:tmpIndexPath];
+                
+                
+                
+                [expandedSections addIndex:i];
+                [[NSUserDefaults standardUserDefaults]setInteger:i forKey:@"section"];
+                [[NSUserDefaults standardUserDefaults]synchronize];
+                
+                NSMutableArray *tmpArray = [NSMutableArray array];
+                
+                 NSArray *arlist=[[_arrChildCategory objectAtIndex:i]valueForKey:@"child"];
+                _heightConstaint.constant = (arrcategeorys.count+arlist.count) * 50;
+                
+                for (int k=0; k<arlist.count; k++)
+                {
+                    NSIndexPath *tmpIndexPath = [NSIndexPath indexPathForRow:k
+                                                                   inSection:i];
+                    [tmpArray addObject:tmpIndexPath];
+                }
+                
+                [_categeorytableView insertRowsAtIndexPaths:tmpArray
+                                 withRowAnimation:UITableViewRowAnimationTop];
+                
+                
+                if([subCategeoryId isEqualToString:@""])
+                {
+                    
+                }
+                else
+                {
+                    
+                    NSArray *sublist = [[_arrChildCategory objectAtIndex:i]valueForKey:@"child"];
+                    
+                    for (int j=0; j<sublist.count; j++)
+                    {
+                        NSString *Substr = [NSString stringWithFormat:@"%@",[[sublist objectAtIndex:j]valueForKey:@"id"]];
+                        
+                        if ([subCategeoryId isEqualToString:Substr])
+                        {
+                            NSIndexPath *tmpIndexPath = [NSIndexPath indexPathForRow:j+1
+                                                                           inSection:i];
+                            NSLog(@"%@",tmpIndexPath);
+                            [self.arryDatalistids2 addObject:tmpIndexPath];
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+         CheckStr=@"1";
+        
+        checked = NO;
+        
+        saftyString = @"0";
+        UIImage *btnImage2 = [UIImage imageNamed:@"UncheckBox"];
+        [_safetybutt setImage:btnImage2 forState:UIControlStateNormal];
+    }
 }
 
 
@@ -411,8 +485,8 @@
                     Headlabel2.hidden=YES;
                     image.image=[UIImage imageNamed:@"plus-sign.png"];
                     Headlabel.textColor =  [UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
-                    Headlabel1.backgroundColor= [UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
-                    Headlabel2.backgroundColor=[UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
+                    Headlabel1.backgroundColor= [UIColor colorWithRed:224.0/255.0f green:224.0/255.0f blue:224.0/255.0f alpha:1.0];
+                    Headlabel2.backgroundColor=[UIColor colorWithRed:224.0/255.0f green:224.0/255.0f blue:224.0/255.0f alpha:1.0];
                     
                 }
             }
@@ -464,8 +538,8 @@
             {
                 image.image=[UIImage imageNamed:@"plus-sign.png"];
                 Headlabel.textColor =  [UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
-                Headlabel1.backgroundColor= [UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
-                Headlabel2.backgroundColor=[UIColor colorWithRed:143.0/255.0f green:144.0/255.0f blue:155.0/255.0f alpha:1.0];
+                Headlabel1.backgroundColor= [UIColor colorWithRed:224.0/255.0f green:224.0/255.0f blue:224.0/255.0f alpha:1.0];
+                Headlabel2.backgroundColor=[UIColor colorWithRed:224.0/255.0f green:224.0/255.0f blue:224.0/255.0f alpha:1.0];
                 Headlabel2.hidden=YES;
             }
         }
@@ -482,6 +556,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    
     if (tableView==_categeorytableView)
     {
         if ([self tableView:tableView canCollapseSection:indexPath.section])
@@ -633,9 +708,6 @@
                     {
                         [tableView deleteRowsAtIndexPaths:tmpArray
                                          withRowAnimation:UITableViewRowAnimationTop];
-                        
-                        
-                        
                     }
                     else
                     {
@@ -667,7 +739,7 @@
                     {
                         [expandedSections addIndex:section];
                         rows = [self tableView:tableView numberOfRowsInSection:section];
-                         [self.arryDatalistids addObject:indexPath];
+                        [self.arryDatalistids addObject:indexPath];
                         
                         NSInteger section = indexPath.section;
                         
@@ -1231,57 +1303,11 @@
 -(void)customtoggleview
 {
     
-   // NSString *struseridnum=[NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"cat1"]];
+     NSString *strurl=[NSString stringWithFormat:@"%@%@?api_key=%@&category_id=%@",BaseUrl,@"foodCategoryTips",ApiKey,strCategeotyId];
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    
-    //Set Params
-    [request setHTTPShouldHandleCookies:NO];
-    [request setTimeoutInterval:60];
-    [request setHTTPMethod:@"POST"];
-    
-    //Create boundary, it can be anything
-    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
-    
-    // set Content-Type in HTTP header
-    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
-    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
-    
-    // post body
-    NSMutableData *body = [NSMutableData data];
-    
-    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
-    
-    [parameters setValue:@"meal_category_tips" forKey:@"method"];
-    [parameters setValue:strCategeotyId forKey:@"category_id"];
-    
-    
-    
-    
-    for (NSString *param in parameters)
-    {
-        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
-    }
-    
-    
-    //Close off the request with the boundary
-    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    // setting the body of the post to the request
-    [request setHTTPBody:body];
-    
-    
-    
-    NSString *strurl=[NSString stringWithFormat:@"http://think360.in/Food4All/webservices/Api.php"];
-    
-    
-    // set URL
     [request setURL:[NSURL URLWithString:strurl]];
-    
-    
-    
+    [request setHTTPMethod:@"GET"];
+    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
     [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         dispatch_async (dispatch_get_main_queue(), ^{
@@ -1292,12 +1318,88 @@
             } else
             {
                 if(data != nil) {
+                    NSError *err;
+                   // NSMutableDictionary *responseJSON = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&err];
                     [self responseOption4:data];
                 }
             }
         });
     }] resume];
     
+    
+    
+    
+    
+    
+//
+//
+//   // NSString *struseridnum=[NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"cat1"]];
+//    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+//
+//    //Set Params
+//    [request setHTTPShouldHandleCookies:NO];
+//    [request setTimeoutInterval:60];
+//    [request setHTTPMethod:@"POST"];
+//
+//    //Create boundary, it can be anything
+//    NSString *boundary = @"------VohpleBoundary4QuqLuM1cE5lMwCy";
+//
+//    // set Content-Type in HTTP header
+//    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
+//    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+//    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+//
+//    // post body
+//    NSMutableData *body = [NSMutableData data];
+//
+//    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+//
+//   // [parameters setValue:@"meal_category_tips" forKey:@"method"];
+//    //[parameters setValue:strCategeotyId forKey:@"category_id"];
+//
+//
+//
+//
+//    for (NSString *param in parameters)
+//    {
+//        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+//        [body appendData:[[NSString stringWithFormat:@"%@\r\n", [parameters objectForKey:param]] dataUsingEncoding:NSUTF8StringEncoding]];
+//    }
+//
+//
+//    //Close off the request with the boundary
+//    [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+//
+//    // setting the body of the post to the request
+//    [request setHTTPBody:body];
+//
+//
+//
+//     NSString *strurl=[NSString stringWithFormat:@"%@%@&api_key=%@&category_id=%@",BaseUrl,@"foodCategoryTips",ApiKey,strCategeotyId];
+//
+//
+//    // set URL
+//    [request setURL:[NSURL URLWithString:strurl]];
+//
+//
+//
+//    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+//    [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+//        dispatch_async (dispatch_get_main_queue(), ^{
+//
+//            if (error)
+//            {
+//
+//            } else
+//            {
+//                if(data != nil) {
+//                    [self responseOption4:data];
+//                }
+//            }
+//        });
+//    }] resume];
+//
 }
 
 -(void)responseOption4:(NSData*)responseData
@@ -1316,7 +1418,7 @@
     
     if ([strsttus isEqualToString:@"200"])
     {
-        arrcategeorys2 = [responseDict valueForKey:@"TipList"];
+        arrcategeorys2 = [responseDict valueForKey:@"tipList"];
         
         
         if (!expandedSections2)
@@ -1361,13 +1463,11 @@
     {
         if (strCategeotyId == (id)[NSNull null] || strCategeotyId.length == 0 )
         {
-            UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"Food4All" message:@"Please Select Categeory" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
-            [alert show];
+             [self showMessage:@"Please Select Categeory" withTitle:@"Food4All"];
         }
         else if (checked !=YES)
         {
-            UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"Food4All" message:@"Please accept I ensure food safety and quality" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
-            [alert show];
+             [self showMessage:@"Please accept I ensure food safety and quality" withTitle:@"Food4All"];
         }
         else
         {
@@ -1376,24 +1476,28 @@
             
             [[NSUserDefaults standardUserDefaults]setObject:strCategeotyId forKey:@"cat1"];
             [[NSUserDefaults standardUserDefaults]synchronize];
+            
+            if ([_StrEditMode isEqualToString:@"1"])
+            {
+                NSData *data = [NSKeyedArchiver archivedDataWithRootObject:_listDetailBank];
+                [[NSUserDefaults standardUserDefaults] setObject:data forKey:@"EditFoodShare"];
+                [[NSUserDefaults standardUserDefaults]synchronize];
+            }
         }
     }
     else
     {
         if (strCategeotyId == (id)[NSNull null] || strCategeotyId.length == 0 )
         {
-            UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"Food4All" message:@"Please Select Categeory" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
-            [alert show];
+            [self showMessage:@"Please Select Categeory" withTitle:@"Food4All"];
         }
         else if (subCategeoryId == (id)[NSNull null] || subCategeoryId.length == 0 )
         {
-            UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"Food4All" message:@"Please Select Sub Categeory" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
-            [alert show];
+             [self showMessage:@"Please Select Sub Categeory" withTitle:@"Food4All"];
         }
         else if (checked !=YES)
         {
-            UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"Food4All" message:@"Please accept I ensure food safety and quality" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles:nil, nil];
-            [alert show];
+             [self showMessage:@"Please accept I ensure food safety and quality" withTitle:@"Food4All"];
         }
         else
         {
@@ -1405,6 +1509,13 @@
             
             [[NSUserDefaults standardUserDefaults]setObject:subCategeoryId forKey:@"cat2"];
             [[NSUserDefaults standardUserDefaults]synchronize];
+            
+            if ([_StrEditMode isEqualToString:@"1"])
+            {
+                NSData *data = [NSKeyedArchiver archivedDataWithRootObject:_listDetailBank];
+                [[NSUserDefaults standardUserDefaults] setObject:data forKey:@"EditFoodShare"];
+                [[NSUserDefaults standardUserDefaults]synchronize];
+            }
         }
     }
 }
@@ -1432,6 +1543,17 @@
     }
 }
 
+#pragma mark -- UIAlertView Method
+-(void)showMessage:(NSString*)message withTitle:(NSString *)title{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            
+        }]];
+        
+        [[[[UIApplication sharedApplication] keyWindow] rootViewController] presentViewController:alertController animated:YES completion:nil];
+    });
+}
 
 
 

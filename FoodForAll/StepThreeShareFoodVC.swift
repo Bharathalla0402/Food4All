@@ -12,14 +12,15 @@ import GoogleMaps
 import CoreLocation
 import GooglePlaces
 
-class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate,UICollectionViewDelegate,UICollectionViewDataSource,UITextViewDelegate,CLLocationManagerDelegate,UITextFieldDelegate,GMSIndoorDisplayDelegate,UISearchBarDelegate,UITableViewDelegate,UITableViewDataSource {
+class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate,UICollectionViewDelegate,UICollectionViewDataSource,UITextViewDelegate,CLLocationManagerDelegate,UITextFieldDelegate,GMSIndoorDisplayDelegate,UISearchBarDelegate,UITableViewDelegate,UITableViewDataSource,SecondDelegate {
     
-    
+      var classObject = ChatingDetailsViewController()
     @IBOutlet weak var mainScroolView: UIScrollView!
     @IBOutlet weak var nameTextFieds: ACFloatingTextfield!
     @IBOutlet weak var timeExprTF: ACFloatingTextfield!
     @IBOutlet weak var quantityTF: ACFloatingTextfield!
     @IBOutlet weak var descriptionTextView: UITextView!
+    @IBOutlet weak var UpdateLab: UILabel!
     
     var imagePicker = UIImagePickerController()
     var currentSelectedImage = UIImage()
@@ -43,6 +44,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     
     
     
+    @IBOutlet var txtLabImage: UILabel!
     
     var foodBankCamera = GMSCameraPosition()
     var foodBankMapView = GMSMapView()
@@ -60,6 +62,8 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     var firstLongitude = Double()
     var myLatitude = Double()
     var myLongitude = Double()
+    var InitialLatitude = Double()
+    var InitialLongitude = Double()
     var locationManager = CLLocationManager()
     var searchViewController = ABCGooglePlacesSearchViewController()
     
@@ -156,18 +160,22 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     var foodbankiID = String()
     
     var myArray = NSDictionary()
-    var strUserID = NSString()
+    var strUserID = String()
 
 
-    
-    
-    
-    
+    var popview4 = UIView()
+    var footerView4 = UIView()
+    var CropperView = BABCropperView()
+    var CroppedImageView = UIImageView()
+    var cropSelectedImage = UIImage()
+     var strpage = String()
+    var StrEditMode = String()
+    var StrFoodShareId = String()
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        
+        classObject.delegate = self
         imagePicker.delegate = self
         descriptionTextView.delegate = self
         descriptionTextView.text = "Enter your text here.."
@@ -196,8 +204,16 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         //strStatus="0"
         
         
-        myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-        strUserID=myArray.value(forKey: "id") as! NSString
+        let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+        myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
+        if let quantity = myArray.value(forKey: "id") as? NSNumber
+        {
+            strUserID = String(describing: quantity)
+        }
+        else if let quantity = myArray.value(forKey: "id") as? String
+        {
+            strUserID = quantity
+        }
         
         foodBankBrn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
         fdBnkNearHightConstrnt.constant = 0
@@ -211,7 +227,8 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         searchViewController.delegate=self
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
@@ -220,6 +237,8 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             currentLongitude = (locationManager.location?.coordinate.longitude)!
             firstLatitude = (locationManager.location?.coordinate.latitude)!
             firstLongitude = (locationManager.location?.coordinate.longitude)!
+            InitialLatitude = (locationManager.location?.coordinate.latitude)!
+            InitialLongitude = (locationManager.location?.coordinate.longitude)!
         }
         
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
@@ -243,19 +262,274 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         }
         //self.getAllFoodBanksAPImethod ()
         
-        self.setUsersClosestCity()
+        
         
        // scrollheightconst.constant = 260
         
         
        // mainScroolView.contentSize = CGSize(width: self.view.frame.size.width, height: 500)
+        
+        
+        
+        if UserDefaults.standard.object(forKey: "EditFoodShare") != nil
+        {
+            UpdateLab.text = "UPDATE FOOD SHARE"
+            
+            StrEditMode = "1"
+            let outData = UserDefaults.standard.object(forKey: "EditFoodShare")
+            let listDetailBank: NSDictionary = NSKeyedUnarchiver.unarchiveObject(with: outData as! Data) as! NSDictionary
+            
+            self.nameTextFieds.text! = (listDetailBank.value(forKey: "title") as! String)
+            self.descriptionTextView.text = listDetailBank.value(forKey: "desc") as? String ?? ""
+            self.descriptionTextView.textColor = UIColor.black
+            let straddress = listDetailBank.value(forKey: "address") as? String ?? ""
+            let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+            self.searchLoctnTF.text! = stradd
+            self.searchVolunteerTF.text! =  stradd
+            self.straddress = stradd as NSString
+           
+           
+            self.imagPathArray = (listDetailBank.value(forKey: "images") as? NSMutableArray)!
+            self.imgFolderAry = (listDetailBank.value(forKey: "images") as? NSMutableArray)!
+            
+            if self.imagPathArray.count == 0
+            {
+                txtLabImage.isHidden = false
+            }
+            else
+            {
+                txtLabImage.isHidden = true
+            }
+            
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+            self.responseString = String(data: jsonData!, encoding: .utf8)!
+            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+            
+            if let quantity = listDetailBank.object(forKey: "quantity") as? NSNumber
+            {
+                self.quantityTF.text =  String(describing: quantity)
+            }
+            else if let quantity = listDetailBank.object(forKey: "quantity")  as? String
+            {
+                self.quantityTF.text = quantity
+            }
+            
+            if let quantity = listDetailBank.object(forKey: "id") as? NSNumber
+            {
+                StrFoodShareId =  String(describing: quantity)
+            }
+            else if let quantity = listDetailBank.object(forKey: "id")  as? String
+            {
+                StrFoodShareId = quantity
+            }
+            
+            if let quantity = listDetailBank.object(forKey: "remaining_time") as? NSNumber
+            {
+                let Val = quantity.intValue/3600
+                self.timeExprTF.text = String(Val)
+            }
+            else if let quantity = listDetailBank.object(forKey: "remaining_time")  as? String
+            {
+                let Val = Int(quantity)!/3600
+                self.timeExprTF.text = String(Val)
+            }
+            
+            var strDeliveryMode = String()
+            if let quantity = listDetailBank.object(forKey: "delivery_mode") as? NSNumber
+            {
+                strDeliveryMode =  String(describing: quantity)
+            }
+            else if let quantity = listDetailBank.object(forKey: "delivery_mode")  as? String
+            {
+                strDeliveryMode = quantity
+            }
+            
+            if let quantity = listDetailBank.object(forKey: "food_bank_id") as? NSNumber
+            {
+                strFoodbankId = String(describing: quantity) as NSString
+            }
+            else if let quantity = listDetailBank.object(forKey: "food_bank_id")  as? String
+            {
+                strFoodbankId = quantity as NSString
+            }
+          
+            if strDeliveryMode == "collection"
+            {
+                let straddress = listDetailBank.value(forKey: "address") as? String ?? ""
+                let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+                self.straddress2 = stradd as NSString
+                
+                self.currentLatitude = Double(listDetailBank .value(forKey: "lat") as! String)!
+                self.currentLongitude = Double(listDetailBank.value(forKey: "long") as! String)!
+                
+                if strFoodbankId == "0"
+                {
+                    strStatus="2"
+                    radioBtnStringChk = "FromMyLocation2"
+                    
+                    foodBankView.isHidden=true
+                    myLoctnView.isHidden=false
+                    
+                    fdBnkNearHightConstrnt.constant = 0
+                    searchFoodbankHeightconstrnt.constant  = 0
+                    volunteersConstraint.constant = 0
+                    collectfrommylocconstrain.constant = 30
+                    
+                    
+                    foodBankBrn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                    foodbanksubbutt.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                    foodbanksubbutt2.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                    myLoctnBtn.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
+                }
+                else
+                {
+                    strStatus="1"
+                    radioBtnStringChk = "FromMyLocation"
+                    
+                    searchFDBnkTF.text = listDetailBank.value(forKey: "foodbank_title") as? String ?? ""
+                    strfoodbankname = listDetailBank.value(forKey: "foodbank_title") as? NSString ?? ""
+                    
+                    foodBankView.isHidden=false
+                    myLoctnView.isHidden=true
+                    
+                    fdBnkNearHightConstrnt.constant = 172
+                    searchFoodbankHeightconstrnt.constant  = 30
+                    volunteersConstraint.constant = 30
+                    collectfrommylocconstrain.constant = 0
+                    
+                    
+                    foodBankBrn.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
+                    foodbanksubbutt.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                    foodbanksubbutt2.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
+                    myLoctnBtn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                    
+                   //  self.setUsersClosestCity2()
+                }
+            }
+            else
+            {
+                let straddress = listDetailBank.value(forKey: "address") as? String ?? ""
+                let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+                self.straddress = stradd as NSString
+                
+                checklat = Double(listDetailBank.value(forKey: "lat") as! String)!
+                checklong = Double(listDetailBank.value(forKey: "long") as! String)!
+                
+                strStatus="0"
+                radioBtnStringChk = "FoodBankNearBy"
+                
+                foodBankView.isHidden=false
+                myLoctnView.isHidden=true
+                
+                fdBnkNearHightConstrnt.constant = 142
+                searchFoodbankHeightconstrnt.constant  = 30
+                volunteersConstraint.constant = 0
+                collectfrommylocconstrain.constant = 0
+                
+                searchFDBnkTF.text = listDetailBank.value(forKey: "foodbank_title") as? String ?? ""
+                strfoodbankname = listDetailBank.value(forKey: "foodbank_title") as? NSString ?? ""
+                
+                foodBankBrn.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
+                foodbanksubbutt.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
+                foodbanksubbutt2.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                myLoctnBtn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
+                
+                 self.setUsersClosestCity2()
+            }
+            
+            UserDefaults.standard.removeObject(forKey: "EditFoodShare")
+        }
+        else
+        {
+            self.nameTextFieds.text = ""
+            self.timeExprTF.text = ""
+            self.quantityTF.text = ""
+            self.descriptionTextView.text = "Enter your text here.."
+            
+            self.setUsersClosestCity()
+        }
+        
+        self.addDoneButtonOnKeyboard()
+    }
+    
+    
+    func setUsersClosestCity2()
+    {
+        currentLatitude = InitialLatitude
+        currentLongitude = InitialLongitude
+        
+        let geoCoder = CLGeocoder()
+        let location = CLLocation(latitude: InitialLatitude, longitude: InitialLongitude)
+        
+        geoCoder.reverseGeocodeLocation(location, completionHandler: { placemarks, error in
+            guard let addressDict = placemarks?[0].addressDictionary else {
+                return
+            }
+            
+            // Print each key-value pair in a new row
+            addressDict.forEach { print($0) }
+            
+            // Print fully formatted address
+            if let formattedAddress = addressDict["FormattedAddressLines"] as? [String] {
+                print(formattedAddress.joined(separator: ", "))
+                
+                self.straddress2 = formattedAddress.joined(separator: ", ") as NSString
+                self.searchLoctnTF.text! = formattedAddress.joined(separator: ", ")
+                self.searchVolunteerTF.text! =  formattedAddress.joined(separator: ", ")
+            }
+            
+        })
+        
+    }
+    
+    
+    
+    
+    
+    func secondsToHoursMinutesSeconds (seconds : Int) -> (Int, Int, Int) {
+        return (seconds / 3600, (seconds % 3600) / 60, (seconds % 3600) % 60)
+    }
+    
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.nameTextFieds.inputAccessoryView = doneToolbar
+        self.quantityTF.inputAccessoryView = doneToolbar
+        self.timeExprTF.inputAccessoryView = doneToolbar
+        self.descriptionTextView.inputAccessoryView = doneToolbar
+        self.searchFDBnkTF.inputAccessoryView = doneToolbar
+        self.searchVolunteerTF.inputAccessoryView = doneToolbar
+        self.searchLoctnTF.inputAccessoryView = doneToolbar
+    }
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
     }
 
     
      //MARK:  -> ImagePicker Controller Delegates
     
-    @IBAction func cameraButtonAction(_ sender: Any) {
-        
+    @IBAction func cameraButtonAction(_ sender: Any)
+    {
+        self.CameraView()
+    }
+    
+    
+    func CameraView ()
+    {
         if self.imagPathArray.count == 5
         {
             AFWrapperClass.alert(Constants.applicationName, message: "You can add up to five images only.", view: self)
@@ -263,27 +537,27 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             let optionMenu = UIAlertController(title: nil, message: "Choose Option", preferredStyle: .actionSheet)
             
             let pibraryAction = UIAlertAction(title: "From Photo Library", style: .default, handler:
-                {(alert: UIAlertAction!) -> Void in
-                    self.imagePicker.sourceType = .photoLibrary
-                    self.imagePicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary)!
-                    self.present(self.imagePicker, animated: true, completion: nil)
+            {(alert: UIAlertAction!) -> Void in
+                self.imagePicker.sourceType = .photoLibrary
+                self.imagePicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary)!
+                self.present(self.imagePicker, animated: true, completion: nil)
             })
             let cameraction = UIAlertAction(title: "Camera", style: .default, handler:
-                {(alert: UIAlertAction!) -> Void in
+            {(alert: UIAlertAction!) -> Void in
+                
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    self.imagePicker.sourceType = UIImagePickerControllerSourceType.camera
+                    self.imagePicker.cameraCaptureMode = .photo
+                    self.imagePicker.modalPresentationStyle = .fullScreen
+                    self.present(self.imagePicker,animated: true,completion: nil)
                     
-                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                        self.imagePicker.sourceType = UIImagePickerControllerSourceType.camera
-                        self.imagePicker.cameraCaptureMode = .photo
-                        self.imagePicker.modalPresentationStyle = .fullScreen
-                        self.present(self.imagePicker,animated: true,completion: nil)
-                        
-                    } else {
-                        AFWrapperClass.alert(Constants.applicationName, message: "Sorry, this device has no camera", view: self)
-                    }
+                } else {
+                    AFWrapperClass.alert(Constants.applicationName, message: "Sorry, this device has no camera", view: self)
+                }
             })
             let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler:
-                {
-                    (alert: UIAlertAction!) -> Void in
+            {
+                (alert: UIAlertAction!) -> Void in
             })
             optionMenu.addAction(pibraryAction)
             optionMenu.addAction(cameraction)
@@ -297,23 +571,99 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
                 popOverPresentationController.permittedArrowDirections  = UIPopoverArrowDirection.any
             }
         }
-
     }
     
-    func image(withReduce imageName: UIImage, scaleTo newsize: CGSize) -> UIImage {
+    func image(withReduce imageName: UIImage, scaleTo newsize: CGSize) -> UIImage
+    {
+        
+        var scaledImageRect = CGRect.zero;
+        
+        let aspectWidth:CGFloat = newsize.width / currentSelectedImage.size.width;
+        let aspectHeight:CGFloat = newsize.height / currentSelectedImage.size.height;
+        let aspectRatio:CGFloat = min(aspectWidth, aspectHeight);
+        
+        scaledImageRect.size.width = currentSelectedImage.size.width * aspectRatio;
+        scaledImageRect.size.height = currentSelectedImage.size.height * aspectRatio;
+        scaledImageRect.origin.x = (newsize.width - scaledImageRect.size.width) / 2.0;
+        scaledImageRect.origin.y = (newsize.height - scaledImageRect.size.height) / 2.0;
+        
         UIGraphicsBeginImageContextWithOptions(newsize, false, 12.0)
-        imageName.draw(in: CGRect(x: CGFloat(0), y: CGFloat(0), width: CGFloat(newsize.width), height: CGFloat(newsize.height)))
-        let newImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
-        return newImage!
+        
+        imageName.draw(in: CGRect(x: scaledImageRect.origin.x, y: scaledImageRect.origin.y, width: scaledImageRect.size.width, height: scaledImageRect.size.height))
+        
+        let scaledImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        
+        return scaledImage!
+        
+        
+//        UIGraphicsBeginImageContextWithOptions(newsize, false, 12.0)
+//        imageName.draw(in: CGRect(x: CGFloat(0), y: CGFloat(0), width: CGFloat(newsize.width), height: CGFloat(newsize.height)))
+//        let newImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
+//        return newImage!
     }
+    
+    
+    func compressImage(_ image: UIImage) -> UIImage
+    {
+      //  let imgData: NSData = UIImageJPEGRepresentation(image, 1)! as NSData
+      
+        var actualHeight = Float(image.size.height)
+        var actualWidth = Float(image.size.width)
+        let maxHeight: Float = 1200.0
+        let maxWidth: Float = 600.0
+        var imgRatio: Float = actualWidth / actualHeight
+        let maxRatio: Float = maxWidth / maxHeight
+        let compressionQuality: Float = 1.0
+        
+        
+        if actualHeight > maxHeight || actualWidth > maxWidth {
+            if imgRatio < maxRatio {
+                //adjust width according to maxHeight
+                imgRatio = maxHeight / actualHeight
+                actualWidth = imgRatio * actualWidth
+                actualHeight = maxHeight
+            }
+            else if imgRatio > maxRatio {
+                //adjust height according to maxWidth
+                imgRatio = maxWidth / actualWidth
+                actualHeight = imgRatio * actualHeight
+                actualWidth = maxWidth
+            }
+            else {
+                actualHeight = maxHeight
+                actualWidth = maxWidth
+            }
+        }
+
+        let Rwidth = CGFloat(actualWidth)
+        let Rheight = CGFloat(actualHeight)
+        let rect = CGRect(origin: CGPoint(x: 0.0,y :0.0), size: CGSize(width: Rwidth, height: Rheight))
+        UIGraphicsBeginImageContext(rect.size)
+        image.draw(in: rect)
+        let img = UIGraphicsGetImageFromCurrentImageContext()
+        let imageData = UIImageJPEGRepresentation(img!, CGFloat(compressionQuality))! as NSData
+        print("Size of Image(bytes):\(imageData.length)")
+        UIGraphicsEndImageContext()
+        return UIImage(data: imageData as Data)!
+    }
+
+    
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         
         
         currentSelectedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-        currentSelectedImage = self.image(withReduce: currentSelectedImage, scaleTo: CGSize(width: CGFloat(25), height: CGFloat(25)))
+      //  currentSelectedImage = self.image(withReduce: currentSelectedImage, scaleTo: CGSize(width: currentSelectedImage.size.width, height: currentSelectedImage.size.height))
         
-        self.uploadImageAPIMethod()
+     //   let imgData: NSData = UIImageJPEGRepresentation(currentSelectedImage, 1)! as NSData
+     //   print("Size of Image(bytes):\(imgData.length)")
+        
+      //  currentSelectedImage = self.compressImage(currentSelectedImage)
+        
+       // self.uploadImageAPIMethod()
+        
+          self.ImageCropView()
         
         dismiss(animated: true, completion: nil)
     }
@@ -324,90 +674,261 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         dismiss(animated: true, completion: nil)
     }
     
-    
-    //MARK: Upload image Method API:
-    
-    func uploadImageAPIMethod () -> Void
+    func ImageCropView ()
     {
+        popview4.isHidden=false
+        footerView4.isHidden=false
         
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        popview4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview4.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview4)
         
-        let imageData: Data? = UIImageJPEGRepresentation(currentSelectedImage, 1)
-        if imageData == nil {
-            //            let imgData: Data? = UIImageJPEGRepresentation(cell.imageViewColctn.image!, 1)
-            //            self.currentSelectedImage = UIImage(data: imgData! as Data)!
+        footerView4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        footerView4.backgroundColor = UIColor.black
+        popview4.addSubview(footerView4)
+        
+        CropperView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        CropperView.backgroundColor = UIColor.white
+        CropperView.image = currentSelectedImage
+        footerView4.addSubview(CropperView)
+        
+        CroppedImageView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        
+        footerView4.addSubview(CroppedImageView)
+        
+        
+        let Cancelbutt = UIButton()
+        Cancelbutt.frame = CGRect(x:0, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Cancelbutt.setTitle("Retake", for: UIControlState.normal)
+        Cancelbutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Cancelbutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Cancelbutt.addTarget(self, action: #selector(self.RetakeButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Cancelbutt)
+        
+        let Donebutt = UIButton()
+        Donebutt.frame = CGRect(x:self.view.frame.size.width/2+1, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Donebutt.setTitle("Crop", for: UIControlState.normal)
+        Donebutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Donebutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Donebutt.addTarget(self, action: #selector(self.CropButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Donebutt)
+        
+         CropperView.cropSize = CGSize(width: 400, height: 300)
+        
+    }
+    
+    func RetakeButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        self.CameraView()
+    }
+    
+    func CropButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        
+        CropperView.renderCroppedImage({(_ croppedImage: UIImage?, _ cropRect: CGRect) -> Void in
             
-            AFWrapperClass.alert(Constants.applicationName, message: "Please choose images", view: self)
-        }
+            self.cropSelectedImage = croppedImage!
+          //  self.uploadImageAPIMethod()
+            
+            self.classObject.next(croppedImage)
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        })
+    }
+
+    
+    func responsewithToken(_ responseToken: NSMutableDictionary!)
+    {
+        print(responseToken)
+        AFWrapperClass.svprogressHudDismiss(view: self)
         
-        let parameters = ["method":"imageupload"] as [String : String]
-        Alamofire.upload(multipartFormData: { (multipartFormData) in
-            let image = self.currentSelectedImage
-            multipartFormData.append(UIImageJPEGRepresentation(image, 1)!, withName: "img", fileName: "uploadedPic.jpeg", mimeType: "image/jpeg")
-            for (key, value) in parameters {
-                multipartFormData.append(value.data(using: String.Encoding.utf8)!, withName: key)
-            }
-        }, to:String(format: "%@",Constants.mainURL))
-        { (result) in
-            switch result {
-            case .success(let upload, _, _):
-                upload.uploadProgress(closure: { (progress) in
-                })
-                upload.responseJSON { response in
-                    print(Progress())
-                    if response.result.isSuccess
-                        //print(response.result.value as! NSDictionary)
-                    {
-                        AFWrapperClass.svprogressHudDismiss(view: self)
-                        
-                        let dataDic : NSDictionary = response.result.value as! NSDictionary
-                        if (dataDic.object(forKey: "responseCode") as! NSNumber) == 200
-                        {
-                            
-                            var arrUrl = [Any]()
-                            arrUrl.append((dataDic.object(forKey: "imagepath") as? String)!)
-                            self.imagPathArray.addObjects(from: arrUrl)
-                            
-                            var arrPath = [Any]()
-                            arrPath.append((dataDic.object(forKey: "imgfolderpath") as? String)!)
-                            self.imgFolderAry.addObjects(from: arrPath)
-                            
-                            var postDict = [AnyHashable: Any]()
-                            postDict["locations"] = self.imgFolderAry
-                            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
-                            self.responseString = String(data: jsonData!, encoding: .utf8)!
-                            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
-                            
-                            print("Before JsonString: \(self.responseString)")
-                            print("Before deleted Array \(self.imgFolderAry)")
-                            
-                            self.collectionViewSetUp.reloadData()
-                            AFWrapperClass.alert(Constants.applicationName, message: "Image Uplaod Successfully", view: self)
-                        }
-                        else
-                        {
-                            AFWrapperClass.svprogressHudDismiss(view: self)
-                            AFWrapperClass.alert(Constants.applicationName, message: "Image not Uploaded Please try again.", view: self)
-                        }
-                    }
-                    if response.result.isFailure
-                    {
-                        AFWrapperClass.svprogressHudDismiss(view: self)
-                        let error : NSError = response.result.error! as NSError
-                        
-                        AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                        print(error.localizedDescription)
-                    }
+        if responseToken == nil
+        {
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: "Server is not responding.Please try again later", view: self)
+        }
+        else
+        {
+        
+        if (responseToken.object(forKey: "status") as! NSNumber) == 1
+        {
+            if StrEditMode == "1"
+            {
+                var arrUrl = [Any]()
+                arrUrl.append(responseToken.value(forKey: "url") as? String ?? "")
+                self.imagPathArray.addObjects(from: arrUrl)
+                
+                print(self.imagPathArray)
+                self.collectionViewSetUp.reloadData()
+                
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+                
+                if self.imagPathArray.count == 0
+                {
+                    txtLabImage.isHidden = false
                 }
-            case .failure(let error):
-                AFWrapperClass.svprogressHudDismiss(view: self)
-                AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                print(error.localizedDescription)
-                break
+                else
+                {
+                    txtLabImage.isHidden = true
+                }
             }
+            else
+            {
+            var arrUrl = [Any]()
+            arrUrl.append(responseToken.value(forKey: "url") as? String ?? "")
+            self.imagPathArray.addObjects(from: arrUrl)
+            
+            var arrPath = [Any]()
+            arrPath.append(responseToken.value(forKey: "path") as? String ?? "")
+            self.imgFolderAry.addObjects(from: arrPath)
+            
+            var postDict = [AnyHashable: Any]()
+            postDict["locations"] = self.imgFolderAry
+            
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+            self.responseString = String(data: jsonData!, encoding: .utf8)!
+            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+            
+            if self.imagPathArray.count == 0
+            {
+                txtLabImage.isHidden = false
+            }
+            else
+            {
+                txtLabImage.isHidden = true
+            }
+            }
+            
+            self.collectionViewSetUp.reloadData()
+        }
+        else
+        {
+            let strerror = responseToken.object(forKey: "error") as? String ?? "Server error"
+            let Message = responseToken.object(forKey: "responseMessage") as? String ?? strerror
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        }
         }
     }
     
+    
+    //MARK: Upload image Method API:
+    
+    
+    func uploadImageAPIMethod () -> Void
+    {
+        self.imagPathArray.removeAllObjects()
+        self.imgFolderAry.removeAllObjects()
+        
+        
+        var arrUrl = [Any]()
+        arrUrl.append("No_Image.jpg")
+        self.imagPathArray.addObjects(from: arrUrl)
+        
+        var arrPath = [Any]()
+        arrPath.append("No_Image.jpg")
+        self.imgFolderAry.addObjects(from: arrPath)
+        
+        var postDict = [AnyHashable: Any]()
+        postDict["locations"] = self.imgFolderAry
+        
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+        self.responseString = String(data: jsonData!, encoding: .utf8)!
+        self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+        
+         self.collectionViewSetUp.reloadData()
+    }
+    
+    
+    
+//
+//    func uploadImageAPIMethod () -> Void
+//    {
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        // let imageData: Data? = UIImageJPEGRepresentation(currentSelectedImage, 1)
+//        let imageData: Data? = UIImageJPEGRepresentation(cropSelectedImage, 1)
+//        if imageData == nil {
+//            //            let imgData: Data? = UIImageJPEGRepresentation(cell.imageViewColctn.image!, 1)
+//            //            self.currentSelectedImage = UIImage(data: imgData! as Data)!
+//
+//            AFWrapperClass.alert(Constants.applicationName, message: "Please choose images", view: self)
+//        }
+//
+//        let parameters = ["method":"imageupload"] as [String : String]
+//        Alamofire.upload(multipartFormData: { (multipartFormData) in
+//            let image = self.currentSelectedImage
+//            multipartFormData.append(UIImageJPEGRepresentation(image, 1)!, withName: "img", fileName: "uploadedPic.jpeg", mimeType: "image/jpeg")
+//            for (key, value) in parameters {
+//                multipartFormData.append(value.data(using: String.Encoding.utf8)!, withName: key)
+//            }
+//        }, to:String(format: "%@",Constants.mainURL))
+//        { (result) in
+//            switch result {
+//            case .success(let upload, _, _):
+//                upload.uploadProgress(closure: { (progress) in
+//                })
+//                upload.responseJSON { response in
+//                    print(Progress())
+//                    if response.result.isSuccess
+//                        //print(response.result.value as! NSDictionary)
+//                    {
+//                        AFWrapperClass.svprogressHudDismiss(view: self)
+//
+//                        let dataDic : NSDictionary = response.result.value as! NSDictionary
+//                        if (dataDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                        {
+//
+//                            var arrUrl = [Any]()
+//                            arrUrl.append((dataDic.object(forKey: "imagepath") as? String)!)
+//                            self.imagPathArray.addObjects(from: arrUrl)
+//
+//                            var arrPath = [Any]()
+//                            arrPath.append((dataDic.object(forKey: "imgfolderpath") as? String)!)
+//                            self.imgFolderAry.addObjects(from: arrPath)
+//
+//                            var postDict = [AnyHashable: Any]()
+//                            postDict["locations"] = self.imgFolderAry
+//                            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+//                            self.responseString = String(data: jsonData!, encoding: .utf8)!
+//                            self.responseString = self.responseString.replacingOccurrences(of: " ", with: "%20")
+//
+//                            print("Before JsonString: \(self.responseString)")
+//                            print("Before deleted Array \(self.imgFolderAry)")
+//
+//                            self.collectionViewSetUp.reloadData()
+//                          //  AFWrapperClass.alert(Constants.applicationName, message: "Image Uplaod Successfully", view: self)
+//                        }
+//                        else
+//                        {
+//                            AFWrapperClass.svprogressHudDismiss(view: self)
+//                            AFWrapperClass.alert(Constants.applicationName, message: "Image not Uploaded Please try again.", view: self)
+//                        }
+//                    }
+//                    if response.result.isFailure
+//                    {
+//                        AFWrapperClass.svprogressHudDismiss(view: self)
+//                        let error : NSError = response.result.error! as NSError
+//
+//                        AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//                        print(error.localizedDescription)
+//                    }
+//                }
+//            case .failure(let error):
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//                print(error.localizedDescription)
+//                break
+//            }
+//        }
+//    }
+//
     
     //MARK: CollectionView Delegates
     
@@ -438,7 +959,9 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         let imageURL: String = self.imagPathArray.object(at: indexPath.row) as! String
         print(imageURL)
         let url = NSURL(string:imageURL)
-        cell.imageViewColctn.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.imageViewColctn.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        cell.imageViewColctn.contentMode = .scaleAspectFill
+        cell.imageViewColctn.clipsToBounds = true
         
         cell.deleteBtn.tag = indexPath.row
         cell.deleteBtn.addTarget(self, action: #selector(StepThreeShareFoodVC.deleteButtonAction(_:)), for: UIControlEvents.touchUpInside)
@@ -453,28 +976,50 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     }
     
     // MARK: Delete Button Action:
-    func deleteButtonAction(_ sender: UIButton!) {
-        
+    func deleteButtonAction(_ sender: UIButton!)
+    {
         let myCell: SetupCVCell? = (sender.superview?.superview as? UICollectionViewCell as! SetupCVCell?)
         let indexPath: IndexPath? = self.collectionViewSetUp.indexPath(for: myCell!)
         if sender.tag == indexPath?.row
         {
-            deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
+            if StrEditMode == "1"
+            {
+                // deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
+                
+                self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
+                
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imagPathArray, options: [])
+                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
+            }
+            else
+            {
+                deletePathStr = self.imgFolderAry.object(at: (indexPath?.row)!) as! String
             
-            self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
-            self.imgFolderAry.removeObject(at: indexPath?.row ?? Int())
+                self.imagPathArray.removeObject(at: indexPath?.row ?? Int())
+                self.imgFolderAry.removeObject(at: indexPath?.row ?? Int())
             
-            var postDict = [AnyHashable: Any]()
-            postDict["locations"] = self.imgFolderAry
-            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
-            self.responseString = String(data: jsonData!, encoding: .utf8)!
-            self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
+                if self.imagPathArray.count == 0
+                {
+                    txtLabImage.isHidden = false
+                }
+                else
+                {
+                    txtLabImage.isHidden = true
+                }
             
-            print("After JsonString: \(self.responseString)")
-            //print("after deleted Array \(self.imagPathArray)")
-            //print(self.imagPathArray.count)
+                var postDict = [AnyHashable: Any]()
+                postDict["locations"] = self.imgFolderAry
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: self.imgFolderAry, options: [])
+                self.responseString = String(data: jsonData!, encoding: .utf8)!
+                self.responseString = responseString.replacingOccurrences(of: " ", with: "%20")
             
-            self.ImageDeleteAPImethod ()
+                print("After JsonString: \(self.responseString)")
+                //print("after deleted Array \(self.imagPathArray)")
+                //print(self.imagPathArray.count)
+            
+                // self.ImageDeleteAPImethod ()
+            }
             
             self.collectionViewSetUp.reloadData()
         }
@@ -566,9 +1111,6 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             myVC?.imageString = self.responseString
 
         }
-        
-
-        
     }
     
     
@@ -579,7 +1121,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     func textViewDidBeginEditing(_ textView: UITextView) {
         if descriptionTextView.textColor == UIColor.lightGray {
             descriptionTextView.text = nil
-            descriptionTextView.textColor = UIColor.darkGray
+            descriptionTextView.textColor = UIColor.black
         }
     }
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -629,9 +1171,22 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     }
     
     
+    // MARK: I am deliver to foodbank:
+    
     
     @IBAction func IamDeliverFoodbankClicked(_ sender: UIButton)
     {
+        if StrEditMode == "1"
+        {
+            self.straddress = ""
+            
+            checklat = 0.0
+            checklong = 0.0
+            
+            searchFDBnkTF.text = ""
+            strfoodbankname = ""
+        }
+        
         strStatus="0"
         radioBtnStringChk = "FoodBankNearBy"
         
@@ -651,6 +1206,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         myLoctnBtn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
     }
     
+     // MARK: Volunteers butt action:
     
     @IBAction func VolunteerneedbuttAction(_ sender: Any)
     {
@@ -671,6 +1227,8 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         foodbanksubbutt2.setImage(UIImage(named: "Radio-clicked copy"), for: .normal)
         myLoctnBtn.setImage(UIImage(named: "radio_unclicked"), for: .normal)
     }
+    
+    
     
     @IBAction func VolunteerneedButtClicked(_ sender: Any)
     {
@@ -719,43 +1277,84 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     
     @IBAction func foodbanklistClicked(_ sender: UIButton)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=Search_FoodBanks&lat=\(currentLatitude)&longt=\(currentLongitude)&text="
-        
-        print(params)
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&search=&lat=\(InitialLatitude)&long=\(InitialLongitude)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    self.arrChildCategory = (responceDic.object(forKey: "FoodbankList") as? NSArray)! as! NSMutableArray
+                    self.arrChildCategory.removeAllObjects()
+                    self.arrChildCategory = (responceDic.object(forKey: "foodbankList") as? NSArray)! as! NSMutableArray
+                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                    self.strpage = String(describing: number)
                     
                     self.foodbanklistView()
                 }
                 else
                 {
+                    self.arrChildCategory.removeAllObjects()
+                    
                     var Message=String()
                     Message = responceDic.object(forKey: "responseMessage") as! String
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
         
+        
+//
+//
+//
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=Search_FoodBanks&lat=\(currentLatitude)&longt=\(currentLongitude)&text="
+//
+//        print(params)
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//                print(responceDic)
+//
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    self.arrChildCategory = (responceDic.object(forKey: "FoodbankList") as? NSArray)! as! NSMutableArray
+//
+//                    self.foodbanklistView()
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
+//
     }
     
     
@@ -806,6 +1405,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         volunterFbTblView.dataSource = self
         volunterFbTblView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         volunterFbTblView.backgroundColor = UIColor.clear
+        volunterFbTblView.tableFooterView = UIView()
         footerView2.addSubview(volunterFbTblView)
         
         
@@ -815,6 +1415,25 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         theSearchBar?.showsCancelButton = false
         volunterFbTblView.tableHeaderView = theSearchBar
         theSearchBar?.isUserInteractionEnabled = true
+        
+        self.addDoneButtonOnKeyboard3()
+    }
+    
+    func addDoneButtonOnKeyboard3()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.theSearchBar?.inputAccessoryView = doneToolbar
     }
     
     
@@ -832,26 +1451,76 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     //  MARK: searchbar Delegates and Datasource:
     
     
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchResults.count != 0 {
-            self.searchResults.removeAllObjects()
-            volunterFbTblView.tag = 1
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String)
+    {
+        
+        let str = searchText
+        var encodeUrl = String()
+        let allowedCharacterSet = (CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[] ").inverted)
+        if let escapedString = str.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) {
+            encodeUrl = escapedString
         }
-        for i in 0..<arrChildCategory.count {
-            // [searchResults removeAllObjects];
-            let string: String = (self.arrChildCategory.object(at: i) as! NSDictionary).value(forKey: "fbank_title") as! String
-            let rangeValue: NSRange = (string as NSString).range(of: searchText, options: .caseInsensitive)
-            if rangeValue.length > 0
-            {
-                volunterFbTblView.tag = 2
-                searchResults.add(arrChildCategory[i])
+        
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&search=\(encodeUrl)&lat=\(InitialLatitude)&long=\(InitialLongitude)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
+        
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    self.arrChildCategory.removeAllObjects()
+                    self.arrChildCategory = (responceDic.object(forKey: "foodbankList") as? NSArray)! as! NSMutableArray
+                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                    self.strpage = String(describing: number)
+                    
+                    self.volunterFbTblView.reloadData()
+                }
+                else
+                {
+                     self.arrChildCategory.removeAllObjects()
+                    self.volunterFbTblView.reloadData()
+                    
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
             }
-            else
-            {
-                
-            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
         }
-        volunterFbTblView.reloadData()
+        
+        
+        
+        
+        
+//        if searchResults.count != 0 {
+//            self.searchResults.removeAllObjects()
+//            volunterFbTblView.tag = 1
+//        }
+//        for i in 0..<arrChildCategory.count {
+//            // [searchResults removeAllObjects];
+//            let string: String = (self.arrChildCategory.object(at: i) as! NSDictionary).value(forKey: "title") as! String
+//            let rangeValue: NSRange = (string as NSString).range(of: searchText, options: .caseInsensitive)
+//            if rangeValue.length > 0
+//            {
+//                volunterFbTblView.tag = 2
+//                searchResults.add(arrChildCategory[i])
+//            }
+//            else
+//            {
+//                
+//            }
+//        }
+//        volunterFbTblView.reloadData()
     }
     
     
@@ -914,7 +1583,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         {
             let titlelab = UILabel()
             titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
-            titlelab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
+            titlelab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
             titlelab.font =  UIFont(name:"Helvetica", size: 15)
             titlelab.textColor=UIColor.black
             titlelab.textAlignment = .left
@@ -932,7 +1601,19 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             
             let Distancelab = UILabel()
             Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            Distancelab.text =  String(format: "%@ Kms ",((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String)!)
+            if let quantity = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber
+            {
+                
+                let strval = String(describing: quantity)
+                Distancelab.text = String(format:"%@ Kms", strval)
+                
+            }
+            else if let quantity = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String
+            {
+                Distancelab.text = String(format:"%@ Kms", quantity)
+                
+            }
+        //    Distancelab.text =  String(format: "%@ Kms ",((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber)!)
             Distancelab.font =  UIFont(name:"Helvetica", size: 15)
             Distancelab.textColor=UIColor.black
             Distancelab.textAlignment = .left
@@ -942,7 +1623,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         {
             let titlelab = UILabel()
             titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
-            titlelab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
+            titlelab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
             titlelab.font =  UIFont(name:"Helvetica", size: 15)
             titlelab.textColor=UIColor.black
             titlelab.textAlignment = .left
@@ -959,7 +1640,19 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             
             let Distancelab = UILabel()
             Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            Distancelab.text =  String(format: "%@ Kms ",((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String)!)
+            if let quantity = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber
+            {
+                
+                let strval = String(describing: quantity)
+                Distancelab.text = String(format:"%@ Kms", strval)
+                
+            }
+            else if let quantity = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String
+            {
+                Distancelab.text = String(format:"%@ Kms", quantity)
+                
+            }
+        //    Distancelab.text =  String(format: "%@ Kms ",((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber)!)
             Distancelab.font =  UIFont(name:"Helvetica", size: 15)
             Distancelab.textColor=UIColor.black
             Distancelab.textAlignment = .left
@@ -973,16 +1666,16 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         
         if volunterFbTblView.tag == 2
         {
-            searchFDBnkTF.text = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            strfoodbankname = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as! NSString
-            strFoodbankId = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_id") as! NSString
+            searchFDBnkTF.text = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+            strfoodbankname = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as! NSString
+            strFoodbankId = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as! NSString
             straddress = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as! NSString
             
-            currentLatitude = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
-            currentLongitude = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "longt") as! String)!
+          //  currentLatitude = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
+          //  currentLongitude = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "long") as! String)!
             
             checklat = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
-            checklong = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "longt") as! String)!
+            checklong = Double((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "long") as! String)!
             
             popview2.isHidden=true
             footerView2.isHidden=true
@@ -993,16 +1686,16 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         }
         else
         {
-            searchFDBnkTF.text = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            strfoodbankname = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as! NSString
-            strFoodbankId = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_id") as! NSString
+            searchFDBnkTF.text = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+            strfoodbankname = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as! NSString
+            strFoodbankId = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as! NSString
             straddress = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as! NSString
             
-            currentLatitude = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
-            currentLongitude = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "longt") as! String)!
+         //   currentLatitude = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
+        //    currentLongitude = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "long") as! String)!
             
             checklat = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "lat") as! String)!
-            checklong = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "longt") as! String)!
+            checklong = Double((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "long") as! String)!
             
             popview2.isHidden=true
             footerView2.isHidden=true
@@ -1014,6 +1707,81 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         
     }
     
+    
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell,forRowAt indexPath: IndexPath)
+    {
+        let lastSectionIndex = tableView.numberOfSections - 1
+        let lastRowIndex = tableView.numberOfRows(inSection: lastSectionIndex) - 1
+        if (indexPath.section == lastSectionIndex) && (indexPath.row == lastRowIndex) {
+            if (strpage == "0") {
+                //  loadLbl.text = "No More List"
+                //  actInd.stopAnimating()
+            }
+            else if (strpage == "") {
+                //    loadLbl.text = "No More List"
+                //   actInd.stopAnimating()
+            }
+            else
+            {
+                
+                let strkey = Constants.ApiKey
+                let str:String = theSearchBar?.text ?? ""
+                
+                var encodeUrl = String()
+                let allowedCharacterSet = (CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[] ").inverted)
+                if let escapedString = str.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) {
+                    encodeUrl = escapedString
+                }
+                let params = "api_key=\(strkey)&search=\(encodeUrl)&lat=\(InitialLatitude)&long=\(InitialLongitude)&page=\(self.strpage)"
+                let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
+                
+                print(baseURL)
+                AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+                    
+                    DispatchQueue.main.async {
+                        AFWrapperClass.svprogressHudDismiss(view: self)
+                        let responceDic:NSDictionary = jsonDic as NSDictionary
+                        //  print(responceDic)
+                        if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                        {
+                            self.responsewithToken7(responceDic)
+                        }
+                        else
+                        {
+                            
+                        }
+                    }
+                }) { (error) in
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+                    //print(error.localizedDescription)
+                }
+                
+            }
+            
+        }
+        
+    }
+    
+    func responsewithToken7(_ responseDict: NSDictionary)
+    {
+        var responseDictionary : NSDictionary = [:]
+        responseDictionary = responseDict
+        
+        
+
+        var arr = NSMutableArray()
+        arr = (responseDictionary.value(forKey: "foodbankList") as? NSMutableArray)!
+        arr=arr as AnyObject as! NSMutableArray
+        self.arrChildCategory.addObjects(from: arr as [AnyObject])
+        
+        let number = responseDictionary.object(forKey: "nextPage") as! NSNumber
+        self.strpage = String(describing: number)
+        
+         self.volunterFbTblView.reloadData()
+        
+    }
     
     
     
@@ -1042,7 +1810,6 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     
     func locationView()
     {
-        
         // tabBarController?.tabBar.isHidden=true
         
         popview3.isHidden=false
@@ -1208,7 +1975,8 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     {
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
@@ -1227,7 +1995,7 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
     }
     
     
-    
+    // MARK: Finish Button Action:
     
     @IBAction func finishbuttAction(_ sender: UIButton)
     {
@@ -1289,15 +2057,179 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
             
             if strStatus == "0"
             {
-                self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(checklat)&longt=\(checklong)&share_with=\(strStatus)&food_bankid=\(strFoodbankId)&address=\(straddress)")
+              //  self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(checklat)&longt=\(checklong)&share_with=\(strStatus)&food_bankid=\(strFoodbankId)&address=\(straddress)")
+                
+                let strlat = "\(checklat)"
+                let strlong = "\(checklong)"
+                
+                
+                var baseURL = String()
+                if StrEditMode == "1"
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"updateFoodsharing")
+                }
+                else
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"addFoodsharing")
+                }
+                let strkey = Constants.ApiKey
+                
+                let PostDataValus = NSMutableDictionary()
+                PostDataValus.setValue(strkey, forKey: "api_key")
+                if StrEditMode == "1"
+                {
+                    PostDataValus.setValue(StrFoodShareId, forKey: "foodsharing_id")
+                }
+                else
+                {
+                    PostDataValus.setValue(strUserID, forKey: "user_id")
+                }
+                PostDataValus.setValue(nameTextFieds.text!, forKey: "title")
+                PostDataValus.setValue(descriptionTextView.text!, forKey: "desc")
+                PostDataValus.setValue(categoryStr, forKey: "food_category_id")
+                PostDataValus.setValue(subCategoryStr, forKey: "food_type_id")
+                PostDataValus.setValue(quantityTF.text!, forKey: "quantity")
+                PostDataValus.setValue(timeExprTF.text!, forKey: "expiration_time")
+                PostDataValus.setValue(straddress, forKey: "address")
+                PostDataValus.setValue(strlat, forKey: "lat")
+                PostDataValus.setValue(strlong, forKey: "long")
+                PostDataValus.setValue(strFoodbankId, forKey: "food_bank_id")
+                PostDataValus.setValue("delivery", forKey: "delivery_mode")
+                PostDataValus.setValue(responseString, forKey: "images")
+                
+                var jsonStringValues = String()
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+                if jsonData == nil {
+                    
+                }
+                else {
+                    jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                    print("jsonString: \(jsonStringValues)")
+                }
+                
+                
+                print(baseURL)
+                print(jsonStringValues)
+                
+                self.fodbankshareMealMethod(baseURL: baseURL , params: jsonStringValues )
+                
             }
             else if strStatus == "1"
             {
-                self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(currentLatitude)&longt=\(currentLongitude)&share_with=\(strStatus)&food_bankid=\(strFoodbankId)&address=\(straddress2)")
+               // self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(currentLatitude)&longt=\(currentLongitude)&share_with=\(strStatus)&food_bankid=\(strFoodbankId)&address=\(straddress2)")
+                
+                let strlat = "\(currentLatitude)"
+                let strlong = "\(currentLongitude)"
+                
+                var baseURL = String()
+                if StrEditMode == "1"
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"updateFoodsharing")
+                }
+                else
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"addFoodsharing")
+                }
+                let strkey = Constants.ApiKey
+                
+                let PostDataValus = NSMutableDictionary()
+                PostDataValus.setValue(strkey, forKey: "api_key")
+                if StrEditMode == "1"
+                {
+                    PostDataValus.setValue(StrFoodShareId, forKey: "foodsharing_id")
+                }
+                else
+                {
+                    PostDataValus.setValue(strUserID, forKey: "user_id")
+                }
+                PostDataValus.setValue(nameTextFieds.text!, forKey: "title")
+                PostDataValus.setValue(descriptionTextView.text!, forKey: "desc")
+                PostDataValus.setValue(categoryStr, forKey: "food_category_id")
+                PostDataValus.setValue(subCategoryStr, forKey: "food_type_id")
+                PostDataValus.setValue(quantityTF.text!, forKey: "quantity")
+                PostDataValus.setValue(timeExprTF.text!, forKey: "expiration_time")
+                PostDataValus.setValue(straddress2, forKey: "address")
+                PostDataValus.setValue(strlat, forKey: "lat")
+                PostDataValus.setValue(strlong, forKey: "long")
+                PostDataValus.setValue(strFoodbankId, forKey: "food_bank_id")
+                PostDataValus.setValue("collection", forKey: "delivery_mode")
+                PostDataValus.setValue(responseString, forKey: "images")
+                
+                var jsonStringValues = String()
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+                if jsonData == nil {
+                    
+                }
+                else {
+                    jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                    print("jsonString: \(jsonStringValues)")
+                }
+                
+                
+                print(baseURL)
+                print(jsonStringValues)
+                
+                self.fodbankshareMealMethod(baseURL: baseURL , params: jsonStringValues )
+                
+                
             }
             else
             {
-                self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(currentLatitude)&longt=\(currentLongitude)&share_with=\(strStatus)&address=\(straddress2)")
+              //  self.fodbankshareMealMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=shareMeal&user_id=\(strUserID)&meal_title=\(nameTextFieds.text!)&meal_category=\(categoryStr)&food_type=\(subCategoryStr)&meal_desc=\(descriptionTextView.text!)&no_of_meal_hidden=\(quantityTF.text!)&hours_hidden=\(timeExprTF.text!)&share_meal_image=\(self.responseString)&lat=\(currentLatitude)&longt=\(currentLongitude)&share_with=\(strStatus)&address=\(straddress2)")
+                
+                let strlat = "\(currentLatitude)"
+                let strlong = "\(currentLongitude)"
+                
+                var baseURL = String()
+                if StrEditMode == "1"
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"updateFoodsharing")
+                }
+                else
+                {
+                    baseURL = String(format:"%@%@",Constants.mainURL,"addFoodsharing")
+                }
+                let strkey = Constants.ApiKey
+                
+                let PostDataValus = NSMutableDictionary()
+                PostDataValus.setValue(strkey, forKey: "api_key")
+                if StrEditMode == "1"
+                {
+                    PostDataValus.setValue(StrFoodShareId, forKey: "foodsharing_id")
+                }
+                else
+                {
+                    PostDataValus.setValue(strUserID, forKey: "user_id")
+                }
+                PostDataValus.setValue(nameTextFieds.text!, forKey: "title")
+                PostDataValus.setValue(descriptionTextView.text!, forKey: "desc")
+                PostDataValus.setValue(categoryStr, forKey: "food_category_id")
+                PostDataValus.setValue(subCategoryStr, forKey: "food_type_id")
+                PostDataValus.setValue(quantityTF.text!, forKey: "quantity")
+                PostDataValus.setValue(timeExprTF.text!, forKey: "expiration_time")
+                PostDataValus.setValue(straddress2, forKey: "address")
+                PostDataValus.setValue(strlat, forKey: "lat")
+                PostDataValus.setValue(strlong, forKey: "long")
+                PostDataValus.setValue("", forKey: "food_bank_id")
+                PostDataValus.setValue("collection", forKey: "delivery_mode")
+                PostDataValus.setValue(responseString, forKey: "images")
+                
+                var jsonStringValues = String()
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+                if jsonData == nil {
+                    
+                }
+                else {
+                    jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                    print("jsonString: \(jsonStringValues)")
+                }
+                
+                
+                print(baseURL)
+                print(jsonStringValues)
+                
+                self.fodbankshareMealMethod(baseURL: baseURL , params: jsonStringValues )
+                
             }
         }
  
@@ -1331,7 +2263,21 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
                     //                    let proVC = self.storyboard?.instantiateViewController(withIdentifier: "ShareFoodVC") as! ShareFoodVC
                     //                    self.navigationController?.pushViewController(proVC, animated: true)
                     
-                    _ = self.navigationController?.popToRootViewController(animated: true)
+                    if self.StrEditMode == "1"
+                    {
+                        let viewControllers: [UIViewController] = self.navigationController!.viewControllers ;
+                        for aViewController in viewControllers {
+                            if(aViewController is MyFoodShareVC){
+                                self.navigationController!.popToViewController(aViewController, animated: true);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _ = self.navigationController?.popToRootViewController(animated: true)
+                    }
+                    
+                   
                     
                     //                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "TabViewController") as? TabViewController
                     //                    self.navigationController?.pushViewController(myVC!, animated: true)
@@ -1422,6 +2368,11 @@ class StepThreeShareFoodVC: UIViewController,UIImagePickerControllerDelegate,UIN
         })
         
     }
+    
+    
+    
+    
+    
     
     
     override func didReceiveMemoryWarning() {

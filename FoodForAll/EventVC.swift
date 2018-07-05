@@ -70,6 +70,8 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+           NotificationCenter.default.addObserver(self, selector: #selector(self.Notificationmethod), name: NSNotification.Name(rawValue: "Notification"), object: nil)
 
          self.setupAlertCtrl2()
         
@@ -133,7 +135,8 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
@@ -168,15 +171,30 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
             
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+           // currentLatitude = (locationManager.location?.coordinate.latitude)!
+          //  currentLongitude = (locationManager.location?.coordinate.longitude)!
+          //  firstLatitude = (locationManager.location?.coordinate.latitude)!
+          //  firstLongitude = (locationManager.location?.coordinate.longitude)!
+            
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
         }
         
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
@@ -202,60 +220,129 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         print("latitude :\(currentLatitude)")
         print("longitude :\(currentLongitude)")
         
-        self.getAllEventsApiMethod()
+      //  self.getAllEventsApiMethod()
         
         perform(#selector(EventVC.showTableView), with: nil, afterDelay: 0.02)
         perform(#selector(EventVC.showMapView), with: nil, afterDelay: 0.02)
 
     }
     
+    func Notificationmethod()
+    {
+        if UserDefaults.standard.object(forKey: "NCount") != nil
+        {
+            let data = UserDefaults.standard.object(forKey: "NCount") as! NSNumber
+            let orderInt  = data.intValue
+            self.NoticationLab.text = String(describing: orderInt)
+        }
+    }
     
     
     @IBAction func NotificationButtonClicked(_ sender: Any)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
-        
-        print(params)
+        if strUserID == ""
+        {
+            
+        }
+        else
+        {
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
                     myVC?.hidesBottomBarWhenPushed=true
                     self.navigationController?.pushViewController(myVC!, animated: true)
                     
-                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+                    myVC?.listArrayFoodBank = responceDic.object(forKey: "NotificationList") as! NSMutableArray
                     let number = responceDic.object(forKey: "nextPage") as! NSNumber
                     myVC?.strpage = String(describing: number)
                 }
                 else
                 {
-                    var Message=String()
-                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        }
         
         
+        
+        
+        //        let baseURL: String  = String(format:"%@",Constants.mainURL)
+        //        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
+        
+        //        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"get_user_notification")
+        //        let strkey = Constants.ApiKey
+        //
+        //        let PostDataValus = NSMutableDictionary()
+        //        PostDataValus.setValue(strkey, forKey: "api_key")
+        //        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        //
+        //        var jsonStringValues = String()
+        //        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        //        if jsonData == nil {
+        //
+        //        }
+        //        else {
+        //            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+        //            print("jsonString: \(jsonStringValues)")
+        //        }
+        //
+        //        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        //        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+        //
+        //            DispatchQueue.main.async {
+        //                AFWrapperClass.svprogressHudDismiss(view: self)
+        //                let responceDic:NSDictionary = jsonDic as NSDictionary
+        //              //  print(responceDic)
+        //
+        //                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+        //                {
+        //                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
+        //                    myVC?.hidesBottomBarWhenPushed=true
+        //                    self.navigationController?.pushViewController(myVC!, animated: true)
+        //
+        //                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+        //                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+        //                    myVC?.strpage = String(describing: number)
+        //                }
+        //                else
+        //                {
+        //                    var Message=String()
+        //                    Message = responceDic.object(forKey: "responseMessage") as! String
+        //
+        //                    AFWrapperClass.svprogressHudDismiss(view: self)
+        //                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        //
+        //                }
+        //            }
+        //
+        //        }) { (error) in
+        //
+        //            AFWrapperClass.svprogressHudDismiss(view: self)
+        //            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+        //            //print(error.localizedDescription)
+        //        }
     }
+    
 
     
     func setupAlertCtrl2() {
@@ -325,7 +412,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
     }
     
     
- @objc private   func showMapView()
+    @objc private   func showMapView()
     {
         Stringlab.text=""
         Stringlab.isHidden=true
@@ -341,7 +428,8 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         //self.marker.position = CLLocationCoordinate2D(latitude: currentLatitude, longitude: currentLongitude)
         self.marker.map = self.mapView
     }
-@objc private  func showTableView()
+    
+    @objc private  func showTableView()
     {
         eventsTableView.frame = CGRect(x:0, y:0, width:eventsBackView.frame.size.width, height:eventsBackView.frame.size.height)
         eventsTableView.delegate=self
@@ -424,7 +512,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         
         let titlelabtext = UILabel()
         titlelabtext.frame = CGRect(x:70, y:5, width:Headview.frame.size.width-80, height:20)
-        titlelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "event_title") as! CVarArg)
+        titlelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "title") as! CVarArg)
         titlelabtext.font =  UIFont(name:"Helvetica", size: 12)
         titlelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         titlelabtext.textAlignment = .left
@@ -440,7 +528,15 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         
         let Distancelabtext = UILabel()
         Distancelabtext.frame = CGRect(x:70, y:titlelab.frame.size.height+titlelab.frame.origin.y+1, width:Headview.frame.size.width-80, height:20)
-        Distancelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "distance") as! CVarArg)
+        if let quantity = markerDataAry.object(forKey: "distance") as? NSNumber
+        {
+            Distancelabtext.text =  String(format: ": %@ Kms",String(describing: quantity))
+        }
+        else if let quantity = markerDataAry.object(forKey: "distance") as? String
+        {
+            Distancelabtext.text = String(format: ": %@ Kms",quantity)
+        }
+      //  Distancelabtext.text = String(format: ": %@", markerDataAry.object(forKey: "distance") as! CVarArg)
         Distancelabtext.font =  UIFont(name:"Helvetica", size: 12)
         Distancelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         Distancelabtext.textAlignment = .left
@@ -495,7 +591,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         view.addSubview(downImage)
         
         Directionlatitude = markerDataAry.object(forKey: "lat") as! String as NSString
-        Directionlongitude = markerDataAry.object(forKey: "longt") as! String as NSString
+        Directionlongitude = markerDataAry.object(forKey: "long") as! String as NSString
         
         
         Uselocationbutt.frame = CGRect(x:0, y:0, width:view.frame.size.width, height:view.frame.size.height-65)
@@ -514,25 +610,25 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
     
     func multipleParamSelector(_ sender: AnyObject, markerDataAry: AnyObject)
     {
-        let markerDataAry: NSDictionary = markerDataAry as! NSDictionary
+        let markerDataAry: NSDictionary = marker.userData as! NSDictionary
         
         let userID:String = markerDataAry.object(forKey: "user_id") as! String
+        
         if userID == strUserID as String
         {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "EventsDetailsViewController") as? EventsDetailsViewController
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = markerDataAry.object(forKey: "fbank_id") as! String
-            myVC?.percentStr = markerDataAry.object(forKey: "percentage") as! String
+            myVC?.foodbankID = markerDataAry.object(forKey: "id") as! String
         }
-        else{
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC
+        else
+        {
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "EventsDetailsViewController") as? EventsDetailsViewController
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = markerDataAry.object(forKey: "fbank_id") as! String
-            myVC?.percentStr = markerDataAry.object(forKey: "percentage") as! String
+            myVC?.foodbankID = markerDataAry.object(forKey: "id") as! String
         }
     }
     
@@ -562,7 +658,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = markerDataAry.object(forKey: "event_id") as! String
+            myVC?.foodbankID = markerDataAry.object(forKey: "id") as! String
         }
         else
         {
@@ -570,7 +666,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = markerDataAry.object(forKey: "event_id") as! String
+            myVC?.foodbankID = markerDataAry.object(forKey: "id") as! String
         }
     }
     
@@ -586,19 +682,25 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
     
     func getAllEventsApiMethod () -> Void
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=allEvent&lat=\(currentLatitude)&lon=\(currentLongitude)&user_id=\(strUserID)"
+         var localTimeZoneName: String { return TimeZone.current.identifier }
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&time_zone=\(localTimeZoneName)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listEvents",params)
         
-        print(params)
+        print(baseURL)
         
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        if self.listArrayFoodBank.count == 0
+        {
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        }
+        
+      //  AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                
+                //  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.listArrayFoodBank.removeAllObjects()
@@ -617,17 +719,27 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                     
                     for i in 0..<self.listArrayFoodBank.count
                     {
-                        let doubleLat = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as! String)
-                        let doubleLong = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "longt") as! String)
+                        let doubleLat = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? "")
+                        let doubleLong = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? "")
                         
-                        self.marker = GMSMarker()
-                        self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
-                        self.marker.title = ((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "address") as! String)
-                        self.marker.infoWindowAnchor = CGPoint(x: CGFloat(0.45), y: CGFloat(0.45))
-                        self.marker.userData = self.listArrayFoodBank.object(at: i) as? NSDictionary
-                        let image: UIImage = UIImage(named: "map_marker.png")!
-                        self.marker.icon = self.image(withReduce: image, scaleTo: CGSize(width: CGFloat(40), height: CGFloat(40)))
-                        self.marker.map = self.mapView
+                        let str: String = (self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? ""
+                        let str1: String = (self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? ""
+                        
+                        if str == "" || str1 == ""
+                        {
+                            
+                        }
+                        else
+                        {
+                            self.marker = GMSMarker()
+                            self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+                            self.marker.title = ((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "address") as? String ?? "")
+                            self.marker.infoWindowAnchor = CGPoint(x: CGFloat(0.45), y: CGFloat(0.45))
+                            self.marker.userData = self.listArrayFoodBank.object(at: i) as? NSDictionary
+                            let image: UIImage = UIImage(named: "map_marker.png")!
+                            self.marker.icon = self.image(withReduce: image, scaleTo: CGSize(width: CGFloat(40), height: CGFloat(40)))
+                            self.marker.map = self.mapView
+                        }
                     }
                     print(self.listArrayFoodBank)
                     
@@ -639,7 +751,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                     Message = responceDic.object(forKey: "responseMessage") as! String
                     self.listArrayFoodBank.removeAllObjects()
                     
-                    if Message == "Event list not found."
+                    if Message == "No Events found."
                     {
                         if self.segemnetBtn.selectedSegmentIndex == 0 {
                             
@@ -669,7 +781,6 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                                 
                             }
                         }
-
                     }
                     else
                     {
@@ -679,14 +790,119 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                     
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
         
+        
+        
+        
+        
+        
+//
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=allEvent&lat=\(currentLatitude)&lon=\(currentLongitude)&user_id=\(strUserID)"
+//
+//        print(params)
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//                print(responceDic)
+//
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    self.listArrayFoodBank.removeAllObjects()
+//
+//                    self.Stringlab.isHidden=true
+//                    self.eventsTableView.isHidden=false
+//
+//                    self.listArrayFoodBank = ((responceDic.object(forKey: "eventList") as? NSArray)! as? NSMutableArray)!
+//                    //print(self.listArrayFoodBank )
+//                    self.listArrayFoodBank=self.listArrayFoodBank as AnyObject as! NSMutableArray
+//
+//                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+//                    self.strpage = String(describing: number)
+//
+//
+//
+//                    for i in 0..<self.listArrayFoodBank.count
+//                    {
+//                        let doubleLat = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as! String)
+//                        let doubleLong = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "longt") as! String)
+//
+//                        self.marker = GMSMarker()
+//                        self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+//                        self.marker.title = ((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "address") as! String)
+//                        self.marker.infoWindowAnchor = CGPoint(x: CGFloat(0.45), y: CGFloat(0.45))
+//                        self.marker.userData = self.listArrayFoodBank.object(at: i) as? NSDictionary
+//                        let image: UIImage = UIImage(named: "map_marker.png")!
+//                        self.marker.icon = self.image(withReduce: image, scaleTo: CGSize(width: CGFloat(40), height: CGFloat(40)))
+//                        self.marker.map = self.mapView
+//                    }
+//                    print(self.listArrayFoodBank)
+//
+//                    self.eventsTableView.reloadData()
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//                    self.listArrayFoodBank.removeAllObjects()
+//
+//                    if Message == "Event list not found."
+//                    {
+//                        if self.segemnetBtn.selectedSegmentIndex == 0 {
+//
+//                            self.eventsTableView.isHidden=false
+//                            self.mapView.isHidden=true
+//                            self.Uselocationbutt2.isHidden=true
+//
+//                            if self.listArrayFoodBank.count == 0
+//                            {
+//                                self.Stringlab.text="No List"
+//                                self.Stringlab.isHidden=false
+//                                self.eventsTableView.isHidden=true
+//                            }
+//                        }
+//                        else if self.segemnetBtn.selectedSegmentIndex == 1
+//                        {
+//                            self.eventsTableView.isHidden=true
+//                            self.mapView.isHidden=false
+//                            self.Uselocationbutt2.isHidden=false
+//
+//                            self.Stringlab.text=""
+//                            self.Stringlab.isHidden=true
+//
+//                            if self.listArrayFoodBank.count == 0
+//                            {
+//                                self.mapView.clear()
+//
+//                            }
+//                        }
+//
+//                    }
+//                    else
+//                    {
+//                        AFWrapperClass.svprogressHudDismiss(view: self)
+//                        AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                    }
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
+//
         
     }
 
@@ -717,36 +933,87 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
         
         cell.selectionStyle = UITableViewCellSelectionStyle.none
         
-        let imageURL: String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "image") as! String
-        let url = NSURL(string: imageURL )
-        cell.EventImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
-        cell.EventTitle.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "event_title") as! String
-        cell.EventUserName.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_name") as! String
-        cell.EventAddress.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as! String
+        let imageURL: NSArray = ((self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "images") as? NSArray)!
+        if imageURL.count == 0
+        {
+            cell.EventImage.image = UIImage(named: "Logo")
+        }
+        else
+        {
+            let strurl = imageURL.object(at: 0)
+            let url = NSURL(string: strurl as! String )
+            cell.EventImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+        }
         
+
+        cell.EventTitle.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as? String ?? ""
+        
+        let strname1 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+        let strname2 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+        cell.EventUserName.text! = strname1+" "+strname2
+        
+       
+        
+        let straddress =  (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as? String ?? ""
+        let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+         cell.EventAddress.text! = stradd
         
         
         if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? NSNumber
         {
-         //   let strval: String = (quantity: quantity.stringValue) as! String
+            //   let strval: String = (quantity: quantity.stringValue) as! String
             let strval = String(describing: quantity)
             cell.EventDistance.text! = strval as String + " kms"
-           
+            
         }
         else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? String
         {
             cell.EventDistance.text! = quantity+" Kms"
         }
         
-        cell.EventStartDate.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "start_date") as! String
-        cell.EventEndDate.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "end_date") as! String
-        cell.EventStartTime.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "start_time") as! String
-        cell.EventEndTime.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "end_time") as! String
- 
+        let StrStartDate = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "start_datetime") as? String ?? ""
+        if StrStartDate == ""
+        {
+            
+        }
+        else
+        {
+            let startDateArray:NSArray = StrStartDate.components(separatedBy: " ") as NSArray
+            if startDateArray.count > 1
+            {
+                cell.EventStartDate.text! = (startDateArray.object(at: 0) as? String)!
+                cell.EventStartTime.text! = (startDateArray.object(at: 1) as? String)!
+            }
+            else
+            {
+                cell.EventStartDate.text! = (startDateArray.object(at: 0) as? String)!
+            }
+        }
+        
+        let StrEndDate = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "end_datetime") as? String ?? ""
+        if StrEndDate == ""
+        {
+            
+        }
+        else
+        {
+            let EndDateArray:NSArray = StrEndDate.components(separatedBy: " ") as NSArray
+            if EndDateArray.count > 1
+            {
+                cell.EventEndDate.text! = (EndDateArray.object(at: 0) as? String)!
+                cell.EventEndTime.text! = (EndDateArray.object(at: 1) as? String)!
+            }
+            else
+            {
+                cell.EventEndDate.text! = (EndDateArray.object(at: 0) as? String)!
+            }
+        }
+        
         return cell
         
     }
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
         let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
@@ -756,7 +1023,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
 
-            myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "event_id") as! String
+            myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
         }
         else
         {
@@ -764,7 +1031,7 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
             myVC?.hidesBottomBarWhenPushed=true
             self.navigationController?.pushViewController(myVC!, animated: true)
             
-            myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "event_id") as! String
+            myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
         }
     }
     
@@ -783,34 +1050,28 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                 //  actInd.stopAnimating()
             }
             else
-            {
-                let baseURL: String  = String(format:"%@",Constants.mainURL)
-                let params = "method=allEvent&lat=\(currentLatitude)&longt=\(currentLongitude)&user_id=\(strUserID)&page=\(strpage)"
+            { 
+                var localTimeZoneName: String { return TimeZone.current.identifier }
+                let strkey = Constants.ApiKey
+                let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&page=\(self.strpage)&time_zone=\(localTimeZoneName)"
+                let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listEvents",params)
                 
-                print(params)
-                
-                // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-                AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+                AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
                     
                     DispatchQueue.main.async {
                         AFWrapperClass.svprogressHudDismiss(view: self)
                         let responceDic:NSDictionary = jsonDic as NSDictionary
-                        print(responceDic)
-                        
-                        
-                        
+                          print(responceDic)
                         if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                         {
-                            self.responsewithToken6(responceDic)
+                            self.responsewithToken7(responceDic)
                         }
                         else
                         {
                             
                         }
                     }
-                    
                 }) { (error) in
-                    
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
                     //print(error.localizedDescription)
@@ -818,6 +1079,49 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
                 
             }
         }
+    }
+    
+    
+    func responsewithToken7(_ responseDict: NSDictionary)
+    {
+        var responseDictionary : NSDictionary = [:]
+        responseDictionary = responseDict
+        
+        var arr = NSMutableArray()
+        arr = (responseDictionary.value(forKey: "eventList") as? NSMutableArray)!
+        arr=arr as AnyObject as! NSMutableArray
+        self.listArrayFoodBank.addObjects(from: arr as [AnyObject])
+       
+        for i in 0..<self.listArrayFoodBank.count
+        {
+            let doubleLat = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? "")
+            let doubleLong = Double((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? "")
+            
+            let str: String = (self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "lat") as? String ?? ""
+            let str1: String = (self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "long") as? String ?? ""
+            
+            if str == "" || str1 == ""
+            {
+                
+            }
+            else
+            {
+                self.marker = GMSMarker()
+                self.marker.position = CLLocationCoordinate2D(latitude: doubleLat!, longitude: doubleLong!)
+                self.marker.title = ((self.listArrayFoodBank.object(at: i) as! NSDictionary).value(forKey: "address") as? String ?? "")
+                self.marker.infoWindowAnchor = CGPoint(x: CGFloat(0.45), y: CGFloat(0.45))
+                self.marker.userData = self.listArrayFoodBank.object(at: i) as? NSDictionary
+                let image: UIImage = UIImage(named: "map_marker.png")!
+                self.marker.icon = self.image(withReduce: image, scaleTo: CGSize(width: CGFloat(40), height: CGFloat(40)))
+                self.marker.map = self.mapView
+            }
+        }
+        
+        let number = responseDictionary.object(forKey: "nextPage") as! NSNumber
+        self.strpage = String(describing: number)
+        
+         eventsTableView.reloadData()
+        
     }
     
     func responsewithToken6(_ responseDict: NSDictionary) {
@@ -924,47 +1228,47 @@ class EventVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GMSMap
     
     
     
-    func initFooterView() {
-        footerview2 = UIView(frame: CGRect(x: CGFloat(0.0), y: CGFloat(0.0), width: CGFloat(view.frame.size.width), height: CGFloat(50.0)))
-        actInd = UIActivityIndicatorView(activityIndicatorStyle: .gray)
-        actInd.tag = 10
-        actInd.frame = CGRect(x: CGFloat(view.frame.size.width / 2 - 10), y: CGFloat(5.0), width: CGFloat(20.0), height: CGFloat(20.0))
-        actInd.isHidden = true
-        //actInd.performSelector(#selector(removeFromSuperview), withObject: nil, afterDelay: 30.0)
-        footerview2.addSubview(actInd)
-        loadLbl = UILabel(frame: CGRect(x: CGFloat(view.frame.size.width / 2 - 100), y: CGFloat(25), width: CGFloat(200), height: CGFloat(20)))
-        loadLbl.textAlignment = .center
-        loadLbl.textColor = UIColor.lightGray
-        // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
-        loadLbl.font = UIFont.systemFont(ofSize: CGFloat(12))
-        footerview2.addSubview(loadLbl)
-        actInd = nil
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        if scrool == 1 {
-            let endOfTable: Bool = (scrollView.contentOffset.y >= 0)
-            if endOfTable && !scrollView.isDragging && !scrollView.isDecelerating {
-                if (strpage == "0") {
-                    eventsTableView.tableFooterView = footerview2
-                    //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.stopAnimating()
-                    //  loadLbl.text = "No More List"
-                    //   actInd.stopAnimating()
-                }
-                else {
-                    eventsTableView.tableFooterView = footerview2
-                    //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.startAnimating()
-                }
-            }
-        }
-    }
-    
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        if scrool == 1 {
-            footerview2.isHidden = true
-            // loadLbl.isHidden = true
-        }
-    }
+//    func initFooterView() {
+//        footerview2 = UIView(frame: CGRect(x: CGFloat(0.0), y: CGFloat(0.0), width: CGFloat(view.frame.size.width), height: CGFloat(50.0)))
+//        actInd = UIActivityIndicatorView(activityIndicatorStyle: .gray)
+//        actInd.tag = 10
+//        actInd.frame = CGRect(x: CGFloat(view.frame.size.width / 2 - 10), y: CGFloat(5.0), width: CGFloat(20.0), height: CGFloat(20.0))
+//        actInd.isHidden = true
+//        //actInd.performSelector(#selector(removeFromSuperview), withObject: nil, afterDelay: 30.0)
+//        footerview2.addSubview(actInd)
+//        loadLbl = UILabel(frame: CGRect(x: CGFloat(view.frame.size.width / 2 - 100), y: CGFloat(25), width: CGFloat(200), height: CGFloat(20)))
+//        loadLbl.textAlignment = .center
+//        loadLbl.textColor = UIColor.lightGray
+//        // [loadLbl setFont:[UIFont fontWithName:@"System" size:2]];
+//        loadLbl.font = UIFont.systemFont(ofSize: CGFloat(12))
+//        footerview2.addSubview(loadLbl)
+//        actInd = nil
+//    }
+//    
+//    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+//        if scrool == 1 {
+//            let endOfTable: Bool = (scrollView.contentOffset.y >= 0)
+//            if endOfTable && !scrollView.isDragging && !scrollView.isDecelerating {
+//                if (strpage == "0") {
+//                    eventsTableView.tableFooterView = footerview2
+//                    //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.stopAnimating()
+//                    //  loadLbl.text = "No More List"
+//                    //   actInd.stopAnimating()
+//                }
+//                else {
+//                    eventsTableView.tableFooterView = footerview2
+//                    //  (footerview2.viewWithTag(10) as? UIActivityIndicatorView)?.startAnimating()
+//                }
+//            }
+//        }
+//    }
+//    
+//    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+//        if scrool == 1 {
+//           // footerview2.isHidden = true
+//            // loadLbl.isHidden = true
+//        }
+//    }
     
     
     
@@ -1018,7 +1322,8 @@ extension EventVC: SWRevealViewControllerDelegate
         }
     }
     
-    func revealController(_ revealController: SWRevealViewController, didMoveTo position: FrontViewPosition) {
+    func revealController(_ revealController: SWRevealViewController, didMoveTo position: FrontViewPosition)
+    {
         if position == FrontViewPositionLeft {
             //  self.view.addSubview(frontView)
             self.view.isUserInteractionEnabled = true

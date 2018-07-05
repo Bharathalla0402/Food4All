@@ -59,19 +59,26 @@ class SettingsVC: UIViewController {
         
         self.setupAlertCtrl2()
 
-    //  identitylabel.isHidden = true
+      identitylabel.isHidden = true
         
-        myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+        let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+        myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
         strUserID=myArray.value(forKey: "id") as! NSString
         straddress=myArray.value(forKey: "address") as! String
+        
+         strfoodBank = "1"
+         strfoodShare = "1"
+         strEvents = "1"
+         strIdentity = "1"
+        
 
-        self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile&user_id=\(strUserID)")
+      //  self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile&user_id=\(strUserID)")
         
         if UserDefaults.standard.object(forKey: "Value") != nil
         {
             postsee = UserDefaults.standard.object(forKey: "Value") as! NSString
             
-            print(postsee)
+          //  print(postsee)
             
            
             
@@ -119,7 +126,8 @@ class SettingsVC: UIViewController {
     }
     
     
-    func setupAlertCtrl2() {
+    func setupAlertCtrl2()
+    {
         
         alertCtrl2 = UIAlertController(title: "Please Update Your Location to get the Notifications", message: nil, preferredStyle: .actionSheet)
         //Create an action
@@ -141,7 +149,7 @@ class SettingsVC: UIViewController {
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+               // print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.userData = (responceDic.object(forKey: "profileDetail") as? NSDictionary)!
@@ -167,26 +175,27 @@ class SettingsVC: UIViewController {
     }
 
     
-    
-    
     @objc private  func ProfileSettinglistAPIMethod (baseURL:String , params: String)
     {
         
-        print(params);
+     //   print(params);
         
-        
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
-            
+
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"userSettings",params)
+
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     self.listArraySettings = (responceDic.object(forKey: "settingDetail") as? NSDictionary)!
                     
-                    let sValue:String = (self.listArraySettings.value(forKey: "range_foodbank") as! String)
+                    let sValue:String = (self.listArraySettings.value(forKey: "distance_radius") as! String)
                     
                     UserDefaults.standard.set(sValue, forKey: "Value")
                     
@@ -213,82 +222,54 @@ class SettingsVC: UIViewController {
                                                                     attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
                         self.kmLabel.attributedText! = attrString
                     }
-
-                    
-//                    self.postsee2=(self.listArraySettings.object(forKey: "range_foodshare") as? String)! as NSString
-                    
-//                    let sValue2:String = (self.listArraySettings.value(forKey: "range_foodshare") as! String)
-//                    if sValue2 == "" {
-//                        self.eventsSlider.value = 5000
-//                        
-//                        let attrString2 = NSMutableAttributedString(string: "5000",
-//                                                                    attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
-//                        
-//                        attrString2.append(NSMutableAttributedString(string: "Kms",
-//                                                                     attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
-//                        
-//                        self.eventsLabelSlid.attributedText! = attrString2
-//                        
-//                    }
-//                    else{
-//                        self.eventsSlider.value = Float(sValue2)!
-//                        
-//                        let attrString2 = NSMutableAttributedString(string: self.postsee2 as String,
-//                                                                    attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
-//                        
-//                        attrString2.append(NSMutableAttributedString(string: "Kms",
-//                                                                     attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
-//                        
-//                        self.eventsLabelSlid.attributedText! = attrString2
-                        
- //                   }
                     
                     
-                                      
+                  
+                    
                     
                     self.postfoodbank=(self.listArraySettings.object(forKey: "notification_foodbank") as? String)! as NSString
-                    if self.postfoodbank == "2"
+                    if self.postfoodbank == "1"
                     {
                         self.foodBankSwitch.setOn(true, animated: false)
-                        self.strfoodBank="2"
+                        self.strfoodBank="1"
                     }
                     else
                     {
                         self.foodBankSwitch.setOn(false, animated: false)
-                        self.strfoodBank="1"
+                        self.strfoodBank="0"
                     }
                     
-                    self.postfoodshare=(self.listArraySettings.object(forKey: "notification_foodshare") as? String)! as NSString
-                    if self.postfoodshare == "2"
+                    self.postfoodshare=(self.listArraySettings.object(forKey: "notification_foodsharing") as? String)! as NSString
+                    if self.postfoodshare == "1"
                     {
                         self.foodShareSwitch.setOn(true, animated: false)
-                        self.strfoodShare="2"
+                        self.strfoodShare="1"
                     }
                     else
                     {
                         self.foodShareSwitch.setOn(false, animated: false)
-                        self.strfoodShare="1"
+                        self.strfoodShare="0"
                     }
                     
                     
                     self.postEvent=(self.listArraySettings.object(forKey: "notification_event") as? String)! as NSString
-                    if self.postEvent == "2"
+                    if self.postEvent == "1"
                     {
                         self.EventsSwitch.setOn(true, animated: false)
-                        self.strEvents="2"
+                        self.strEvents="1"
                     }
                     else
                     {
                         self.EventsSwitch.setOn(false, animated: false)
-                        self.strEvents="1"
+                        self.strEvents="0"
                     }
                     
                     
                     self.postsetting=(self.listArraySettings.object(forKey: "identity_hidden") as? String)! as NSString
-                    if self.postsetting == "2"
+                    if self.postsetting == "1"
                     {
                         self.identitySwitch.setOn(true, animated: false)
-                        self.strIdentity="2"
+                        self.strIdentity="1"
                         
                         self.identitylabel.isHidden = false
                         
@@ -296,7 +277,7 @@ class SettingsVC: UIViewController {
                     else
                     {
                         self.identitySwitch.setOn(false, animated: false)
-                        self.strIdentity="1"
+                        self.strIdentity="0"
                         
                         self.identitylabel.isHidden = true
                     }
@@ -304,17 +285,164 @@ class SettingsVC: UIViewController {
                 }
                 else
                 {
-                   
+                    
                     
                 }
             }
             
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        //
+
+
+
+
+        
+//
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//             //   print(responceDic)
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    self.listArraySettings = (responceDic.object(forKey: "settingDetail") as? NSDictionary)!
+//
+//                    let sValue:String = (self.listArraySettings.value(forKey: "range_foodbank") as! String)
+//
+//                    UserDefaults.standard.set(sValue, forKey: "Value")
+//
+//
+//                    if sValue == ""
+//                    {
+//                        self.FoodbankSlider.value = Float(5000)
+//
+//                        let attrString = NSMutableAttributedString(string: "5000",
+//                                                                   attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
+//
+//                        attrString.append(NSMutableAttributedString(string: "Kms",
+//                                                                    attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
+//                        self.kmLabel.attributedText! = attrString
+//                    }
+//                    else
+//                    {
+//                        self.FoodbankSlider.value = Float(sValue as String)!
+//
+//                        let attrString = NSMutableAttributedString(string: sValue as String,
+//                                                                   attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
+//
+//                        attrString.append(NSMutableAttributedString(string: "Kms",
+//                                                                    attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
+//                        self.kmLabel.attributedText! = attrString
+//                    }
+//
+//
+////                    self.postsee2=(self.listArraySettings.object(forKey: "range_foodshare") as? String)! as NSString
+//
+////                    let sValue2:String = (self.listArraySettings.value(forKey: "range_foodshare") as! String)
+////                    if sValue2 == "" {
+////                        self.eventsSlider.value = 5000
+////
+////                        let attrString2 = NSMutableAttributedString(string: "5000",
+////                                                                    attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
+////
+////                        attrString2.append(NSMutableAttributedString(string: "Kms",
+////                                                                     attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
+////
+////                        self.eventsLabelSlid.attributedText! = attrString2
+////
+////                    }
+////                    else{
+////                        self.eventsSlider.value = Float(sValue2)!
+////
+////                        let attrString2 = NSMutableAttributedString(string: self.postsee2 as String,
+////                                                                    attributes: [ NSFontAttributeName: UIFont.systemFont(ofSize: 15) ])
+////
+////                        attrString2.append(NSMutableAttributedString(string: "Kms",
+////                                                                     attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 11) ]))
+////
+////                        self.eventsLabelSlid.attributedText! = attrString2
+//
+// //                   }
+//
+//
+//
+//
+//                    self.postfoodbank=(self.listArraySettings.object(forKey: "notification_foodbank") as? String)! as NSString
+//                    if self.postfoodbank == "2"
+//                    {
+//                        self.foodBankSwitch.setOn(true, animated: false)
+//                        self.strfoodBank="2"
+//                    }
+//                    else
+//                    {
+//                        self.foodBankSwitch.setOn(false, animated: false)
+//                        self.strfoodBank="1"
+//                    }
+//
+//                    self.postfoodshare=(self.listArraySettings.object(forKey: "notification_foodshare") as? String)! as NSString
+//                    if self.postfoodshare == "2"
+//                    {
+//                        self.foodShareSwitch.setOn(true, animated: false)
+//                        self.strfoodShare="2"
+//                    }
+//                    else
+//                    {
+//                        self.foodShareSwitch.setOn(false, animated: false)
+//                        self.strfoodShare="1"
+//                    }
+//
+//
+//                    self.postEvent=(self.listArraySettings.object(forKey: "notification_event") as? String)! as NSString
+//                    if self.postEvent == "2"
+//                    {
+//                        self.EventsSwitch.setOn(true, animated: false)
+//                        self.strEvents="2"
+//                    }
+//                    else
+//                    {
+//                        self.EventsSwitch.setOn(false, animated: false)
+//                        self.strEvents="1"
+//                    }
+//
+//
+//                    self.postsetting=(self.listArraySettings.object(forKey: "identity_hidden") as? String)! as NSString
+//                    if self.postsetting == "2"
+//                    {
+//                        self.identitySwitch.setOn(true, animated: false)
+//                        self.strIdentity="2"
+//
+//                        self.identitylabel.isHidden = false
+//
+//                    }
+//                    else
+//                    {
+//                        self.identitySwitch.setOn(false, animated: false)
+//                        self.strIdentity="1"
+//
+//                        self.identitylabel.isHidden = true
+//                    }
+//
+//                }
+//                else
+//                {
+//
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     }
 
     
@@ -394,24 +522,27 @@ class SettingsVC: UIViewController {
         
         if !foodBankSwitch.isOn
         {
-            strfoodBank="1"
+            strfoodBank="0"
             self.foodBankSwitch.setOn(false, animated: false)
         }
         else
         {
-            if straddress.isEmpty
-            {
-                alertCtrl2?.popoverPresentationController?.sourceView = view
-                present(alertCtrl2!, animated: true, completion: {() -> Void in
-                })
-                self.foodBankSwitch.setOn(false, animated: false)
-                strfoodBank="1"
-            }
-            else
-            {
-                strfoodBank="2"
-                self.foodBankSwitch.setOn(true, animated: false)
-            }
+//            if straddress.isEmpty
+//            {
+//                alertCtrl2?.popoverPresentationController?.sourceView = view
+//                present(alertCtrl2!, animated: true, completion: {() -> Void in
+//                })
+//                self.foodBankSwitch.setOn(false, animated: false)
+//                strfoodBank="1"
+//            }
+//            else
+//            {
+//                strfoodBank="2"
+//                self.foodBankSwitch.setOn(true, animated: false)
+//            }
+            
+            strfoodBank="1"
+            self.foodBankSwitch.setOn(true, animated: false)
 
         }
         
@@ -437,24 +568,27 @@ class SettingsVC: UIViewController {
     {
         if !foodShareSwitch.isOn
         {
-            strfoodShare="1"
+            strfoodShare="0"
             self.foodShareSwitch.setOn(false, animated: false)
         }
         else
         {
-            if straddress.isEmpty
-            {
-                alertCtrl2?.popoverPresentationController?.sourceView = view
-                present(alertCtrl2!, animated: true, completion: {() -> Void in
-                })
-                self.foodShareSwitch.setOn(false, animated: false)
-                strfoodShare="1"
-            }
-            else
-            {
-                strfoodShare="2"
-                self.foodShareSwitch.setOn(true, animated: false)
-            }
+//            if straddress.isEmpty
+//            {
+//                alertCtrl2?.popoverPresentationController?.sourceView = view
+//                present(alertCtrl2!, animated: true, completion: {() -> Void in
+//                })
+//                self.foodShareSwitch.setOn(false, animated: false)
+//                strfoodShare="1"
+//            }
+//            else
+//            {
+//                strfoodShare="2"
+//                self.foodShareSwitch.setOn(true, animated: false)
+//            }
+            
+            strfoodShare="1"
+            self.foodShareSwitch.setOn(true, animated: false)
             
         }
         
@@ -472,24 +606,27 @@ class SettingsVC: UIViewController {
     {
         if !EventsSwitch.isOn
         {
-            strEvents="1"
+            strEvents="0"
             self.EventsSwitch.setOn(false, animated: false)
         }
         else
         {
-            if straddress.isEmpty
-            {
-                alertCtrl2?.popoverPresentationController?.sourceView = view
-                present(alertCtrl2!, animated: true, completion: {() -> Void in
-                })
-                self.EventsSwitch.setOn(false, animated: false)
-                strEvents="1"
-            }
-            else
-            {
-                strEvents="2"
-                self.EventsSwitch.setOn(true, animated: false)
-            }
+//            if straddress.isEmpty
+//            {
+//                alertCtrl2?.popoverPresentationController?.sourceView = view
+//                present(alertCtrl2!, animated: true, completion: {() -> Void in
+//                })
+//                self.EventsSwitch.setOn(false, animated: false)
+//                strEvents="1"
+//            }
+//            else
+//            {
+//                strEvents="2"
+//                self.EventsSwitch.setOn(true, animated: false)
+//            }
+            
+            strEvents="1"
+            self.EventsSwitch.setOn(true, animated: false)
             
         }
         
@@ -508,13 +645,13 @@ class SettingsVC: UIViewController {
     {
         if identitySwitch.isOn
         {
-           strIdentity="2"
+           strIdentity="1"
             
             self.identitylabel.isHidden = false
         }
         else
         {
-           strIdentity="1"
+           strIdentity="0"
             
             self.identitylabel.isHidden = true
         }
@@ -523,48 +660,116 @@ class SettingsVC: UIViewController {
   
     @IBAction func SaveSettingsClicked(_ sender: Any)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=updateSetting&userId=\(strUserID)&range_foodbank=\(self.postsee)&range_foodshare=\(self.postsee2)&facebook=\(strFacebook)&twitter=\(strTwitter)&google_plus=\(strGoogle)&identity_hidden=\(strIdentity)&notification_foodbank=\(strfoodBank)&notification_foodshare=\(strfoodShare)&notification_event=\(strEvents)"
+       // let baseURL: String  = String(format:"%@",Constants.mainURL)
+      //  let params = "method=updateSetting&userId=\(strUserID)&range_foodbank=\(self.postsee)&range_foodshare=\(self.postsee2)&facebook=\(strFacebook)&twitter=\(strTwitter)&google_plus=\(strGoogle)&identity_hidden=\(strIdentity)&notification_foodbank=\(strfoodBank)&notification_foodshare=\(strfoodShare)&notification_event=\(strEvents)"
         
-        print(params)
-        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateSettings")
+        let strkey = Constants.ApiKey
+
+        let PostDataValus = NSMutableDictionary()
+         PostDataValus.setValue(strkey, forKey: "api_key")
+         PostDataValus.setValue(strUserID, forKey: "user_id")
+         PostDataValus.setValue(self.postsee, forKey: "distance_radius")
+         PostDataValus.setValue(strfoodBank, forKey: "notification_foodbank")
+         PostDataValus.setValue(strfoodShare, forKey: "notification_foodsharing")
+         PostDataValus.setValue(strEvents, forKey: "notification_event")
+         PostDataValus.setValue(strIdentity, forKey: "identity_hidden")
+
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
-            
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                //  print(responceDic)
+
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-                    self.navigationController?.pushViewController(foodVC!, animated: true)
+                    
+                    let alert = UIAlertController(title: Constants.applicationName, message: responceDic.object(forKey: "responseMessage") as? String ?? "Settings has been saved", preferredStyle: UIAlertControllerStyle.alert)
+                    
+                    let alertOKAction=UIAlertAction(title:"Ok", style: UIAlertActionStyle.default,handler: { action in
+                        _ = self.navigationController?.popViewController(animated: true)
+                    })
+                    
+                    alert.addAction(alertOKAction)
+                    self.present(alert, animated: true, completion: nil)
+                    
+                    //_ = self.navigationController?.popViewController(animated: true)
                 }
                 else
                 {
-                    var Message=String()
-                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                 }
             }
-            
+
         }) { (error) in
-            
+
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+
+      
         
+        
+       
+        
+//      //  print(params)
+//        
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//            
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//             //   print(responceDic)
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+//                    self.navigationController?.pushViewController(foodVC!, animated: true)
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//                    
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                }
+//            }
+//            
+//        }) { (error) in
+//            
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
+//        
 
     }
     
     
     
     @IBAction func backButtonAction(_ sender: Any) {
-        let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-        self.navigationController?.pushViewController(foodVC!, animated: true)
+        //    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+        //      self.navigationController?.pushViewController(foodVC!, animated: true)
+        
+        self.navigationController?.popViewController(animated: true)
     }
     
     override func didReceiveMemoryWarning() {

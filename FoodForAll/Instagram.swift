@@ -43,14 +43,14 @@ var dataDic = NSDictionary()
         do {
             if let url = request.url {
                 
-                print(url)
+              //  print(url)
                 
                 if String(describing: url).range(of: "#access_token") != nil {
                     
                     try InstagramEngine.shared().receivedValidAccessToken(from: url)
                     
                     if let accessToken = InstagramEngine.shared().accessToken {
-                        print("accessToken: \(accessToken)")
+                    //    print("accessToken: \(accessToken)")
                         //start
                         
                         let URl =  "https://api.instagram.com/v1/users/self/?access_token=\(accessToken)"
@@ -63,7 +63,7 @@ var dataDic = NSDictionary()
                         Alamofire.request(URl, method: .get, parameters: parameter, encoding: JSONEncoding.default, headers: nil)
                             .responseJSON { response in
                                 appInstance.hideLoader()
-                                print(response.result.value!)
+                            //    print(response.result.value!)
                                 
                                 if response.result.isSuccess {
                                     
@@ -77,7 +77,7 @@ var dataDic = NSDictionary()
                                         
                                         if let json = NSString(data: data, encoding:  String.Encoding.utf8.rawValue){
                                             
-                                           print(json)
+                                        //   print(json)
                                            result["result"] = json
                                             
                                          let responceDic:NSDictionary = ((dict as AnyObject).object(forKey: "meta") as? NSDictionary)!

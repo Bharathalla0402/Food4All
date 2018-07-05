@@ -40,7 +40,7 @@ class CongratulationVC: UIViewController {
     @IBAction func sliderValueChanged(_ sender: UISlider) {
         
         self.SliderVal.setValue((round(sender.value / 5) * 5), animated: false)
-        print("\(sender.value)")
+       // print("\(sender.value)")
         let integere: Int = Int((round(sender.value / 5) * 5))
         sliderString = String(integere)
     }
@@ -54,7 +54,6 @@ class CongratulationVC: UIViewController {
     
     @objc private  func saveFoodbankAPImethod () -> Void
     {
-        
         if sliderString == "0"
         {
             var Message=String()
@@ -68,14 +67,14 @@ class CongratulationVC: UIViewController {
         
         let baseURL: String  = String(format:"%@",Constants.mainURL)
         let params = "method=get_FoodBanks&fbank_id=\(foodBankIDStr)&percentage=\(sliderString)&userid=\(strUserID)"
-        print(params)
+      //  print(params)
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 
-                print(responceDic)
+             //   print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
 //                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "FoodBanksVc") as? FoodBanksVc
@@ -107,10 +106,9 @@ class CongratulationVC: UIViewController {
     
 
     
-    @IBAction func backButtonAction(_ sender: Any) {
-        
+    @IBAction func backButtonAction(_ sender: Any)
+    {
         _ = self.navigationController?.popViewController(animated: true)
-        
     }
     
     

@@ -19,9 +19,8 @@ class FBtableCell: UITableViewCell {
     @IBOutlet weak var locationLabel: UILabel!
     @IBOutlet weak var milesLabel: UILabel!
     @IBOutlet weak var sliderFdBnk: WOWMarkSlider!
-    
     @IBOutlet weak var percentLbl: UILabel!
-    
+    @IBOutlet weak var Bottomlbl: UILabel!
     
     
     override func awakeFromNib() {

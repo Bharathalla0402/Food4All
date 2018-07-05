@@ -148,10 +148,33 @@ func textField(_ textField: UITextField, shouldChangeCharactersIn shouldChangeCh
     
     @objc private   func otpAPIMethod (baseURL:String , params: String)
     {
-        print(params);
+     //   print(params);
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"verifyOtp")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(UsearID, forKey: "user_id")
+        PostDataValus.setValue(otpStr, forKey: "otp")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
 
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
@@ -159,8 +182,15 @@ func textField(_ textField: UITextField, shouldChangeCharactersIn shouldChangeCh
                 print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
-                    let UserResponse:NSDictionary = responceDic.object(forKey: "userDetails")  as! NSDictionary
-                    UserDefaults.standard.set(UserResponse, forKey: "UserId")
+                   // let UserResponse:NSDictionary = responceDic.object(forKey: "userDetails")  as! NSDictionary
+                   // UserDefaults.standard.set(UserResponse, forKey: "UserId")
+                    
+                     let dataDic:NSDictionary = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: dataDic)
+                    currentDefaults?.set(data, forKey: "UserId")
+                    
                     let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
                     self.navigationController?.pushViewController(foodVC!, animated: true)
                 }
@@ -187,15 +217,37 @@ func textField(_ textField: UITextField, shouldChangeCharactersIn shouldChangeCh
     
     @objc private   func ReverifyotpAPIMethod (baseURL:String , params: String)
     {
-        print(params);
+      //  print(params);
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"resendotp")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(UsearID, forKey: "user_id")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+             //   print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                    

@@ -1,0 +1,21 @@
+//
+//  Food4All.pch
+//  FoodForAll
+//
+//  Created by think360 on 01/02/18.
+//  Copyright © 2018 Think360Solutions. All rights reserved.
+//
+
+#ifndef Food4All_pch
+#define Food4All_pch
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+//#define BaseUrl @"http://www.think360.in/livefood4all/Api/"
+
+//#define BaseUrl @"https://food4all.org/Api/"
+#define BaseUrl @"https://www.food4all.org/Api/"
+#define ApiKey @"AIzaSyBU2xLzNpMVqSlMCut6h1L8kWXdnaPMIoE"
+
+#endif /* Food4All_pch */

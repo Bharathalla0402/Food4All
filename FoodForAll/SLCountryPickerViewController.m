@@ -50,8 +50,17 @@ static NSString *CellIdentifier = @"CountryCell";
             _searchController.searchResultsDelegate = self;
             
             //  [_searchController setActive:YES animated:YES];
-            [theSearchBar becomeFirstResponder];
-            _searchController.displaysSearchBarInNavigationBar = YES;
+            
+            if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+            {
+                theSearchBar.hidden = YES;
+                _searchController.displaysSearchBarInNavigationBar = NO;
+            }
+            else
+            {
+                [theSearchBar becomeFirstResponder];
+                _searchController.displaysSearchBarInNavigationBar = YES;
+            }
         }
 }
 - (void)viewDidLoad

@@ -13,10 +13,10 @@ import GoogleMaps
 import GooglePlaces
 import CoreLocation
 
-class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate,CLLocationManagerDelegate,HMDiallingCodeDelegate,UITextFieldDelegate
+class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate,CLLocationManagerDelegate,HMDiallingCodeDelegate,UITextFieldDelegate,SecondDelegate
 {
 
-    
+      var classObject = ChatingDetailsViewController()
     var camera = GMSCameraPosition()
     var lastCameraPosition = GMSCameraPosition()
     var mapView = GMSMapView()
@@ -46,7 +46,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     var myString = String()
     var diallingCode = HMDiallingCode()
-
+    var strApiCheck = String()
 
     lazy var geocoder = CLGeocoder()
     
@@ -57,6 +57,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     @IBOutlet weak var profileImage: UIImageView!
     @IBOutlet weak var UserName: ACFloatingTextfield!
+    @IBOutlet weak var LastName: ACFloatingTextfield!
     @IBOutlet weak var userEmail: ACFloatingTextfield!
     @IBOutlet weak var userMobileNumber: ACFloatingTextfield!
     @IBOutlet weak var userAddress: ACFloatingTextfield!
@@ -65,6 +66,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     var strUserID = NSString()
     var imgFolderAry = NSMutableArray()
     var responseString = String()
+    var StrImageUrl = String()
     
     
     var imagePicker = UIImagePickerController()
@@ -72,30 +74,39 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     @IBOutlet weak var cameraButton: UIButton!
     
+    var popview4 = UIView()
+    var footerView4 = UIView()
+    var CropperView = BABCropperView()
+    var CroppedImageView = UIImageView()
+    var cropSelectedImage = UIImage()
+    
+    var popview5 = UIView()
+    var footerView5 = UIView()
+    var CancelButton5 = UIButton()
+    var DoneButton5 = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        classObject.delegate = self
+        let data2 = UserDefaults.standard.object(forKey: "UserId") as? Data
+        self.myArray = (NSKeyedUnarchiver.unarchiveObject(with: data2!) as? NSDictionary)!
+        self.strUserID=self.myArray.value(forKey: "id") as! NSString
+        
+         self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile&user_id=\(strUserID)")
+        
+        self.UserName.text = ""
+        self.userEmail.text = ""
+        self.LastName.text = ""
+        self.userAddress.text = ""
+        self.countryCode.text = ""
+        self.userMobileNumber.text = ""
+        countryCode.isHidden = true
         
          searchViewController.delegate=self
         
         imagePicker.delegate = self
-        
-        myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-        print(myArray)
-        UserName.text=myArray.value(forKey: "first_name") as! String?
-        userEmail.text=myArray.value(forKey: "email") as! String?
-        strUserID=myArray.value(forKey: "id") as! NSString
-        let string1 = myArray.value(forKey: "country_code") as! NSString
-        countryCode.text = string1 as String
-        let string3 = myArray.value(forKey: "phone_no") as! NSString
-        userMobileNumber.text = string3 as String
-        let stringUrl = myArray.value(forKey: "image") as! NSString
-        let url = URL.init(string:stringUrl as String)
-        profileImage.sd_setImage(with: url , placeholderImage: UIImage(named: "applogo.png"))
-        userAddress.text=myArray.value(forKey: "address") as! String?
-       //profileBackgrndView.backgroundColor = UIColor(patternImage: UIImage(named: "profile-bg")!)
-        
+      
         // Do any additional setup after loading the view.
         
         myString = "0"
@@ -103,15 +114,29 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
         {
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
+           // currentLatitude = (locationManager.location?.coordinate.latitude)!
+           // currentLongitude = (locationManager.location?.coordinate.longitude)!
+          //  firstLatitude = (locationManager.location?.coordinate.latitude)!
+          //  firstLongitude = (locationManager.location?.coordinate.longitude)!
         }
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
         }else{
@@ -134,33 +159,97 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         
        // self.setUsersClosestCity2()
         
-        self.getProfileAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getProfile&user_id=\(strUserID)")
+       
+        
+         self.addDoneButtonOnKeyboard()
+    }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.UserName.inputAccessoryView = doneToolbar
+        self.userEmail.inputAccessoryView = doneToolbar
+        self.userAddress.inputAccessoryView = doneToolbar
+        self.countryCode.inputAccessoryView = doneToolbar
+        self.userMobileNumber.inputAccessoryView = doneToolbar
+    }
+    
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
     }
 
     
     
     @objc private  func getProfileAPIMethod (baseURL:String , params: String)
     {
-        print(params);
+      //  print(params);
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"userProfile",params)
         
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    self.userData = (responceDic.object(forKey: "profileDetail") as? NSDictionary)!
-                   
+                    let UserResponse:NSDictionary = responceDic.object(forKey: "profileDetail")  as! NSDictionary
                     
-                   self.userAddress.text = self.userData.object(forKey: "address") as! String?
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: UserResponse)
+                    currentDefaults?.set(data, forKey: "UserId")
                     
-                    let stringUrl = self.userData.object(forKey: "image") as! String?
-                    let url = URL.init(string:stringUrl! as String)
+                    
+                    
+                    
+                    let data2 = UserDefaults.standard.object(forKey: "UserId") as? Data
+                    self.myArray = (NSKeyedUnarchiver.unarchiveObject(with: data2!) as? NSDictionary)!
+                    
+                    self.UserName.text=self.myArray.value(forKey: "first_name") as? String ?? ""
+                    self.LastName.text=self.myArray.value(forKey: "last_name") as? String ?? ""
+                    self.userEmail.text=self.myArray.value(forKey: "email") as? String ?? ""
+                    self.strUserID=self.myArray.value(forKey: "id") as! NSString
+                    // let string1 = myArray.value(forKey: "country_code") as! NSString
+                    //  countryCode.text = string1 as String
+                    let string3 = self.myArray.value(forKey: "phone_no") as? NSString ?? ""
+                    self.userMobileNumber.text = string3 as String
+                  //  self.StrImageUrl = self.myArray.value(forKey: "image") as? String ?? ""
+                    let stringUrl = self.myArray.value(forKey: "image") as! NSString
+                    let url = URL.init(string:stringUrl as String)
+                    print(url ?? "")
                     self.profileImage.sd_setImage(with: url , placeholderImage: UIImage(named: "applogo.png"))
+                    self.userAddress.text=self.myArray.value(forKey: "address") as! String?
+                    //profileBackgrndView.backgroundColor = UIColor(patternImage: UIImage(named: "profile-bg")!)
                     
+                    let str1 = self.myArray.value(forKey: "lat") as? String ?? ""
+                    let str2 = self.myArray.value(forKey: "long") as? String ?? ""
+                    
+                    if str1 == "" || str2 == ""
+                    {
+                        
+                    }
+                    else
+                    {
+                        self.currentLatitude = Double(self.myArray.value(forKey: "lat") as? String ?? "")!
+                        self.currentLongitude = Double(self.myArray.value(forKey: "long") as? String ?? "")!
+                    }
+                    print(self.currentLatitude)
+                    print(self.currentLongitude)
                 }
                 else
                 {
@@ -169,16 +258,53 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
-            AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        //
+        
+        
+        
+        
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//             //   print(responceDic)
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//                    self.userData = (responceDic.object(forKey: "profileDetail") as? NSDictionary)!
+//
+//                   self.userAddress.text = self.userData.object(forKey: "address") as! String?
+//
+//                    let stringUrl = self.userData.object(forKey: "image") as! String?
+//                    let url = URL.init(string:stringUrl! as String)
+//                    self.profileImage.sd_setImage(with: url , placeholderImage: UIImage(named: "applogo.png"))
+//
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     }
     
     
@@ -192,30 +318,35 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     @IBAction func ProfileImageClicked(_ sender: Any)
     {
+        self.CameraView()
+    }
+    
+    func CameraView ()
+    {
         let optionMenu = UIAlertController(title: nil, message: "Choose Option", preferredStyle: .actionSheet)
         
         let pibraryAction = UIAlertAction(title: "From Photo Library", style: .default, handler:
-            {(alert: UIAlertAction!) -> Void in
-                self.imagePicker.sourceType = .photoLibrary
-                self.imagePicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary)!
-                self.present(self.imagePicker, animated: true, completion: nil)
+        {(alert: UIAlertAction!) -> Void in
+            self.imagePicker.sourceType = .photoLibrary
+            self.imagePicker.mediaTypes = UIImagePickerController.availableMediaTypes(for: .photoLibrary)!
+            self.present(self.imagePicker, animated: true, completion: nil)
         })
         let cameraction = UIAlertAction(title: "Camera", style: .default, handler:
-            {(alert: UIAlertAction!) -> Void in
+        {(alert: UIAlertAction!) -> Void in
+            
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                self.imagePicker.sourceType = UIImagePickerControllerSourceType.camera
+                self.imagePicker.cameraCaptureMode = .photo
+                self.imagePicker.modalPresentationStyle = .fullScreen
+                self.present(self.imagePicker,animated: true,completion: nil)
                 
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    self.imagePicker.sourceType = UIImagePickerControllerSourceType.camera
-                    self.imagePicker.cameraCaptureMode = .photo
-                    self.imagePicker.modalPresentationStyle = .fullScreen
-                    self.present(self.imagePicker,animated: true,completion: nil)
-                    
-                } else {
-                    AFWrapperClass.alert(Constants.applicationName, message: "Sorry, this device has no camera", view: self)
-                }
+            } else {
+                AFWrapperClass.alert(Constants.applicationName, message: "Sorry, this device has no camera", view: self)
+            }
         })
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler:
-            {
-                (alert: UIAlertAction!) -> Void in
+        {
+            (alert: UIAlertAction!) -> Void in
         })
         optionMenu.addAction(pibraryAction)
         optionMenu.addAction(cameraction)
@@ -243,7 +374,9 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     {
         currentSelectedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
       //  currentSelectedImage = self.image(withReduce: currentSelectedImage, scaleTo: CGSize(width: CGFloat(40), height: CGFloat(40)))
-        profileImage.image=currentSelectedImage
+        
+         self.ImageCropView()
+       
     
         dismiss(animated: true, completion: nil)
     }
@@ -255,6 +388,326 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     }
     
     
+    func ImageCropView ()
+    {
+        popview4.isHidden=false
+        footerView4.isHidden=false
+        
+        popview4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview4.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview4)
+        
+        footerView4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        footerView4.backgroundColor = UIColor.black
+        popview4.addSubview(footerView4)
+        
+        CropperView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        CropperView.backgroundColor = UIColor.white
+        CropperView.image = currentSelectedImage
+        footerView4.addSubview(CropperView)
+        
+        CroppedImageView.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height-50)
+        
+        footerView4.addSubview(CroppedImageView)
+        
+        
+        let Cancelbutt = UIButton()
+        Cancelbutt.frame = CGRect(x:0, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Cancelbutt.setTitle("Retake", for: UIControlState.normal)
+        Cancelbutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Cancelbutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Cancelbutt.addTarget(self, action: #selector(self.RetakeButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Cancelbutt)
+        
+        let Donebutt = UIButton()
+        Donebutt.frame = CGRect(x:self.view.frame.size.width/2+1, y:self.view.frame.size.height-50, width:self.view.frame.size.width/2-2, height:50)
+        Donebutt.setTitle("Crop", for: UIControlState.normal)
+        Donebutt.backgroundColor = #colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        Donebutt.setTitleColor(UIColor.black, for: UIControlState.normal)
+        Donebutt.addTarget(self, action: #selector(self.CropButtAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(Donebutt)
+        
+        CropperView.cropSize = CGSize(width: 300, height: 300)
+        
+    }
+    
+    func RetakeButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        self.CameraView()
+    }
+    
+    func CropButtAction(_ sender: UIButton!)
+    {
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        
+        CropperView.renderCroppedImage({(_ croppedImage: UIImage?, _ cropRect: CGRect) -> Void in
+            
+            self.cropSelectedImage = croppedImage!
+            self.profileImage.image = croppedImage!
+            
+            self.classObject.next2(croppedImage)
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        })
+    }
+    
+    
+    func responsewithToken(_ responseToken: NSMutableDictionary!)
+    {
+        print(responseToken)
+        AFWrapperClass.svprogressHudDismiss(view: self)
+        
+        if responseToken == nil
+        {
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: "Server is not responding.Please try again later", view: self)
+        }
+        else
+        {
+        
+        if (responseToken.object(forKey: "status") as! NSNumber) == 1
+        {
+            
+            self.StrImageUrl = responseToken.value(forKey: "path") as? String ?? ""
+          
+        }
+        else
+        {
+            let strerror = responseToken.object(forKey: "error") as? String ?? "Server error"
+            let Message = responseToken.object(forKey: "responseMessage") as? String ?? strerror
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        }
+        }
+    }
+    
+    
+    
+     //MARK: Add Mobile Number
+    
+    @IBAction func AddMobileClicked(_ sender: UIButton)
+    {
+        self.AddMobileNumber()
+    }
+    
+    
+    func AddMobileNumber()
+    {
+        
+        popview5.isHidden=false
+        footerView5.isHidden=false
+        forgotPassWordTF.text=""
+        forgotPassWordTF.placeholder=""
+        
+        popview5.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview5.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview5)
+        
+        footerView5.frame = CGRect(x:self.view.frame.size.width/2-150, y:self.view.frame.size.height/2-100, width:300, height:200)
+        footerView5.backgroundColor = UIColor.white
+        popview5.addSubview(footerView5)
+        
+        
+        let forgotlab = UILabel()
+        forgotlab.frame = CGRect(x:0, y:0, width:footerView5.frame.size.width, height:40)
+        forgotlab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        forgotlab.text="Add Mobile Number"
+        forgotlab.font =  UIFont(name:"Helvetica-Bold", size: 15)
+        forgotlab.textColor=UIColor.white
+        forgotlab.textAlignment = .center
+        footerView5.addSubview(forgotlab)
+        
+        
+        let labUnderline = UILabel()
+        labUnderline.frame = CGRect(x:0, y:forgotlab.frame.origin.y+forgotlab.frame.size.height+1, width:footerView5.frame.size.width, height:2)
+        labUnderline.backgroundColor = UIColor.darkGray
+        labUnderline.isHidden=true
+        footerView5.addSubview(labUnderline)
+        
+        
+        
+        forgotPassWordTF = ACFloatingTextfield()
+        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:250, height:45)
+        forgotPassWordTF.delegate = self
+        forgotPassWordTF.placeholder = "Mobile Number"
+        forgotPassWordTF.placeHolderColor=UIColor.lightGray
+        forgotPassWordTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.lineColor=UIColor.lightGray
+        forgotPassWordTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.keyboardType=UIKeyboardType.emailAddress
+        forgotPassWordTF.autocorrectionType = .no
+        forgotPassWordTF.autocapitalizationType = .none
+        forgotPassWordTF.spellCheckingType = .no
+        footerView5.addSubview(forgotPassWordTF)
+        
+        
+        CancelButton5.frame = CGRect(x:10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView5.frame.size.width/2-15, height:40)
+        CancelButton5.backgroundColor=#colorLiteral(red: 0.9137254902, green: 0.9137254902, blue: 0.9137254902, alpha: 1)
+        CancelButton5.setTitle("Cancel", for: .normal)
+        CancelButton5.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        CancelButton5.setTitleColor(#colorLiteral(red: 0.4980392157, green: 0.4980392157, blue: 0.4980392157, alpha: 1), for: .normal)
+        CancelButton5.titleLabel?.textAlignment = .center
+        CancelButton5.addTarget(self, action: #selector(self.cancelButtonAction4(_:)), for: UIControlEvents.touchUpInside)
+        footerView5.addSubview(CancelButton5)
+        
+        
+        DoneButton5.frame = CGRect(x:CancelButton5.frame.size.width+CancelButton5.frame.origin.x+10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView5.frame.size.width/2-15, height:40)
+        DoneButton5.backgroundColor=#colorLiteral(red: 0.1097696498, green: 0.6676027775, blue: 0.8812960982, alpha: 1)
+        DoneButton5.setTitle("Done", for: .normal)
+        DoneButton5.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        DoneButton5.setTitleColor(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1), for: .normal)
+        DoneButton5.titleLabel?.textAlignment = .center
+        DoneButton5.addTarget(self, action: #selector(self.AddMobileDoneButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView5.addSubview(DoneButton5)
+        
+        self.forgotPassWordTF.text = ""
+        
+        self.addDoneButtonOnKeyboard6()
+    }
+    
+    func addDoneButtonOnKeyboard6()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.forgotPassWordTF.inputAccessoryView = doneToolbar
+    }
+    
+    
+    
+    // MARK: Cancel Button Action :
+    func cancelButtonAction4(_ sender: UIButton!)
+    {
+        popview5.isHidden=true
+        footerView5.isHidden=true
+    }
+    
+    
+    // MARK: Done Button Action :
+    func AddMobileDoneButtonAction(_ sender: UIButton!)
+    {
+        var message = String()
+        if (forgotPassWordTF.text?.isEmpty)!
+        {
+            message = "Please enter Mobile Number"
+        }
+        
+        if message.characters.count > 1
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
+        }
+        else
+        {
+            
+            let str: String = forgotPassWordTF.text!
+            if str.isNumber == true
+            {
+                strApiCheck = "3"
+                let vc = SLCountryPickerViewController()
+                vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+                    self.diallingCode.getForCountry(code!)
+                }
+                self.navigationController?.pushViewController(vc, animated: true)
+            }
+            else
+            {
+                AFWrapperClass.alert(Constants.applicationName, message: "Please enter Mobile Number", view: self)
+            }
+        }
+        
+    }
+    
+    
+    func AddMobileapi()
+    {
+        
+        let str1 = countryCode.text
+        let str2 = forgotPassWordTF.text
+        let usermobile = str1!+str2!
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"addPhoneNo")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(self.strUserID, forKey: "user_id")
+        PostDataValus.setValue(usermobile, forKey: "phone_no")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+        //  print(params)
+        
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    // self.strUserId = responceDic.object(forKey: "user_id")  as! String
+                    
+                    self.popview5.isHidden=true
+                    self.footerView5.isHidden=true
+                    
+                    let str1 = self.countryCode.text
+                    let str2 = self.forgotPassWordTF.text
+                    let str = str1!+str2!
+                    self.userMobileNumber.text = str
+                    
+                  //  self.VerifyView()
+                    
+                   // let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "ConfirmOTPVC") as? ConfirmOTPVC
+                   // foodVC?.UsearID = String(describing: self.strUserID)
+                   // self.navigationController?.pushViewController(foodVC!, animated: true)
+                }
+                else
+                {
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+            
+        }) { (error) in
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+
+    
+    
     //MARK: Upload image Method API:
     
     func uploadImageAPIMethod () -> Void
@@ -264,21 +717,21 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         
         if (UserName.text?.isEmpty)!
         {
-            message = "Please enter name"
+            message = "Please enter first name"
+        }
+        else if (LastName.text?.isEmpty)!
+        {
+            message = "Please enter last name"
+        }
+        else if (userEmail.text?.isEmpty)!
+        {
+            message = "Please enter email id"
         }
         else if !AFWrapperClass.isValidEmail(userEmail.text!)
         {
             message = "Please enter valid Email"
         }
-        else if (countryCode.text?.isEmpty)!
-        {
-            message = "Please choose country code"
-        }
-        else if (userMobileNumber.text?.isEmpty)!
-        {
-            message = "Please enter Phone number"
-        }
-        
+       
         if message.characters.count > 1 {
             
             AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
@@ -288,7 +741,13 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
             let alert = UIAlertController(title: "Food4All", message: "Are You Sure Want to Update Profile", preferredStyle: UIAlertControllerStyle.alert)
             
             let alertOKAction=UIAlertAction(title:"Update", style: UIAlertActionStyle.default,handler: { action in
-                self.Updatemethod()
+//                self.strApiCheck = "1"
+//                let vc = SLCountryPickerViewController()
+//                vc.completionBlock = {(_ country: String?, _ code: String?) -> Void in
+//                    self.diallingCode.getForCountry(code!)
+//                }
+//                self.navigationController?.pushViewController(vc, animated: true)
+                self.Updatemethod2()
             })
             
             let alertCancelAction=UIAlertAction(title:"Cancel", style: UIAlertActionStyle.destructive,handler: { action in
@@ -302,13 +761,89 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         }
     }
     
+    func Updatemethod2()
+    {
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateProfile")
+        let strkey = Constants.ApiKey
+      //  let str1 = ""
+       // let str2 = userMobileNumber.text
+      //  let usermobile = str1!+str2!
+        
+        let strlat = "\(currentLatitude)"
+        let strlong = "\(currentLongitude)"
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(strUserID, forKey: "user_id")
+        PostDataValus.setValue(UserName.text!, forKey: "first_name")
+        PostDataValus.setValue(LastName.text!, forKey: "last_name")
+        PostDataValus.setValue(userAddress.text!, forKey: "address")
+        PostDataValus.setValue(strlat, forKey: "lat")
+        PostDataValus.setValue(strlong, forKey: "long")
+        PostDataValus.setValue(self.StrImageUrl, forKey: "image")
+        PostDataValus.setValue(userEmail.text!, forKey: "email")
+        PostDataValus.setValue(userMobileNumber.text, forKey: "phone_no")
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDics:NSDictionary = jsonDic as NSDictionary
+                print(responceDics)
+                if (responceDics.object(forKey: "status") as! NSNumber) == 1
+                {
+                    let UserResponse:NSDictionary = responceDics.object(forKey: "profileDetail")  as! NSDictionary
+                    
+                    let currentDefaults: UserDefaults? = UserDefaults.standard
+                    let data = NSKeyedArchiver.archivedData(withRootObject: UserResponse)
+                    currentDefaults?.set(data, forKey: "UserId")
+                    
+                    let alert = UIAlertController(title: Constants.applicationName, message: responceDics.object(forKey: "responseMessage") as? String ?? "Profile has been updated", preferredStyle: UIAlertControllerStyle.alert)
+                    
+                    let alertOKAction=UIAlertAction(title:"Ok", style: UIAlertActionStyle.default,handler: { action in
+                                 _ = self.navigationController?.popViewController(animated: true)
+                    })
+                    
+                    alert.addAction(alertOKAction)
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
     
     func Updatemethod()
     {
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         
-        let imageData: Data? = UIImageJPEGRepresentation(currentSelectedImage, 1)
+        let imageData: Data? = UIImageJPEGRepresentation(self.cropSelectedImage, 1)
         if imageData == nil
         {
             var address=String()
@@ -323,7 +858,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
             let baseURL: String  = String(format:"%@",Constants.mainURL)
             let params = "method=updateProfile&id=\(strUserID)&first_name=\(StrName)&address=\(address)&lat=\(currentLatitude)&lon=\(currentLongitude)&email=\(userEmail.text!)&country_code=\(countryCode.text!)&phone=\(userMobileNumber.text!)"
             
-            print(params)
+           // print(params)
             
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
             AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -331,7 +866,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
-                    print(responceDic)
+                   // print(responceDic)
                     if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                     {
                         _ = self.navigationController?.popViewController(animated: true)
@@ -391,7 +926,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
             let parameters = ["method":"updateProfile","id":strUserID as String,"first_name":StrName as String,"address":address as String,"lat":strlat as String,"lon":strlong as String,"email":emailadd as String,"country_code":counCode as String,"phone":PhoneNum as String] as [String : String]
             
             Alamofire.upload(multipartFormData: { (multipartFormData) in
-                let image = self.currentSelectedImage
+                let image = self.cropSelectedImage
                 multipartFormData.append(UIImageJPEGRepresentation(image, 1)!, withName: "image", fileName: "uploadedPic.jpeg", mimeType: "image/jpeg")
                 for (key, value) in parameters {
                     multipartFormData.append(value.data(using: String.Encoding.utf8)!, withName: key)
@@ -403,7 +938,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                     upload.uploadProgress(closure: { (progress) in
                     })
                     upload.responseJSON { response in
-                        print(Progress())
+                     //   print(Progress())
                         if response.result.isSuccess
                             //print(response.result.value as! NSDictionary)
                         {
@@ -416,10 +951,10 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                                 let UserResponse:NSDictionary = dataDic.object(forKey: "profileDetail")  as! NSDictionary
                                 UserDefaults.standard.set(UserResponse, forKey: "UserId")
                                 
-                                let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-                                self.navigationController?.pushViewController(foodVC!, animated: true)
+                            //    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+                          //      self.navigationController?.pushViewController(foodVC!, animated: true)
                                 
-                                
+                                self.navigationController?.popViewController(animated: true)
                                 
                                 var Message=String()
                                 Message = dataDic.object(forKey: "responseMessage") as! String
@@ -449,13 +984,13 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                             let error : NSError = response.result.error! as NSError
                             
                             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                            print(error.localizedDescription)
+                         //   print(error.localizedDescription)
                         }
                     }
                 case .failure(let error):
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                    print(error.localizedDescription)
+                  //  print(error.localizedDescription)
                     break
                 }
             }
@@ -542,8 +1077,32 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         ResendButton.addTarget(self, action: #selector(ProfileVC.ResendButtonAction(_:)), for: UIControlEvents.touchUpInside)
         footerView2.addSubview(ResendButton)
         
+        self.forgotPassWordTF.text = ""
         
+        self.addDoneButtonOnKeyboard2()
     }
+    
+    
+    func addDoneButtonOnKeyboard2()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.forgotPassWordTF.inputAccessoryView = doneToolbar
+       
+    }
+    
+    
+   
     
     // MARK: Verify Cancel Button Action :
     func VerifycancelButtonAction(_ sender: UIButton!)
@@ -560,7 +1119,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     @objc private   func ReverifyotpAPIMethod2 (baseURL:String , params: String)
     {
-        print(params);
+     //   print(params);
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -568,7 +1127,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+              //  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     
@@ -613,7 +1172,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     @objc private  func Veify2APIMethod (baseURL:String , params: String)
     {
         
-        print(params);
+       // print(params);
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -621,7 +1180,7 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
+              //  print(responceDic)
                 if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                 {
                     self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
@@ -630,8 +1189,10 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                     self.popview2.isHidden=true
                     self.footerView2.isHidden=true
                     
-                    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-                    self.navigationController?.pushViewController(foodVC!, animated: true)
+                    //    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+                    //      self.navigationController?.pushViewController(foodVC!, animated: true)
+                    
+                    self.navigationController?.popViewController(animated: true)
                     
                 
                     var Message=String()
@@ -672,8 +1233,10 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     @IBAction func backButtonAction(_ sender: Any)
     {
-        let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-        self.navigationController?.pushViewController(foodVC!, animated: true)
+        //    let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+        //      self.navigationController?.pushViewController(foodVC!, animated: true)
+        
+        self.navigationController?.popViewController(animated: true)
     }
     
     @IBAction func AddressButtClicked(_ sender: UIButton)
@@ -842,15 +1405,29 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     {
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
         {
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
+           // currentLatitude = (locationManager.location?.coordinate.latitude)!
+          //  currentLongitude = (locationManager.location?.coordinate.longitude)!
+          //  firstLatitude = (locationManager.location?.coordinate.latitude)!
+          //  firstLongitude = (locationManager.location?.coordinate.longitude)!
         }
         
         
@@ -890,11 +1467,11 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                 
                 if placeMark.isoCountryCode != nil
                 {
-                    print(placeMark.isoCountryCode! as String)
+                  //  print(placeMark.isoCountryCode! as String)
                     
                     let iosCode = placeMark.isoCountryCode! as String
                     
-                    print(iosCode)
+                   // print(iosCode)
                     self.diallingCode.getForCountry(iosCode)
                 }
             }
@@ -939,8 +1516,17 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     }
     func didGetDiallingCode(_ diallingCode: String!, forCountry countryCode: String!) {
         
-        print(diallingCode)
+      //  print(diallingCode)
         self.countryCode.text! = String(format: "+%@",diallingCode)
+        
+        if strApiCheck == "1"
+        {
+            self.Updatemethod2()
+        }
+        else
+        {
+            self.AddMobileapi()
+        }
         
         myString = "1"
     }
@@ -1007,7 +1593,7 @@ extension ProfileVC: GMSMapViewDelegate
     
     private func mapView(mapView:GMSMapView!,idleAtCameraPosition position:GMSCameraPosition!)
     {
-        print(position)
+       // print(position)
         
     }
     

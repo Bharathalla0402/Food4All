@@ -14,6 +14,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
 
     
     @IBOutlet weak var nameTF: ACFloatingTextfield!
+    @IBOutlet weak var lastNameTF: ACFloatingTextfield!
     @IBOutlet weak var emailTF: ACFloatingTextfield!
     @IBOutlet weak var phoneTF: ACFloatingTextfield!
     @IBOutlet weak var countryCodeTF: ACFloatingTextfield!
@@ -26,6 +27,8 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
     var socialID = String()
     var emailGet = String()
     var nameGet = String()
+    var name1Get = String()
+    var name2Get = String()
     var socialRegistaerStr = String()
     var method = String()
     var StrName = String()
@@ -53,10 +56,15 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.nameTF.text = ""
+        self.lastNameTF.text = ""
+        self.emailTF.text = ""
+        self.phoneTF.text = ""
+        self.countryCodeTF.text = ""
         
-        print(nameGet)
-        print(socialID)
-        print(imgURL)
+      //  print(nameGet)
+     //   print(socialID)
+    //    print(imgURL)
         
 //        let cookieJar : HTTPCookieStorage = HTTPCookieStorage.shared
 //        for cookie in cookieJar.cookies! as [HTTPCookie]{
@@ -83,27 +91,28 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
         StrName2=""
         emailTF.text! = emailGet
         nameTF.text! = nameGet
+        lastNameTF.text! = name2Get
         if emailChkStr == "YES" {
             emailTF.isEnabled = false
         }else{
             emailTF.isEnabled = true
         }
-        if socialRegistaerStr == "FaceBook"
+        if socialRegistaerStr == "facebook"
         {
             titleLab.text="Facebook Registration"
             method = "facebook"
             socialApi = "facebook_id"
         }
-        else if socialRegistaerStr == "Twitter"
+        else if socialRegistaerStr == "twitter"
         {
              titleLab.text="Twitter Registration"
              method = "twitter"
              socialApi = "twitter_id"
         }
-        else if socialRegistaerStr == "Google"
+        else if socialRegistaerStr == "google"
         {
              titleLab.text="Google Registration"
-             method = "google_plus"
+             method = "facebook"
              socialApi = "google_id"
         }
         else if socialRegistaerStr == "Instagram"
@@ -119,14 +128,17 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
             socialApi = "pinterest_id"
         }
         
+        titleLab.text = "Registration"
+        
+        
         countryCodeTF.isUserInteractionEnabled=false
         
         self.diallingCode.delegate=self;
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
         locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
@@ -136,37 +148,64 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
         }
         
 //        self.termsmethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=termsandcondition")
+        
+        self.addDoneButtonOnKeyboard()
     }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.nameTF.inputAccessoryView = doneToolbar
+        self.emailTF.inputAccessoryView = doneToolbar
+        self.phoneTF.inputAccessoryView = doneToolbar
+       
+        
+    }
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
+    }
+    
     
     @objc private  func termsmethod (baseURL:String , params: String)
     {
-        print(params)
+      //  print(params)
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&gcm_id=\(DeviceToken)&device_type=ios"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"termsAndConditions",params)
         
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    
-                    self.htmlstring = (responceDic.object(forKey: "terms") as? NSString)! as String
-                    
+                    self.htmlstring = (responceDic.object(forKey: "terms") as? NSDictionary)?.value(forKey: "terms") as? String ?? ""
                 }
                 else
                 {
-                   
+                    
                 }
             }
-            
         }) { (error) in
-            
-            AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        
     }
 
     
@@ -216,7 +255,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
             if ((error) != nil)
             {
                 self.countryCodeTF.text! = ""
-                print("Locarion Error :\((error?.localizedDescription)! as String)")
+              //  print("Locarion Error :\((error?.localizedDescription)! as String)")
                 //     AFWrapperClass.alert(Constants.applicationName, message: String(format: "+%@",diallingCode), view: self)
             }
             else{
@@ -226,11 +265,11 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
                 
                 if placeMark.isoCountryCode != nil
                 {
-                    print(placeMark.isoCountryCode! as String)
+                  //  print(placeMark.isoCountryCode! as String)
                     
                     let iosCode = placeMark.isoCountryCode! as String
                     
-                    print(iosCode)
+                 //   print(iosCode)
                     self.diallingCode.getForCountry(iosCode)
                 }
             }
@@ -277,7 +316,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
         Ccode = countryCodeTF.text!
         Ccode = Ccode.replacingOccurrences(of: "+", with: "%2B")
         
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
+      //  let baseURL: String  = String(format:"%@",Constants.mainURL)
         StrName = (nameTF.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))!
         
         //url to string
@@ -285,12 +324,48 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
         string = string.replacingOccurrences(of: "&", with: "%26")
         string = string.replacingOccurrences(of: "+", with: "%2B")
         
-        let params = "method=\(method)&\(socialApi)=\(socialID)&first_name=\(StrName)&email=\(emailTF.text!)&phone_no=\(phoneTF.text!)&gcm_id=\(DeviceToken)&country_code=\(Ccode)&device_type=ios&image=\(string)"
+     //   let params = "method=\(method)&\(socialApi)=\(socialID)&first_name=\(StrName)&email=\(emailTF.text!)&phone_no=\(phoneTF.text!)&gcm_id=\(DeviceToken)&country_code=\(Ccode)&device_type=ios&image=\(string)"
 
-        print(params)
+     //   print(params)
+        
+
+        var mobileFullString = String()
+        mobileFullString = String(format: "%@%@",Ccode,phoneTF.text!)
+    //mobileFullString = String(mobileFullString.replacingOccurrences(of: "+", with: "%2B"))
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"signUp")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        PostDataValus.setValue("ios", forKey: "device_type")
+        PostDataValus.setValue(StrName, forKey: "first_name")
+        PostDataValus.setValue(lastNameTF.text!, forKey: "last_name")
+        PostDataValus.setValue(mobileFullString, forKey: "phone_no")
+        PostDataValus.setValue("1", forKey: "is_social")
+        PostDataValus.setValue(emailTF.text!, forKey: "email")
+        PostDataValus.setValue(self.socialID, forKey: socialApi)
+        PostDataValus.setValue("1", forKey: "is_social")
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
@@ -307,7 +382,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
                     
                     foodVC?.UsearID = String(describing: id)
                     
-                    print(id )
+                 //   print(id )
 
                 }
                 else
@@ -336,10 +411,10 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
     
     @IBAction func bavkButtonAction(_ sender: Any)
     {
-       // _ = self.navigationController?.popViewController(animated: true)
+        _ = self.navigationController?.popViewController(animated: true)
         
-        let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "RegistrationVC") as? RegistrationVC
-        self.navigationController?.pushViewController(foodVC!, animated: true)
+      //  let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "RegistrationVC") as? RegistrationVC
+     //   self.navigationController?.pushViewController(foodVC!, animated: true)
     }
     
     @IBAction func CountryPickerClicked(_ sender: Any)
@@ -361,7 +436,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
     
     func didGetDiallingCode(_ diallingCode: String!, forCountry countryCode: String!) {
         
-        print(diallingCode)
+     //   print(diallingCode)
         self.countryCodeTF.text! = String(format: "+%@",diallingCode)
         
         myString = "1"

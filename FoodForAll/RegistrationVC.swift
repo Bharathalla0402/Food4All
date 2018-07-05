@@ -18,9 +18,6 @@ import SwiftyJSON
 
 class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,GIDSignInDelegate,HMDiallingCodeDelegate,CLLocationManagerDelegate,UIWebViewDelegate
 {
-
-    
-    
     @IBOutlet weak var logoImage: UIImageView!
     
     @IBOutlet weak var registerSgmntBtn: UISegmentedControl!
@@ -86,7 +83,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         }
         else
         {
-            DeviceToken = ""
+            DeviceToken = "abcdef"
         }
         
         acceptString = "1"
@@ -103,14 +100,25 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
         locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
             
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+            }else {
+                
+            }
+            
+           
         }
         
         
@@ -120,33 +128,63 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
     
     @objc private  func termsmethod (baseURL:String , params: String)
     {
-        print(params)
+       // print(params)
         
-       // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&gcm_id=\(DeviceToken)&device_type=ios"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"termsAndConditions",params)
+        
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                  print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    
-                    self.htmlstring = (responceDic.object(forKey: "terms") as? NSString)! as String
-                
+                     self.htmlstring = (responceDic.object(forKey: "terms") as? NSDictionary)?.value(forKey: "terms") as? String ?? ""
                 }
                 else
                 {
-                 
+                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+    
+        
+        
+        
+        
+//
+//       // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//              //  print(responceDic)
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//
+//                    self.htmlstring = (responceDic.object(forKey: "terms") as? NSString)! as String
+//
+//                }
+//                else
+//                {
+//
+//                }
+//            }
+//
+//        }) { (error) in
+//
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     }
 
     
@@ -164,8 +202,18 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
             
             locationManager.requestWhenInUseAuthorization()
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+            }else {
+                
+            }
+            
             
         }else{
             locationManager.requestWhenInUseAuthorization()
@@ -200,7 +248,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
             if ((error) != nil)
             {
                 self.countryCodeTF.text! = ""
-                print("Locarion Error :\((error?.localizedDescription)! as String)")
+               // print("Locarion Error :\((error?.localizedDescription)! as String)")
                 //     AFWrapperClass.alert(Constants.applicationName, message: String(format: "+%@",diallingCode), view: self)
             }
             else{
@@ -210,11 +258,11 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                 
                 if placeMark.isoCountryCode != nil
                 {
-                    print(placeMark.isoCountryCode! as String)
+                  //  print(placeMark.isoCountryCode! as String)
                     
                     let iosCode = placeMark.isoCountryCode! as String
                     
-                    print(iosCode)
+                 //   print(iosCode)
                     self.diallingCode.getForCountry(iosCode)
                 }
             }
@@ -230,9 +278,9 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         
         
         userNameTF = ACFloatingTextfield()
-        userNameTF.frame = CGRect(x:15, y:registerSgmntBtn.frame.origin.y+55, width:self.view.frame.size.width-55, height:45)
+        userNameTF.frame = CGRect(x:15, y:registerSgmntBtn.frame.origin.y+55, width:self.view.frame.size.width/2-20, height:45)
         userNameTF.delegate = self
-        userNameTF.placeholder = "Your Name"
+        userNameTF.placeholder = "First Name"
         userNameTF.placeHolderColor=UIColor.lightGray
         userNameTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
         userNameTF.lineColor=UIColor.lightGray
@@ -240,19 +288,19 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         userNameTF.autocorrectionType = UITextAutocorrectionType.no
         self.scrollviewRgstr.addSubview(userNameTF)
         
-//        lastNameTF = ACFloatingTextfield()
-//        lastNameTF.frame = CGRect(x:self.view.frame.size.width/2+10, y:registerSgmntBtn.frame.origin.y+55, width:self.view.frame.size.width/2-50, height:45)
-//        lastNameTF.delegate = self
-//        lastNameTF.placeholder = "Last Name"
-//        lastNameTF.placeHolderColor=UIColor.lightGray
-//        lastNameTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
-//        lastNameTF.lineColor=UIColor.lightGray
-//        lastNameTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
-//        lastNameTF.autocorrectionType = UITextAutocorrectionType.no
-//        self.scrollviewRgstr.addSubview(lastNameTF)
+        lastNameTF = ACFloatingTextfield()
+        lastNameTF.frame = CGRect(x:self.view.frame.size.width/2+5, y:registerSgmntBtn.frame.origin.y+55, width:self.view.frame.size.width/2-20, height:45)
+        lastNameTF.delegate = self
+        lastNameTF.placeholder = "Last Name"
+        lastNameTF.placeHolderColor=UIColor.lightGray
+        lastNameTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        lastNameTF.lineColor=UIColor.lightGray
+        lastNameTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        lastNameTF.autocorrectionType = UITextAutocorrectionType.no
+        self.scrollviewRgstr.addSubview(lastNameTF)
 
         emailTF = ACFloatingTextfield()
-        emailTF.frame = CGRect(x:15, y:userNameTF.frame.origin.y+70, width:self.view.frame.size.width-55, height:45)
+        emailTF.frame = CGRect(x:15, y:userNameTF.frame.origin.y+70, width:self.view.frame.size.width-30, height:45)
         emailTF.delegate = self
         emailTF.placeholder = "Email address"
         emailTF.placeHolderColor=UIColor.lightGray
@@ -295,7 +343,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         
         
         phoneTF = ACFloatingTextfield()
-        phoneTF.frame = CGRect(x:120, y:emailTF.frame.origin.y+70, width:self.view.frame.size.width-160, height:45)
+        phoneTF.frame = CGRect(x:120, y:emailTF.frame.origin.y+70, width:self.view.frame.size.width-135, height:45)
         phoneTF.delegate = self
         phoneTF.placeholder = "Phone Number"
         phoneTF.placeHolderColor=UIColor.lightGray
@@ -308,7 +356,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         self.scrollviewRgstr.addSubview(phoneTF)
         
         passWordTF = ACFloatingTextfield()
-        passWordTF.frame = CGRect(x:15, y:phoneTF.frame.origin.y+70, width:self.view.frame.size.width-55, height:45)
+        passWordTF.frame = CGRect(x:15, y:phoneTF.frame.origin.y+70, width:self.view.frame.size.width-30, height:45)
         passWordTF.delegate = self
         passWordTF.placeholder = "Password"
         passWordTF.placeHolderColor=UIColor.lightGray
@@ -320,7 +368,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         self.scrollviewRgstr.addSubview(passWordTF)
                 
         reEnterPWTF = ACFloatingTextfield()
-        reEnterPWTF.frame = CGRect(x:15, y:passWordTF.frame.origin.y+70, width:self.view.frame.size.width-55, height:45)
+        reEnterPWTF.frame = CGRect(x:15, y:passWordTF.frame.origin.y+70, width:self.view.frame.size.width-30, height:45)
         reEnterPWTF.delegate = self
         reEnterPWTF.placeholder = "Re-enter Password"
         reEnterPWTF.placeHolderColor=UIColor.lightGray
@@ -381,6 +429,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         orLabe.clipsToBounds = true
         scrollviewRgstr.addSubview(orLabe)
         
+        orLabe.isHidden = true
         
         twitterLoginbtn.frame = CGRect(x:self.view.frame.width/2-20, y:orLabe.frame.origin.y+50, width:40, height:40)
         twitterLoginbtn.setImage(#imageLiteral(resourceName: "Twitter"), for: UIControlState.normal)
@@ -388,18 +437,23 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         twitterLoginbtn.layer.cornerRadius = 4
         self.scrollviewRgstr.addSubview(twitterLoginbtn)
         
+        twitterLoginbtn.isHidden = true
+        
         googleSigninButton.frame = CGRect(x:twitterLoginbtn.frame.origin.x+50, y:orLabe.frame.origin.y+50, width:40, height:40)
         googleSigninButton.setImage(#imageLiteral(resourceName: "GoogleSignIn icon"), for: UIControlState.normal)
         googleSigninButton.addTarget(self, action: #selector(RegistrationVC.googleloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
         googleSigninButton.layer.cornerRadius = 4
         self.scrollviewRgstr.addSubview(googleSigninButton)
        
+        googleSigninButton.isHidden = true
         
         facebookLoginbtn.frame = CGRect(x:twitterLoginbtn.frame.origin.x-50, y:twitterLoginbtn.frame.origin.y, width:40, height:40)
         facebookLoginbtn.setImage(#imageLiteral(resourceName: "FaceBook"), for: UIControlState.normal)
         facebookLoginbtn.addTarget(self, action: #selector(RegistrationVC.faceBookloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
         facebookLoginbtn.layer.cornerRadius = 4
         self.scrollviewRgstr.addSubview(facebookLoginbtn)
+        
+        facebookLoginbtn.isHidden = true
         
 //        InstagramLoginbtn.frame = CGRect(x:googleSigninButton.frame.origin.x+50, y:twitterLoginbtn.frame.origin.y+2, width:35, height:35)
 //        InstagramLoginbtn.setImage(UIImage(named: "instagram.png"), for: .normal)
@@ -424,9 +478,44 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         instagramLoginButton.isHidden = true
         self.scrollviewRgstr.addSubview(instagramLoginButton)
         
+         self.scrollviewRgstr.contentSize = CGSize(width: self.view.frame.size.width, height: 500)
+        
+        self.userNameTF.text = ""
+         self.lastNameTF.text = ""
+        self.emailTF.text = ""
+        self.phoneTF.text = ""
+        self.passWordTF.text = ""
+        self.reEnterPWTF.text = ""
+        self.countryCodeTF.text = ""
+        self.addDoneButtonOnKeyboard()
+    }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.userNameTF.inputAccessoryView = doneToolbar
+         self.emailTF.inputAccessoryView = doneToolbar
+         self.phoneTF.inputAccessoryView = doneToolbar
+         self.passWordTF.inputAccessoryView = doneToolbar
+         self.reEnterPWTF.inputAccessoryView = doneToolbar
         
     }
     
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
+    }
     
     
     func termsButtonAction(_ sender: UIButton!)
@@ -507,7 +596,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
     
     func didGetDiallingCode(_ diallingCode: String!, forCountry countryCode: String!) {
         
-        print(diallingCode)
+      //  print(diallingCode)
         self.countryCodeTF.text! = String(format: "+%@",diallingCode)
         
          myString = "1"
@@ -540,10 +629,10 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
             sender.isSelected = false
             acceptString = "1"
             
-            print("select 1")
+          //  print("select 1")
         } else {
             
-            print("Un select 0")
+          //  print("Un select 0")
             acceptBtn.setImage(UIImage(named: "UncheckBox"), for: .normal)
             sender.isSelected = true
             acceptString = "0"
@@ -554,17 +643,20 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
     // MARK: Register Button Action :
     func registaerButtonAction(_ sender: UIButton!) {
         
+        let str = phoneTF.text
+        var trimmedString = str?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        let firstCharacter = trimmedString?.characters.first
         
         var message = String()
         
         if (userNameTF.text?.isEmpty)!
         {
-            message = "Please enter Your Name"
+            message = "Please enter First Name"
         }
-//        else if (lastNameTF.text?.isEmpty)!
-//        {
-//            message = "Please enter LastName"
-//        }
+        else if (lastNameTF.text?.isEmpty)!
+        {
+            message = "Please enter LastName"
+        }
         else if !AFWrapperClass.isValidEmail(emailTF.text!)
         {
             message = "Please enter valid Email"
@@ -576,6 +668,10 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         else if (phoneTF.text?.isEmpty)!
         {
             message = "Please enter Phone number"
+        }
+        else if (firstCharacter == "0")
+        {
+            message = "Please enter Proper Phone number (Starting Phone Number Doesn't include with any country code or zeros)"
         }
         else if (passWordTF.text?.characters.count)! < 6
         {
@@ -605,24 +701,60 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         {
             var Ccode=String()
             Ccode = countryCodeTF.text!
-            Ccode = Ccode.replacingOccurrences(of: "+", with: "%2B")
+          //  Ccode = Ccode.replacingOccurrences(of: "+", with: "%2B")
             
     
             StrName = (userNameTF.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))!
             
-            let baseURL: String  = String(format:"%@",Constants.mainURL)
-            let params = "method=signup&first_name=\(StrName)&email=\(emailTF.text!)&phone_no=\(phoneTF.text!)&pwd=\(passWordTF.text!)&country_code=\(Ccode)&gcm_id=\(DeviceToken)&device_type=ios"
+          //  let baseURL: String  = String(format:"%@",Constants.mainURL)
+         //   let params = "method=signup&first_name=\(StrName)&email=\(emailTF.text!)&phone_no=\(phoneTF.text!)&pwd=\(passWordTF.text!)&country_code=\(Ccode)&gcm_id=\(DeviceToken)&device_type=ios"
             
-            print(params)
+            
+            var mobileFullString = String()
+            mobileFullString = String(format: "%@%@",Ccode,phoneTF.text!)
+           // mobileFullString = String(mobileFullString.replacingOccurrences(of: "+", with: "%2B"))
+            
+            let baseURL: String  = String(format:"%@%@",Constants.mainURL,"signUp")
+            let strkey = Constants.ApiKey
+            
+            let PostDataValus = NSMutableDictionary()
+            PostDataValus.setValue(strkey, forKey: "api_key")
+            PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+            PostDataValus.setValue("ios", forKey: "device_type")
+            PostDataValus.setValue(StrName, forKey: "first_name")
+            PostDataValus.setValue(lastNameTF.text!, forKey: "last_name")
+             PostDataValus.setValue(mobileFullString, forKey: "phone_no")
+             PostDataValus.setValue("0", forKey: "is_social")
+             PostDataValus.setValue(emailTF.text!, forKey: "email")
+             PostDataValus.setValue(passWordTF.text!, forKey: "pwd")
+            
+            
+            var jsonStringValues = String()
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+            if jsonData == nil {
+                
+            }
+            else {
+                jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                print("jsonString: \(jsonStringValues)")
+            }
+            
+            
+            print(baseURL)
+            print(jsonStringValues)
+            
+            
+            
+          //  print(params)
 
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
                 
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
                      print(responceDic)
-                    if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                    if (responceDic.object(forKey: "status") as! NSNumber) == 1
                     {
                         self.dataDic = (responceDic.object(forKey: "userDetails") as? NSDictionary)!
                         
@@ -630,11 +762,16 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                         self.navigationController?.pushViewController(foodVC!, animated: true)
                         
                         
-                        let id: NSNumber   = (self.dataDic.value(forKey: "id") as? NSNumber!)!
+                        if let quantity = self.dataDic.object(forKey: "id") as? NSNumber
+                        {
+                            foodVC?.UsearID = String(describing: quantity)
+                        }
+                        else if let quantity = self.dataDic.object(forKey: "id") as? String
+                        {
+                            foodVC?.UsearID = quantity
+                        }
                         
-                        foodVC?.UsearID = String(describing: id)
-                        
-                        print(id )
+                      //  print(id )
                     }
                     else
                     {
@@ -696,7 +833,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                 self.view.isUserInteractionEnabled = true
                 
                 
-                print((PDKResponseObject?.user().identifier)!)
+              //  print((PDKResponseObject?.user().identifier)!)
                 
                 self.user = (PDKResponseObject?.user())!
                 self.pinterestName = (PDKResponseObject?.user().firstName)! + " " + (PDKResponseObject?.user().lastName != nil ? (PDKResponseObject?.user().lastName)! : "")
@@ -704,7 +841,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                 
                 if let url = JSON(PDKResponseObject?.user().images["60x60"] as Any)["url"].string
                 {
-                    print(url)
+                    // print(url)
                     self.imageURL = NSURL(string: url)!
                 }
                 
@@ -767,7 +904,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                     
                     self.faceBookDic = result as! [String : AnyObject] as NSDictionary
                     
-                    print( self.faceBookDic)
+                  //  print( self.faceBookDic)
                     
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SocialRegistrationVC") as? SocialRegistrationVC
                     self.navigationController?.pushViewController(myVC!, animated: true)
@@ -778,7 +915,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                     let info : NSDictionary =  self.faceBookDic.object(forKey: "picture") as! NSDictionary
                     let info2 : NSDictionary =  info.object(forKey: "data") as! NSDictionary
                     let url: NSString = (info2.object(forKey: "url") as? NSString)!
-                    print(url)
+                  //  print(url)
                     myVC?.imgURL = NSURL(string: url as String)!
                     myVC?.emailChkStr = "YES"
                     myVC?.socialRegistaerStr = "FaceBook"
@@ -816,8 +953,8 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 AFWrapperClass.svprogressHudDismiss(view: self)
-                print("signed in as \(session?.userName)")
-                print("signed in as \(session?.userID)")
+             //   print("signed in as \(session?.userName)")
+             //   print("signed in as \(session?.userID)")
               
                 
 //                let userID = Twitter.sharedInstance().sessionStore.session()!.userID
@@ -829,11 +966,11 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
                 
                 let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
                 client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_ user: TWTRUser?, _ error: Error?) -> Void in
-                    print("\(user?.profileImageURL)")
+                //    print("\(user?.profileImageURL)")
                     
                     self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
                     
-                    print(self.imageURL)
+                  //  print(self.imageURL)
                     
                     
                     
@@ -858,7 +995,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
             } else {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
-                print("error: \(String(describing: error?.localizedDescription))")
+             //   print("error: \(String(describing: error?.localizedDescription))")
             }
         }
         
@@ -905,7 +1042,7 @@ class RegistrationVC: UIViewController,UITextFieldDelegate,GIDSignInUIDelegate,G
         if GIDSignIn.sharedInstance().currentUser.profile.hasImage
         {
             imageURL = user.profile.imageURL(withDimension: UInt(120)) as NSURL
-            print("Image Url : \(imageURL)")
+          //  print("Image Url : \(imageURL)")
         }
 
     

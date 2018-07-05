@@ -12,9 +12,17 @@ import UIKit
 //MARK: Base URL:
 
 class Constants {
+   
    // static let mainURL = "https://www.food4all.org/webservices1/Api.php"
     //static let mainURL = "https://www.food4all.org/demo/webservices/Api.php"
-    static let mainURL = "http://think360.in/Food4All/webservices/Api.php"
+    //static let mainURL = "http://think360.in/Food4All/webservices/Api.php"
+    // static let mainURL = "http://think360.in/demoFood4All/webservices/Api.php"
+   // static let mainURL = "http://think360.in/food4all/webservices/Api.php"
+  
+   // static let mainURL = "http://www.think360.in/livefood4all/Api/"
+   // static let mainURL = "https://food4all.org/Api/"
+    static let mainURL = "https://www.food4all.org/Api/"
+    static let ApiKey = "AIzaSyBU2xLzNpMVqSlMCut6h1L8kWXdnaPMIoE"
     static let applicationName = "Food4All"
 }
 
@@ -24,11 +32,13 @@ func szBadgeCount() -> String
     {
         let badge = UserDefaults.standard.object(forKey: "badgeCount") as! String
         return badge
-    }else
+    }
+    else
     {
         return ""
     }
 }
+
 extension String  {
     var isNumber : Bool {
         get{
@@ -60,7 +70,8 @@ func szAddBadgeCount()
         let str:String = String(format:"%lu",count)
         UserDefaults.standard.set(str, forKey: "badgeCount")
         UserDefaults.standard.synchronize()
-    }else
+    }
+    else
     {
         UserDefaults.standard.set("1", forKey: "badgeCount")
         UserDefaults.standard.synchronize()
@@ -486,3 +497,15 @@ extension UIView {
         transform = CGAffineTransform(scaleX: transform.a, y: -transform.d)
     }
 }
+
+extension Double {
+    /// Rounds the double to decimal places value
+    func rounded(toPlaces places:Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
+}
+
+
+
+

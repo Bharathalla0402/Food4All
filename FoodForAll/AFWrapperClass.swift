@@ -37,8 +37,6 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
 // MARK: Alamofire requestPOSTURL:
     
     class func requestPOSTURL(_ strURL : String, params : [String : AnyObject]?, success:@escaping (NSDictionary) -> Void, failure:@escaping (NSError) -> Void){
-        
-        
         let urlwithPercentEscapes = strURL.addingPercentEncoding( withAllowedCharacters: CharacterSet.urlQueryAllowed)
         Alamofire.request(urlwithPercentEscapes!, method: .post, parameters: params, encoding: JSONEncoding.default)
             .responseJSON { (response:DataResponse<Any>) in
@@ -59,38 +57,47 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
     
 // MARK: Alamofire requestPOSTURLWithUrlsession:
     class func requestPOSTURLWithUrlsession(_ strURL : String, params : String, success:@escaping (NSDictionary) -> Void, failure:@escaping (NSError) -> Void){
-        
+
         var request = URLRequest(url: URL(string: strURL)!)
         request.httpMethod = "POST"
         let postString = params
         request.httpBody = postString.data(using: .utf8)
-        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+      //  request.setValue(Constants.ApiKey, forHTTPHeaderField: "api_key")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+//        var headers = HTTPHeaders()
+//        headers["api_key"] = Constants.ApiKey
+//        headers["Accept"] = "application/json"
+//        headers["Content-Type"] = "application/x-www-form-urlencoded"
+//        request.allHTTPHeaderFields = headers
+        
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
                 // check for fundamental networking error
                 // print("error=\(error?.localizedDescription)")
-                failure(error as! NSError)
+                failure(error! as NSError)
                 return
             }
-            
+
             if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
                 // check for http errors
                 print("statusCode should be 200, but is \(httpStatus.statusCode)")
-                print("response = \(response)")
+                print("response = \(String(describing: response))")
             }
-            
+
             let responseString = String(data: data, encoding: .utf8)
                 // print("responseString = \(responseString)")
-            
+
             if let data = responseString?.data(using: String.Encoding.utf8) {
                 do {
                     let jsonDic = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String:AnyObject]
-                    
+
                     let dic:NSDictionary = (jsonDic as AnyObject) as! NSDictionary
                     success(dic)
-                    
+
                     //print("response = \(dic)")
-                    
+
                 } catch {
                     failure(error as NSError)
                     //print("Something went wrong")
@@ -98,8 +105,8 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
             }
         }
         task.resume()
-      
-        
+
+
 //        let urlwithPercentEscapes = strURL.addingPercentEncoding( withAllowedCharacters: CharacterSet.urlQueryAllowed)
 //        var request = URLRequest(url: URL(string: urlwithPercentEscapes!)!)
 //        request.httpMethod = "POST"
@@ -115,7 +122,7 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
 //                }
 //                return
 //            }
-//            
+//
 //            if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
 //                // check for http errors
 //                // print("statusCode should be 200, but is \(httpStatus.statusCode)")
@@ -125,7 +132,7 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
 //                    failure(error as! NSError)
 //                }
 //            }
-//            
+//
 //            let responseString = String(data: data, encoding: .utf8)
 //            print("responseString = \(responseString)")
 //            do {
@@ -145,7 +152,127 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
 //        }
 //        task.resume()
     }
+
     
+    
+//
+//    class func requestPOSTURLWithUrlsession(_ strURL : String, params : String, success:@escaping (NSDictionary) -> Void, failure:@escaping (NSError) -> Void){
+//
+//
+//
+//        var request = URLRequest(url: URL(string: strURL)!)
+//
+//        request.httpMethod = "POST"
+//
+//        let postString = params
+//
+//        request.httpBody = postString.data(using: .utf8)
+//
+//        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+//
+//            guard let data = data, error == nil else {
+//
+//                // check for fundamental networking error
+//
+//                // print("error=\(error?.localizedDescription)")
+//
+//                failure(error! as NSError)
+//
+//                return
+//
+//            }
+//
+//
+//
+//            if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
+//
+//                // check for http errors
+//
+//                //print("statusCode should be 200, but is \(httpStatus.statusCode)")
+//
+//                //print("response = \(response)")
+//
+//            }
+//
+//
+//
+//            let responseString = String(data: data, encoding: .utf8)
+//
+//            // print("responseString = \(responseString)")
+//
+//
+//
+//            if let data = responseString?.data(using: String.Encoding.utf8) {
+//
+//                do {
+//
+//                    let jsonDic = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String:AnyObject]
+//
+//
+//
+//                    let dic:NSDictionary = (jsonDic as AnyObject) as! NSDictionary
+//
+//                    success(dic)
+//
+//                    //print("response = \(dic)")
+//
+//                } catch {
+//
+//                    failure(error as NSError)
+//
+//                    //print("Something went wrong")
+//
+//                }
+//
+//            }
+//
+//        }
+//
+//        task.resume()
+//    }
+//
+//
+//
+//
+    
+    
+    
+    
+    class func requestGETURLWithUrlsession(_ strURL : String, success:@escaping (NSDictionary) -> Void, failure:@escaping (NSError) -> Void)
+    {
+        var request = URLRequest(url: URL(string: strURL)!)
+        
+        request.httpMethod = "GET"
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                failure(error! as NSError)
+                return
+            }
+            
+            if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
+                // check for http errors
+                //print("statusCode should be 200, but is \(httpStatus.statusCode)")
+                //print("response = \(response)")
+            }
+            
+            let responseString = String(data: data, encoding: .utf8)
+            // print("responseString = \(responseString)")
+            if let data = responseString?.data(using: String.Encoding.utf8) {
+                do {
+                    let jsonDic = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String:AnyObject]
+                    let dic:NSDictionary = (jsonDic as AnyObject) as! NSDictionary
+                    success(dic)
+                    //print("response = \(dic)")
+                } catch {
+                    failure(error as NSError)
+                    //print("Something went wrong")
+                }
+            }
+        }
+        task.resume()
+    }
+
     
     
 // MARK: Alamofire requestPUTURL:
@@ -548,3 +675,17 @@ class AFWrapperClass: NSObject,UIViewControllerAnimatedTransitioning,CAAnimation
 
     
 }
+
+//extension UITextField {
+//    func setLeftPaddingPoints(_ amount:CGFloat){
+//        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: amount, height: self.frame.size.height))
+//        self.leftView = paddingView
+//        self.leftViewMode = .always
+//    }
+//    func setRightPaddingPoints(_ amount:CGFloat) {
+//        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: amount, height: self.frame.size.height))
+//        self.rightView = paddingView
+//        self.rightViewMode = .always
+//    }
+//}
+

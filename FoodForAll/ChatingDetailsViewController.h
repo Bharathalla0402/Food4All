@@ -8,6 +8,14 @@
 
 #import <UIKit/UIKit.h>
 
+@class SecondDelegate;
+@protocol SecondDelegate <NSObject>
+
+@optional
+- (void)responsewithToken: (NSMutableDictionary *)responseToken;
+@end
+
+
 @interface ChatingDetailsViewController : UIViewController<UITextFieldDelegate,UITextViewDelegate,UITableViewDataSource,UITableViewDelegate>
 {
     NSString *userid;
@@ -21,6 +29,7 @@
     
     NSMutableArray *arrimage;
 }
+@property (nonatomic, assign) id <SecondDelegate> delegate;
 @property (weak, nonatomic) IBOutlet UIButton *sendButt;
 
 @property (weak, nonatomic) IBOutlet UIView *messageView;
@@ -33,5 +42,13 @@
 @property(nonatomic,retain) NSString *strPostUserId;
 @property(nonatomic,retain) NSString *checkString;
 @property(nonatomic,retain) NSString *strpage;
+
+
+
+@property(nonatomic,retain) NSString *StrChatMessageTypeId;
+@property(nonatomic,retain) NSString *StrChatMessage;
+
+- (void)next: (UIImage *)currentSelectedImage;
+- (void)next2: (UIImage *)currentSelectedImage;
 
 @end

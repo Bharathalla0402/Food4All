@@ -14,6 +14,7 @@ import SDWebImage
 
 class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocationManagerDelegate,LCBannerViewDelegate {
 
+    @IBOutlet var iconView: UIView!
     var camera = GMSCameraPosition()
     var mapView = GMSMapView()
     var marker = GMSMarker()
@@ -81,11 +82,20 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
     
     var strState = String()
     var checkString = String()
+    
+    var ShareUrl = String()
+    
+    @IBOutlet var MyShareView: UIView!
+    // @IBOutlet weak var ShareView: UIView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        iconView.isHidden = true
 
         // Do any additional setup after loading the view.
+        
+       //  MyShareView.isHidden = true
         
          self.setupAlertCtrl2()
         
@@ -102,7 +112,8 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             strUserID=myArray.value(forKey: "id") as! NSString
         }
         else
@@ -111,7 +122,16 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         }
         
         
-        ZoomButton.frame = CGRect(x:self.view.frame.size.width-50, y:130, width:40, height:40)
+        let userInterface = UIDevice.current.userInterfaceIdiom
+        
+        if(userInterface == .pad)
+        {
+            ZoomButton.frame = CGRect(x:self.view.frame.size.width-50, y:290, width:40, height:40)
+        }
+        else
+        {
+            ZoomButton.frame = CGRect(x:self.view.frame.size.width-50, y:130, width:40, height:40)
+        }
         ZoomButton.setImage(UIImage(named: "ic_aspect_ratio_white_3x.png"), for: .normal)
         ZoomButton.addTarget(self, action: #selector(self.zoomImageBtnAction(_:)), for: UIControlEvents.touchUpInside)
         self.mainScroolView.addSubview(ZoomButton)
@@ -121,7 +141,8 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
@@ -250,7 +271,7 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         
         let titlelabtext = UILabel()
         titlelabtext.frame = CGRect(x:70, y:5, width:Headview.frame.size.width-80, height:20)
-        titlelabtext.text = String(format: ": %@", self.listDicFoodBank.object(forKey: "event_title") as! CVarArg)
+        titlelabtext.text = String(format: ": %@", self.listDicFoodBank.object(forKey: "title") as! CVarArg)
         titlelabtext.font =  UIFont(name:"Helvetica", size: 12)
         titlelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         titlelabtext.textAlignment = .left
@@ -266,7 +287,14 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         
         let Distancelabtext = UILabel()
         Distancelabtext.frame = CGRect(x:70, y:titlelab.frame.size.height+titlelab.frame.origin.y+1, width:Headview.frame.size.width-80, height:20)
-        Distancelabtext.text = String(format: ": %@ kms", self.listDicFoodBank.object(forKey: "distance") as! CVarArg)
+        if let quantity = self.listDicFoodBank.object(forKey: "distance") as? NSNumber
+        {
+            Distancelabtext.text =  String(format: ": %@ Kms",String(describing: quantity))
+        }
+        else if let quantity = self.listDicFoodBank.object(forKey: "distance")  as? String
+        {
+            Distancelabtext.text = String(format: ": %@ Kms",quantity)
+        }
         Distancelabtext.font =  UIFont(name:"Helvetica", size: 12)
         Distancelabtext.textColor=#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)
         Distancelabtext.textAlignment = .left
@@ -299,7 +327,7 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
         Headview.addSubview(Locationlabtext)
         
         Directionlatitude = self.listDicFoodBank.object(forKey: "lat") as! String as NSString
-        Directionlongitude = self.listDicFoodBank.object(forKey: "longt") as! String as NSString
+        Directionlongitude = self.listDicFoodBank.object(forKey: "long") as! String as NSString
         
         
         
@@ -324,10 +352,22 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
             let image1 = image.addingPercentEncoding( withAllowedCharacters: CharacterSet.urlQueryAllowed)
             imagesDataArray.add(image1 as Any)
         }
-        let banner = LCBannerView.init(frame: CGRect(x: 0, y: 0, width: self.imageBanerView.frame.size.width, height: self.imageBanerView.frame.size.height), delegate: self, imageURLs: (imagesArray as NSArray) as! [Any], placeholderImage:"PlaceHolderImageLoading", timerInterval: 5, currentPageIndicatorTintColor: UIColor.red, pageIndicatorTintColor: UIColor.white)
-        banner?.clipsToBounds = true
-        banner?.contentMode = .scaleAspectFill
-        imageBanerView.addSubview(banner!)
+        
+        if imagesDataArray.count == 1
+        {
+            let bannerview = LCBannerView.init(frame: CGRect(x: 0, y: 0, width: self.imageBanerView.frame.size.width, height: self.imageBanerView.frame.size.height), delegate: self, imageURLs: (imagesArray as NSArray) as! [Any], placeholderImage:"Logo", timerInterval: 500, currentPageIndicatorTintColor: UIColor.clear, pageIndicatorTintColor: UIColor.clear)
+            bannerview?.clipsToBounds = true
+            bannerview?.notScrolling = true
+            bannerview?.contentMode = .scaleAspectFill
+            imageBanerView.addSubview(bannerview!)
+        }
+        else
+        {
+            let banner = LCBannerView.init(frame: CGRect(x: 0, y: 0, width: self.imageBanerView.frame.size.width, height: self.imageBanerView.frame.size.height), delegate: self, imageURLs: (imagesArray as NSArray) as! [Any], placeholderImage:"Logo", timerInterval: 5, currentPageIndicatorTintColor: UIColor.red, pageIndicatorTintColor: UIColor.white)
+            banner?.clipsToBounds = true
+            banner?.contentMode = .scaleAspectFill
+            imageBanerView.addSubview(banner!)
+        }
         
     }
     
@@ -337,67 +377,135 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
     
     func FoodBankDetailAPImethod () -> Void
     {
+        var localTimeZoneName: String { return TimeZone.current.identifier }
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&lat=\(currentLatitude)&long=\(currentLongitude)&event_id=\(foodbankID)&time_zone=\(localTimeZoneName)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"eventDetail",params)
         
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=eventDetail&event_id=\(foodbankID)&lat=\(currentLatitude)&lon=\(currentLongitude)"
-        
-        print(params)
+        print(baseURL)
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                //  print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     print(responceDic)
-                    self.listDicFoodBank = (responceDic.object(forKey: "eventList") as? NSDictionary)!
+                    self.listDicFoodBank = (responceDic.object(forKey: "eventDetail") as? NSDictionary)!
                     
                     self.currentLatitude = Double(self.listDicFoodBank .value(forKey: "lat") as! String)!
-                    self.currentLongitude = Double(self.listDicFoodBank.value(forKey: "longt") as! String)!
+                    self.currentLongitude = Double(self.listDicFoodBank.value(forKey: "long") as! String)!
                     
                     self.Directionlatitude = self.listDicFoodBank.value(forKey: "lat") as! String as NSString
-                    self.Directionlongitude = self.listDicFoodBank.value(forKey: "longt") as! String as NSString
+                    self.Directionlongitude = self.listDicFoodBank.value(forKey: "long") as! String as NSString
                     
-                    self.aboutLabel.text! = (self.listDicFoodBank.value(forKey: "event_desc") as! String)
-                    self.addressLabel.text! = (self.listDicFoodBank.value(forKey: "address") as! String)
-                    self.txtStartDateTime.text! = String(format:"%@ | %@",(self.listDicFoodBank .value(forKey: "start_date") as! String),(self.listDicFoodBank .value(forKey: "start_time") as! String))
-                    
-                    self.txtEndDateTime.text! = String(format:"%@ | %@",(self.listDicFoodBank .value(forKey: "end_date") as! String),(self.listDicFoodBank .value(forKey: "end_time") as! String))
-                    
-                    self.foodBankName.text! = (self.listDicFoodBank.value(forKey: "event_title") as! String)
-                  
-               
+                    self.aboutLabel.text! = self.listDicFoodBank.value(forKey: "desc") as? String ?? ""
                     
                     
+                    
+                    let straddress = self.listDicFoodBank.value(forKey: "address") as? String ?? ""
+                    let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+                    self.addressLabel.text! = stradd
+                    
+                    
+                    self.txtStartDateTime.text! = self.listDicFoodBank.object(forKey: "start_datetime") as? String ?? ""
+                    
+                    self.txtEndDateTime.text! = self.listDicFoodBank.object(forKey: "end_datetime") as? String ?? ""
+                    
+                    
+                    self.foodBankName.text! = (self.listDicFoodBank.value(forKey: "title") as! String)
+                    
+                  //  self.phoneNumLbl.text! = String(format:"%@",(self.listDicFoodBank .value(forKey: "phone_no") as? String ?? ""))
+                  //  self.number = String(format:"%@",(self.listDicFoodBank .value(forKey: "phone_no") as? String ?? "")) as NSString
+                    
+                    self.ShareUrl = self.listDicFoodBank.value(forKey: "short_code") as? String ?? ""
                     
                     if let quantity = (self.listDicFoodBank .value(forKey: "distance")) as? NSNumber
                     {
                         //let strval: String = (quantity: quantity.stringValue) as! String
                         let strval = String(describing: quantity)
-                        self.mileLabel.text! =  String(format:"%@ Kms Away",strval as String)
-                       
+                        let str1:String = "With in "
+                        let str2:String = "Kms"
+                        self.mileLabel.text! = str1 + (strval as String) + str2
                         
                     }
                     else if let quantity = (self.listDicFoodBank .value(forKey: "distance")) as? String
                     {
-                        self.mileLabel.text! = String(format:"%@ Kms Away",quantity as String)
+                        let str1:String = "With in "
+                        let str2:String = " Kms"
+                        self.mileLabel.text! = str1 + quantity + str2
+                    }
+                    
+                    let stringUrl = self.listDicFoodBank.value(forKey: "user_image") as? NSString ?? ""
+                    let url = URL.init(string:stringUrl as String)
+                    if NSURL(string:stringUrl as String) != nil
+                    {
+                       // self.userPic.sd_setImage(with: (url) as! URL, placeholderImage: UIImage.init(named: "Logo"))
+                      //  self.userPic.image = UIImage.init(named: "Logo")
+                    }
+                    else
+                    {
+                      //  self.userPic.image = UIImage.init(named: "Logo")
                     }
                     
                     
+//                    let strname1 = self.listDicFoodBank.object(forKey: "first_name") as? String ?? ""
+//                    let strname2 = self.listDicFoodBank.object(forKey: "last_name") as? String ?? ""
+//                    self.userName.text! = strname1+" "+strname2
                     
-                    self.perform(#selector(MyFoodBankDetailsVC.showMapView), with: nil, afterDelay: 0.01)
+                   
                     
-                    self.imagesArray = (self.listDicFoodBank.object(forKey: "image") as? NSArray)!
+//                    self.UserID = self.listDicFoodBank.value(forKey: "user_id") as! String as NSString
+//
+//                    if self.UserID == self.strUserID
+//                    {
+//                        self.chatButton.isHidden=true
+//                        self.callButton.isHidden=true
+//                    }
+//                    else
+//                    {
+//                        self.chatButton.isHidden=false
+//                        self.callButton.isHidden=false
+//
+//                        // self.reportView.isHidden = false
+//                        // self.RequestView.isHidden = false
+//                    }
+//
+                    
+               
+                    
+                    
+                    
+//                    if self.identityVal == "1"
+//                    {
+//                        self.userPic.isHidden = false
+//                        self.userName.isHidden = false
+//                        self.phoneNumLbl.isHidden = false
+//                        self.identitylabel.isHidden = true
+//                    }
+//                    else
+//                    {
+//                        self.userPic.isHidden = true
+//                        self.userName.isHidden = true
+//                        self.phoneNumLbl.isHidden = true
+//                        self.identitylabel.isHidden = false
+//                    }
+                    
+                    
+                    
+                     self.perform(#selector(self.showMapView), with: nil, afterDelay: 0.02)
+                    
+                    self.imagesArray = (self.listDicFoodBank.object(forKey: "images") as? NSArray)!
                     
                     if self.imagesArray.count == 0
                     {
                         self.imagesArray = [ "http://think360.in/food4all//assets/file-upload/uploadedPic-322777181.538.jpeg"]
-                        self.perform(#selector(MyFoodBankDetailsVC.showBannerView), with: nil, afterDelay: 0.02)
+                        self.perform(#selector(self.showBannerView), with: nil, afterDelay: 0.02)
                     }else{
-                        self.perform(#selector(MyFoodBankDetailsVC.showBannerView), with: nil, afterDelay: 0.02)
+                        self.perform(#selector(self.showBannerView), with: nil, afterDelay: 0.02)
                     }
                 }
                     
@@ -416,6 +524,89 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        
+    
+//
+//
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=eventDetail&event_id=\(foodbankID)&lat=\(currentLatitude)&lon=\(currentLongitude)"
+//
+//      //  print(params)
+//
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//
+//                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+//                {
+//
+//                 //   print(responceDic)
+//                    self.listDicFoodBank = (responceDic.object(forKey: "eventList") as? NSDictionary)!
+//
+//                    self.currentLatitude = Double(self.listDicFoodBank .value(forKey: "lat") as! String)!
+//                    self.currentLongitude = Double(self.listDicFoodBank.value(forKey: "longt") as! String)!
+//
+//                    self.Directionlatitude = self.listDicFoodBank.value(forKey: "lat") as! String as NSString
+//                    self.Directionlongitude = self.listDicFoodBank.value(forKey: "longt") as! String as NSString
+//
+//                    self.aboutLabel.text! = (self.listDicFoodBank.value(forKey: "event_desc") as! String)
+//                    self.addressLabel.text! = (self.listDicFoodBank.value(forKey: "address") as! String)
+//                    self.txtStartDateTime.text! = String(format:"%@ | %@",(self.listDicFoodBank .value(forKey: "start_date") as! String),(self.listDicFoodBank .value(forKey: "start_time") as! String))
+//
+//                    self.txtEndDateTime.text! = String(format:"%@ | %@",(self.listDicFoodBank .value(forKey: "end_date") as! String),(self.listDicFoodBank .value(forKey: "end_time") as! String))
+//
+//                    self.foodBankName.text! = (self.listDicFoodBank.value(forKey: "event_title") as! String)
+//
+//                     self.ShareUrl = self.listDicFoodBank.value(forKey: "short_code") as? String ?? ""
+//
+//
+//
+//                    if let quantity = (self.listDicFoodBank .value(forKey: "distance")) as? NSNumber
+//                    {
+//                        //let strval: String = (quantity: quantity.stringValue) as! String
+//                        let strval = String(describing: quantity)
+//                        self.mileLabel.text! =  String(format:"%@ Kms Away",strval as String)
+//
+//
+//                    }
+//                    else if let quantity = (self.listDicFoodBank .value(forKey: "distance")) as? String
+//                    {
+//                        self.mileLabel.text! = String(format:"%@ Kms Away",quantity as String)
+//                    }
+//
+//
+//
+//                    self.perform(#selector(MyFoodBankDetailsVC.showMapView), with: nil, afterDelay: 0.01)
+//
+//                    self.imagesArray = (self.listDicFoodBank.object(forKey: "image") as? NSArray)!
+//
+//                    if self.imagesArray.count == 0
+//                    {
+//                        self.imagesArray = [ "http://think360.in/food4all//assets/file-upload/uploadedPic-322777181.538.jpeg"]
+//                        self.perform(#selector(MyFoodBankDetailsVC.showBannerView), with: nil, afterDelay: 0.02)
+//                    }else{
+//                        self.perform(#selector(MyFoodBankDetailsVC.showBannerView), with: nil, afterDelay: 0.02)
+//                    }
+//                }
+//
+//
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                }
+//            }
+//        }) { (error) in
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     }
     
     
@@ -470,7 +661,7 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
             let baseURL: String  = String(format:"%@",Constants.mainURL)
             let params = "method=set_conversation&buyer_id=\(strUserID)&post_id=\(foodbankID)&selling_id=\(self.UserID)&post_url=\(posturl)"
             
-            print(params)
+         //   print(params)
             
             AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
             AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -478,7 +669,7 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
                 DispatchQueue.main.async {
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     let responceDic:NSDictionary = jsonDic as NSDictionary
-                    print(responceDic)
+                 //   print(responceDic)
                     if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
                     {
                         let myVC = self.storyboard?.instantiateViewController(withIdentifier: "ChatingDetailsViewController") as? ChatingDetailsViewController
@@ -527,7 +718,9 @@ class MyEventsDetailsViewController: UIViewController,GMSMapViewDelegate,CLLocat
     
     @IBAction func ShareButtClicked(_ sender: UIButton)
     {
-        let text = "https://itunes.apple.com/tw/app/id1242021232"
+         let text = self.ShareUrl + "\n\n" + "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4all"
+        
+        //  let text = self.ShareUrl + "\n\n" + "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4All"
         
         let textToShare = [ text ]
         let activityViewController = UIActivityViewController(activityItems: textToShare, applicationActivities: nil)

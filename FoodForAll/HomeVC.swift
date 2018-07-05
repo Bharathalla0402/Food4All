@@ -12,8 +12,12 @@ import SDWebImage
 import GoogleMaps
 import GooglePlaces
 import CoreLocation
+import WebKit
 
-class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UITableViewDelegate,UITableViewDataSource,UISearchBarDelegate {
+
+
+
+class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UITableViewDelegate,UITableViewDataSource,UISearchBarDelegate,UIWebViewDelegate,UITextViewDelegate {
 
     
     @IBOutlet weak var topView: UINavigationBar!
@@ -37,14 +41,40 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     @IBOutlet weak var imageViewhome: UIView!
     @IBOutlet weak var navgivationView: UIView!
     
+    @IBOutlet var playerView: YouTubePlayerView!
+    @IBOutlet var playButton: UIButton!
+    
     @IBOutlet weak var discriptionLabel: UILabel!
     @IBOutlet weak var foodBankLabel: UILabel!
     @IBOutlet weak var foodShareLbl: UILabel!
+    @IBOutlet weak var VolunteerLal: UILabel!
     @IBOutlet weak var AboutTitle: UILabel!
     @IBOutlet weak var Eventlabel: UILabel!
     @IBOutlet weak var MoreDetailLabel: UILabel!
     
     @IBOutlet weak var ValunteerButt: UIButton!
+    @IBOutlet weak var FoodBankTabl: UITableView!
+    @IBOutlet weak var FoodBankTablHeight: NSLayoutConstraint!
+    @IBOutlet weak var EventsTabl: UITableView!
+    @IBOutlet weak var EventTablHeight: NSLayoutConstraint!
+    @IBOutlet weak var MoreDetailView: UIView!
+   // @IBOutlet weak var videofromurl: VideoFromURL!
+    
+    @IBOutlet var TopVideoViewHeight: NSLayoutConstraint!
+    @IBOutlet var NearFoodBankLab: UILabel!
+    @IBOutlet var UpcomingEventLab: UILabel!
+    @IBOutlet var NearFoodBankHeight: NSLayoutConstraint!
+    @IBOutlet var UpcomingEventHeight: NSLayoutConstraint!
+    
+    
+    @IBOutlet weak var FoodbankLab: UILabel!
+    @IBOutlet weak var FoodShareLab: UILabel!
+    @IBOutlet weak var EventsLab: UILabel!
+    @IBOutlet weak var VolunteersLab: UILabel!
+    
+    
+    var Foodcell: FBtableCell!
+     var Eventcell: EventTableCell!
     
     var popview = UIView()
     var footerView = UIView()
@@ -63,11 +93,11 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     var frontView = UIView()
     
     var myArray = NSDictionary()
-    var strUserID = NSString()
+    var strUserID = String()
     
     var DeviceToken=String()
     
-    var strvalinter = NSString()
+    var strvalinter = String()
     
     
     var imagesArray = NSArray()
@@ -96,11 +126,23 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     var searchResults = NSMutableArray()
     var theSearchBar: UISearchBar?
     
+    var listArrayFoodBank = NSMutableArray()
+    var listArrayFoodEvent = NSMutableArray()
+     var strpage = String()
+     var strVideoUrl = String()
+    var strwidth = String()
+    
+    @IBOutlet var VideoWebView: WKWebView!
+    @IBOutlet weak var DataWebView: UIWebView!
        
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(HomeVC.getDashBoardAPImethod), name: NSNotification.Name(rawValue: "NotificationIdentifier"), object: nil)
+        let currentDefaults: UserDefaults? = UserDefaults.standard
+        currentDefaults?.set("yes", forKey: "txt")
+        
+        playerView.isHidden = true
+        playButton.isHidden = true
         
         frontView.frame = CGRect(x:0, y:65, width:self.view.frame.size.width, height:self.view.frame.size.height)
         frontView.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
@@ -108,9 +150,18 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         self.view.addSubview(frontView)
         
         
+        FoodBankTabl.tag = 3
+        EventsTabl.tag = 4
        
-       
+        FoodBankTabl.rowHeight = UITableViewAutomaticDimension
+        FoodBankTabl.estimatedRowHeight = 160
+        FoodBankTabl.tableFooterView = UIView()
+        FoodBankTabl.separatorStyle = .none
         
+        EventsTabl.rowHeight = UITableViewAutomaticDimension
+        EventsTabl.estimatedRowHeight = 200
+        EventsTabl.tableFooterView = UIView()
+        EventsTabl.separatorStyle = .none
         
         NoticationLab = UILabel(frame: CGRect(x: CGFloat(self.view.frame.size.width - 32), y: CGFloat(18), width: CGFloat(24), height: CGFloat(24)))
         NoticationLab.backgroundColor = UIColor(red: CGFloat(255.0 / 255.0), green: CGFloat(0.0 / 255.0), blue: CGFloat(0.0 / 255.0), alpha: CGFloat(1.0))
@@ -139,23 +190,35 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         }
         else
         {
-            DeviceToken = ""
+             DeviceToken = "afghg"
         }
 
+       
         
+         NotificationCenter.default.addObserver(self, selector: #selector(HomeVC.getDashBoardAPImethod), name: NSNotification.Name(rawValue: "NotificationIdentifier"), object: nil)
         
+           NotificationCenter.default.addObserver(self, selector: #selector(self.Notificationmethod), name: NSNotification.Name(rawValue: "Notification"), object: nil)
         
         
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
-            myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
-            strUserID=myArray.value(forKey: "id") as! NSString
+            let data = UserDefaults.standard.object(forKey: "UserId") as? Data
+            myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
             
-            //self.ProfileSettinglistAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=getSetting&userId=\(strUserID)")
+          //  myArray = UserDefaults.standard.object(forKey: "UserId") as! NSDictionary
+            
+            if let quantity = myArray.value(forKey: "id") as? NSNumber
+            {
+                strUserID = String(describing: quantity)
+            }
+            else if let quantity = myArray.value(forKey: "id") as? String
+            {
+                strUserID = quantity
+            }
         }
         else
         {
-           // strUserID = "0"
+            strUserID = ""
            ValunteerButt.isHidden=true
         }
 
@@ -177,15 +240,27 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         searchViewController.delegate=self
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+      //  locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
         
         
        
-        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+        if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways)
+        {
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
         }
         if CLLocationManager.locationServicesEnabled() && CLLocationManager.authorizationStatus() != CLAuthorizationStatus.denied {
         }else{
@@ -202,28 +277,81 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         }
 
         self.locationmethod()
-        self.getDashBoardAPImethod()
+       // self.getDashBoardAPImethod()
     }
     
-  
+    @IBAction func PlayButtClicked(_ sender: Any) {
+        if playerView.ready {
+            if playerView.playerState != YouTubePlayerState.Playing {
+                playerView.play()
+              //  playButton.setTitle("Pause", forState: .Normal)
+            } else {
+                playerView.pause()
+               // playButton.setTitle("Play", forState: .Normal)
+            }
+        }
+    }
     
-    override func viewWillAppear(_ animated: Bool) {
+    // web Delegate methods
+    
+    func webViewDidStartLoad(_ webView: UIWebView) {
+       // AFWrapperClass.svprogressHudShow(title: "Loading...", view: imageViewhome)
+    }
+    
+    func webViewDidFinishLoad(_ webView: UIWebView) {
+       // AFWrapperClass.svprogressHudDismiss(view: imageViewhome)
+    }
+    
+    func webView(_ webView: UIWebView, didFailLoadWithError error: Error) {
+        if (error.localizedDescription == "The Internet connection appears to be offline.") {
+         //   AFWrapperClass.svprogressHudDismiss(view: imageViewhome)
+            AFWrapperClass.alert("NetWork Error!", message: "Please check your mobile data/WiFi Connection", view: self)
+        }
+        if (error.localizedDescription == "The request timed out.") {
+          //  AFWrapperClass.svprogressHudDismiss(view: imageViewhome)
+        }
+    }
+    
+    
+    func Notificationmethod()
+    {
+        if UserDefaults.standard.object(forKey: "NCount") != nil
+        {
+            let data = UserDefaults.standard.object(forKey: "NCount") as! NSNumber
+            let orderInt  = data.intValue
+            self.NoticationLab.text = String(describing: orderInt)
+        }
+    }
+    
+    
+    override func viewWillAppear(_ animated: Bool)
+    {
        // self.navigationController?.isNavigationBarHidden = true
         
         searchViewController.delegate=self
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
         }
         
        
-        
         self.popview.isHidden=true
         self.footerView.isHidden=true
         
@@ -243,7 +371,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         }
         else
         {
-            DeviceToken = ""
+            DeviceToken = "afghg"
         }
         
         frontView.isHidden=true
@@ -251,18 +379,16 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         self.tabBarController?.tabBar.isHidden = false
         self.getDashBoardAPImethod()
         
-        
         // self.locationmethod()
         
-       
+        //  ValunteerButt.isUserInteractionEnabled = false
     }
     
     
     @objc private  func ProfileSettinglistAPIMethod (baseURL:String , params: String)
     {
         
-        print(params);
-        
+      //  print(params);
         
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
@@ -270,12 +396,11 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+             //   print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     self.listArraySettings = (responceDic.object(forKey: "settingDetail") as? NSDictionary)!
-                    
-                                   }
+                }
                 else
                 {
                                       
@@ -302,7 +427,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             let image1 = image.addingPercentEncoding( withAllowedCharacters: CharacterSet.urlQueryAllowed)
             imagesDataArray.add(image1 as Any)
         }
-        let banner = LCBannerView.init(frame: CGRect(x: 0, y: 0, width: self.imageViewhome.frame.size.width, height: self.imageViewhome.frame.size.height), delegate: self, imageURLs: (imagesArray as NSArray) as! [Any], placeholderImage:"PlaceHolderImageLoading", timerInterval: 5, currentPageIndicatorTintColor: UIColor.red, pageIndicatorTintColor: UIColor.white)
+        let banner = LCBannerView.init(frame: CGRect(x: 0, y: 0, width: self.imageViewhome.frame.size.width, height: self.imageViewhome.frame.size.height), delegate: self, imageURLs: (imagesArray as NSArray) as! [Any], placeholderImage:"Logo", timerInterval: 5, currentPageIndicatorTintColor: UIColor.red, pageIndicatorTintColor: UIColor.white)
         banner?.clipsToBounds = true
         imageViewhome.addSubview(banner!)
         //banner?.notScrolling = true
@@ -311,19 +436,27 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     func locationmethod () -> Void
     {
         
-        print("location method")
-        
+      //  print("location method")
         
         if( CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedWhenInUse || CLLocationManager.authorizationStatus() == CLAuthorizationStatus.authorizedAlways){
-            currentLatitude = (locationManager.location?.coordinate.latitude)!
-            currentLongitude = (locationManager.location?.coordinate.longitude)!
-            firstLatitude = (locationManager.location?.coordinate.latitude)!
-            firstLongitude = (locationManager.location?.coordinate.longitude)!
+            if let lat = self.locationManager.location?.coordinate.latitude {
+                currentLatitude = lat
+                firstLatitude = lat
+            }else {
+                
+            }
+            
+            if let long = self.locationManager.location?.coordinate.longitude {
+                currentLongitude = long
+                firstLongitude = long
+            }else {
+                
+            }
              self.getDashBoardAPImethod()
         }
         else
         {
-              print("location method2")
+            //  print("location method2")
             
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
                self.locationmethod()
@@ -332,159 +465,341 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     }
 
     
-    
+    // MARK: Dashboard Api :
     
     func getDashBoardAPImethod () -> Void
     {
-                let baseURL: String  = String(format:"%@",Constants.mainURL)
-                let params = "method=get_sliderDashboard&gcm_id=\(DeviceToken)&device_type=ios&user_id=\(strUserID)&lat=\(currentLatitude)&lon=\(currentLongitude)"
-        print(params)
-                AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-                AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+//                let baseURL: String  = String(format:"%@",Constants.mainURL)
+//                let params = "method=get_sliderDashboard&gcm_id=\(DeviceToken)&device_type=ios&user_id=\(strUserID)&lat=\(currentLatitude)&lon=\(currentLongitude)"
         
-                    DispatchQueue.main.async {
-                        AFWrapperClass.svprogressHudDismiss(view: self)
-                        let responceDic:NSDictionary = jsonDic as NSDictionary
-                        
-                        if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+        let strlat = "\(currentLatitude)"
+        let strlong = "\(currentLongitude)"
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"dashboard")
+        let strkey = Constants.ApiKey
+        
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+        PostDataValus.setValue("ios", forKey: "device_type")
+        PostDataValus.setValue(strUserID, forKey: "user_id")
+        PostDataValus.setValue(strlat, forKey: "lat")
+        PostDataValus.setValue(strlong, forKey: "long")
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        if self.listArrayFoodBank.count == 0
+        {
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        }
+        // AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDics:NSDictionary = jsonDic as NSDictionary
+                print(responceDics)
+                if (responceDics.object(forKey: "status") as! NSNumber) == 1
+                {
+                    let responceDic:NSDictionary = (responceDics.object(forKey: "dashboardDetails") as? NSDictionary)!
+                    
+                    if let quantity = responceDic.object(forKey: "foodbank_count") as? NSNumber
+                    {
+                        self.foodBankLabel.text! =  String(describing: quantity)
+                    }
+                    else if let quantity = responceDic.object(forKey: "foodbank_count") as? String
+                    {
+                        self.foodBankLabel.text! = quantity
+                    }
+                    
+                    if let quantity = responceDic.object(forKey: "foodsharing_count") as? NSNumber
+                    {
+                        self.foodShareLbl.text! =  String(describing: quantity)
+                    }
+                    else if let quantity = responceDic.object(forKey: "foodsharing_count") as? String
+                    {
+                        self.foodShareLbl.text! = quantity
+                    }
+                    
+                    if let quantity = responceDic.object(forKey: "events_count") as? NSNumber
+                    {
+                        self.Eventlabel.text! =  String(describing: quantity)
+                    }
+                    else if let quantity = responceDic.object(forKey: "events_count") as? String
+                    {
+                        self.Eventlabel.text! = quantity
+                    }
+                    
+                    if let quantity = responceDic.object(forKey: "volunteers_count") as? NSNumber
+                    {
+                        self.VolunteerLal.text! =  String(describing: quantity)
+                    }
+                    else if let quantity = responceDic.object(forKey: "volunteers_count") as? String
+                    {
+                        self.VolunteerLal.text! = quantity
+                    }
+                    
+                    
+                    
+                    
+                    //  let number = responceDic.object(forKey: "Notification") as! NSString
+                    
+                    
+                    self.strvalinter = responceDic.object(forKey: "volunteer_status") as? String ?? ""
+                    
+                    UserDefaults.standard.set(self.strvalinter, forKey: "volunteerstatus")
+                    
+                    
+                    if self.strUserID == ""
+                    {
+                        self.ValunteerButt.isHidden=true
+                    }
+                    else
+                    {
+                        if self.strvalinter == "1"
                         {
-                            
-                        print(responceDic)
-                            
-                            self.foodBankLabel.text! = (responceDic.object(forKey: "FoodBanks") as? String)!
-                            self.foodShareLbl.text! = (responceDic.object(forKey: "FoodShare") as? String)!
-                            self.Eventlabel.text! = (responceDic.object(forKey: "Event") as? String)!
-                          //  let number = responceDic.object(forKey: "Notification") as! NSString
-                            
-                            
-                            self.strvalinter=(responceDic.object(forKey: "volunteerstatus") as? String)! as NSString
-                            
-                            UserDefaults.standard.set(self.strvalinter, forKey: "volunteerstatus")
-                            
-                          
-                            if self.strUserID == ""
-                            {
-                               self.ValunteerButt.isHidden=true
-                            }
-                            else
-                            {
-                                if self.strvalinter == "1"
-                                {
-                                     self.ValunteerButt.setTitle("Invite friends to become Volunteers", for: .normal)
-                                     self.ValunteerButt.addTarget(self, action: #selector(HomeVC.becomeVolntrBtnAction2(_:)), for: UIControlEvents.touchUpInside)
-                                }
-                                else
-                                {
-                                    self.ValunteerButt.setTitle("I Want To Become Volunteer", for: .normal)
-                                    self.ValunteerButt.addTarget(self, action: #selector(HomeVC.becomeVolunteerClicked(_:)), for: UIControlEvents.touchUpInside)
-                                }
-                            }
-                            
-                            
-                            
-                            if let quantity = responceDic.object(forKey: "Notification") as? NSNumber
-                            {
-                               //let strval: String = (quantity: quantity.stringValue) as! String
-                                
-                                let strval = String(describing: quantity)
-                                
-                                if strval == "0"
-                                {
-                                    self.NoticationLab.isHidden = true
-                                     UserDefaults.standard.set(quantity, forKey: "NCount")
-                                   // self.NotificationButton.isHidden = false
-                                }
-                                else
-                                {
-                                    self.NoticationLab.text = (quantity: quantity.stringValue) as? String
-                                    UserDefaults.standard.set(self.NoticationLab.text, forKey: "NCount")
-                                    self.NoticationLab.isHidden = false
-                                    self.NotificationButton.isHidden = false
-                                }
-                            }
-                            else if let quantity = responceDic.object(forKey: "Notification") as? String
-                            {
-                                if quantity == "0"
-                                {
-                                    self.NoticationLab.isHidden = true
-                                    UserDefaults.standard.set(quantity, forKey: "NCount")
-                                   // self.NotificationButton.isHidden = true
-                                }
-                                else
-                                {
-                                    self.NoticationLab.text = quantity
-                                    UserDefaults.standard.set(self.NoticationLab.text, forKey: "NCount")
-                                    self.NoticationLab.isHidden = false
-                                    self.NotificationButton.isHidden = false
-                                }
-                            }
-                            
-                           // self.NoticationLab.text! = String(format : "%@", responceDic.object(forKey: "Notification") as! CVarArg)
-                            self.discriptionLabel.text! = ((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "description") as? String)!
-                            self.AboutTitle.text=((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "heading") as? String)!
-                            
-                            
-//                            let htmlText2 = ((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "description") as? String)!
-//                            
-//                            if let htmlData2 = htmlText2.data(using: String.Encoding.unicode) {
-//                                do {
-//                                    let attributedText = try NSAttributedString(data: htmlData2, options: [NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType], documentAttributes: nil)
-//                                    self.discriptionLabel.attributedText = attributedText
-//                                    self.discriptionLabel.font = UIFont(name: "Helvetica", size: 16.0)!
-//                                    
-//                                } catch let e as NSError {
-//                                    print("Couldn't translate \(htmlText2): \(e.localizedDescription) ")
-//                                }
-//                            }
-
-                            
-                            
-                            
-//                            
-//                            let htmlText = ((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "more_about") as? String)!
-//                            
-//                            if let htmlData = htmlText.data(using: String.Encoding.unicode) {
-//                                do {
-//                                    let attributedText = try NSAttributedString(data: htmlData, options: [NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType], documentAttributes: nil)
-//                                    self.MoreDetailLabel.attributedText = attributedText
-//                                    self.MoreDetailLabel.font = UIFont(name: "Helvetica", size: 16.0)!
-//                                    
-//                                } catch let e as NSError {
-//                                    print("Couldn't translate \(htmlText): \(e.localizedDescription) ")
-//                                }
-//                            }
-                            
-                            
-                            
-                            self.MoreDetailLabel.text! = ((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "more_about") as? String)!
-                            
-                            self.imagesArray = ((responceDic.object(forKey: "DasboardList") as! NSDictionary).object(forKey: "Dashborad_Image") as? NSArray)!.value(forKey: "images") as! NSArray
-                            
-                            //print(self.imagesArray)
-                            if self.imagesArray.count == 0
-                            {
-                                self.imagesArray = ["http://think360.in/food4all//assets/file-upload/uploadedPic-322777181.538.jpeg"]
-                                self.perform(#selector(HomeVC.showBannerView), with: nil, afterDelay: 0.02)
-                            }else{
-                                self.perform(#selector(HomeVC.showBannerView), with: nil, afterDelay: 0.02)
-                            }
+                            self.ValunteerButt.setTitle("Invite friends to become Volunteers", for: .normal)
+                            self.ValunteerButt.addTarget(self, action: #selector(HomeVC.becomeVolntrBtnAction2(_:)), for: UIControlEvents.touchUpInside)
                         }
                         else
                         {
-                            var Message=String()
-                            Message = responceDic.object(forKey: "responseMessage") as! String
-                            
-                            AFWrapperClass.svprogressHudDismiss(view: self)
-                            AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                            self.ValunteerButt.setTitle("I Want To Become Volunteer", for: .normal)
+                            self.ValunteerButt.addTarget(self, action: #selector(HomeVC.becomeVolunteerClicked(_:)), for: UIControlEvents.touchUpInside)
                         }
                     }
-                }) { (error) in
-                    AFWrapperClass.svprogressHudDismiss(view: self)
-                    AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
-                    //print(error.localizedDescription)
+                    
+                    
+                    
+                    if let quantity = responceDic.object(forKey: "notifications") as? NSNumber
+                    {
+                        //let strval: String = (quantity: quantity.stringValue) as! String
+                        
+                        let strval = String(describing: quantity)
+                        
+                        if strval == "0"
+                        {
+                            self.NoticationLab.isHidden = true
+                            UserDefaults.standard.set(strval, forKey: "NCount")
+                            // self.NotificationButton.isHidden = false
+                        }
+                        else
+                        {
+                            self.NoticationLab.text = strval
+                            UserDefaults.standard.set(strval, forKey: "NCount")
+                            self.NoticationLab.isHidden = false
+                            self.NotificationButton.isHidden = false
+                        }
+                    }
+                    else if let quantity = responceDic.object(forKey: "notifications") as? String
+                    {
+                        if quantity == "0"
+                        {
+                            self.NoticationLab.isHidden = true
+                            UserDefaults.standard.set(quantity, forKey: "NCount")
+                            // self.NotificationButton.isHidden = true
+                        }
+                        else
+                        {
+                            self.NoticationLab.text = quantity
+                            UserDefaults.standard.set(quantity, forKey: "NCount")
+                            self.NoticationLab.isHidden = false
+                            self.NotificationButton.isHidden = false
+                        }
+                    }
+                    
+                 
+                    
+                    let strtitle = "  "
+                    let strtitle2 = responceDic.object(forKey: "heading") as? String ?? "Food4All.Org"
+                    self.AboutTitle.text = strtitle+strtitle2
+                    
+                    
+                    let htmlText2 = (responceDic.object(forKey: "description") as? String)!
+                    
+                    if let htmlData2 = htmlText2.data(using: String.Encoding.unicode) {
+                        do {
+                            let attributedText = try NSAttributedString(data: htmlData2, options: [NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType], documentAttributes: nil)
+                            self.discriptionLabel.attributedText = attributedText
+                            self.discriptionLabel.font = UIFont(name: "Helvetica", size: 16.0)!
+                            
+                        } catch let e as NSError {
+                            print("Couldn't translate \(htmlText2): \(e.localizedDescription) ")
+                        }
+                    }
+                    
+                    self.strVideoUrl = responceDic.object(forKey: "header_video") as? String ?? ""
+                    
+                    self.DataWebView.isOpaque = false;
+                    self.DataWebView.backgroundColor = UIColor.clear
+                    self.DataWebView.allowsInlineMediaPlayback = true
+                    self.DataWebView.scrollView.isScrollEnabled = false
+                    self.DataWebView.scrollView.bounces = false
+                    
+                    
+                    
+                    let width = self.view.bounds.size.width
+                    print(width)
+                    
+                    if(width == 320)
+                    {
+                        self.TopVideoViewHeight.constant = 175
+                        self.strwidth = "175"
+                    }
+                    else if (width == 375)
+                    {
+                        self.TopVideoViewHeight.constant = 220
+                        self.strwidth = "220"
+                    }
+                    else
+                    {
+                        self.TopVideoViewHeight.constant = 220
+                        self.strwidth = "220"
+                    }
+                    
+                    
+                    
+                    let userInterface = UIDevice.current.userInterfaceIdiom
+                    
+                    if(userInterface == .pad)
+                    {
+                        self.TopVideoViewHeight.constant = 320
+                        let width = self.view.frame.size.width
+                        
+                        
+                        let str1 =  "<html><body><iframe src=\""
+                        let str2 = "?playsinline=1\" width=\""
+                        let str3 = String(describing: width)
+                        let str4 = "\" height=\"320\" frameborder=\"0\" allowfullscreen></iframe></body></html>"
+                        let embededHTML = str1+self.strVideoUrl+str2+str3+str4
+                        self.DataWebView.loadHTMLString(embededHTML, baseURL: Bundle.main.bundleURL)
+                    }
+                    else
+                    {
+                        let width = self.view.frame.size.width
+                        let str1 =  "<html><body><iframe src=\""
+                        let str2 = "?playsinline=1\" width=\""
+                        let str3 = String(describing: width)
+                        let str4 = "\" height=\""
+                        let str5 = "\" frameborder=\"0\" allowfullscreen></iframe></body></html>"
+                        //  let str6 = "\" height=\"175\" frameborder=\"0\" allowfullscreen></iframe></body></html>"
+                        let embededHTML = str1+self.strVideoUrl+str2+str3+str4+self.strwidth+str5
+                        
+                        print(embededHTML)
+                        self.DataWebView.loadHTMLString(embededHTML, baseURL: Bundle.main.bundleURL)
+                    }
+                    
+                    self.listArrayFoodBank = responceDic.object(forKey: "nearest_foodbank") as! NSMutableArray
+                    self.listArrayFoodEvent = responceDic.object(forKey: "upcoming_event") as! NSMutableArray
+                    
+                    if self.listArrayFoodBank.count == 0
+                    {
+                        self.FoodBankTablHeight.constant = 0
+                        self.NearFoodBankLab.isHidden = true
+                        self.NearFoodBankHeight.constant = 0
+                    }
+                    else
+                    {
+                        self.FoodBankTablHeight.constant = CGFloat((self.listArrayFoodBank.count) * 190)
+                        self.NearFoodBankLab.isHidden = false
+                        self.NearFoodBankHeight.constant = 42
+                    }
+                    
+                    if self.listArrayFoodEvent.count == 0
+                    {
+                        self.EventTablHeight.constant = 0
+                        self.UpcomingEventLab.isHidden = true
+                        self.UpcomingEventHeight.constant = 0
+                    }
+                    else
+                    {
+                        self.EventTablHeight.constant = CGFloat((self.listArrayFoodEvent.count) * 220)
+                        self.UpcomingEventLab.isHidden = false
+                        self.UpcomingEventHeight.constant = 42
+                    }
+                    
+                    self.FoodBankTabl.reloadData()
+                    self.EventsTabl.reloadData()
+                    
+                    self.imagesArray = responceDic.object(forKey: "sliders") as! NSArray
+                    
+                    
+                    if self.view.bounds.size.width == 320.0
+                    {
+                        self.FoodbankLab.font = UIFont.systemFont(ofSize: 10)
+                        self.FoodShareLab.font = UIFont.systemFont(ofSize: 10)
+                        self.EventsLab.font = UIFont.systemFont(ofSize: 10)
+                        self.VolunteersLab.font = UIFont.systemFont(ofSize: 10)
+                    }
+                    else if self.view.bounds.size.width == 375.0
+                    {
+                        self.FoodbankLab.font = UIFont.systemFont(ofSize: 12)
+                        self.FoodShareLab.font = UIFont.systemFont(ofSize: 12)
+                        self.EventsLab.font = UIFont.systemFont(ofSize: 12)
+                        self.VolunteersLab.font = UIFont.systemFont(ofSize: 12)
+                    }
+                    else if self.view.bounds.size.width == 414.0
+                    {
+                        self.FoodbankLab.font = UIFont.systemFont(ofSize: 13)
+                        self.FoodShareLab.font = UIFont.systemFont(ofSize: 13)
+                        self.EventsLab.font = UIFont.systemFont(ofSize: 13)
+                        self.VolunteersLab.font = UIFont.systemFont(ofSize: 13)
+                    }
+                    
+                    
+                    //print(self.imagesArray)
+//                    if self.imagesArray.count == 0
+//                    {
+//                        self.imagesArray = ["http://think360.in/food4all//assets/file-upload/uploadedPic-322777181.538.jpeg"]
+//                        self.perform(#selector(HomeVC.showBannerView), with: nil, afterDelay: 0.02)
+//                    }else{
+//                        self.perform(#selector(HomeVC.showBannerView), with: nil, afterDelay: 0.02)
+//                    }
                 }
+                else
+                {
+                    let strerror = responceDics.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDics.object(forKey: "responseMessage") as? String ?? strerror
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
     }
     
+     // MARK: videobutt Clicked :
+    
+    @IBAction func VideoButtClicked(_ sender: UIButton)
+    {
+        if strVideoUrl == ""
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: "No Video Found", view: self)
+        }
+        else
+        {
+            let proVC = self.storyboard?.instantiateViewController(withIdentifier: "VideoPlayViewController") as! VideoPlayViewController
+            proVC.strwebUrl = self.strVideoUrl
+            proVC.hidesBottomBarWhenPushed = true
+            self.navigationController?.pushViewController(proVC, animated: true)
+        }
+    }
     
     
     @IBAction func becomeVolntrBtnAction2(_ sender: Any)
@@ -507,49 +822,110 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     
     @IBAction func NotificationButtonClicked(_ sender: Any)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
-        
-        print(params)
-        
+        if strUserID == ""
+        {
+            
+        }
+        else
+        {
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
+        print(baseURL)
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                  print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
                     myVC?.hidesBottomBarWhenPushed=true
                     self.navigationController?.pushViewController(myVC!, animated: true)
                     
-                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+                    myVC?.listArrayFoodBank = responceDic.object(forKey: "NotificationList") as! NSMutableArray
                     let number = responceDic.object(forKey: "nextPage") as! NSNumber
                     myVC?.strpage = String(describing: number)
                 }
                 else
                 {
-                    var Message=String()
-                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
+        }
+        
+        
+        
+        
+//        let baseURL: String  = String(format:"%@",Constants.mainURL)
+//        let params = "method=get_user_notification&gcm_id=\(DeviceToken)"
+        
+//        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"get_user_notification")
+//        let strkey = Constants.ApiKey
+//        
+//        let PostDataValus = NSMutableDictionary()
+//        PostDataValus.setValue(strkey, forKey: "api_key")
+//        PostDataValus.setValue(DeviceToken, forKey: "gcm_id")
+//        
+//        var jsonStringValues = String()
+//        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+//        if jsonData == nil {
+//            
+//        }
+//        else {
+//            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+//            print("jsonString: \(jsonStringValues)")
+//        }
+//        
+//        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+//            
+//            DispatchQueue.main.async {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                let responceDic:NSDictionary = jsonDic as NSDictionary
+//              //  print(responceDic)
+//                
+//                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+//                {
+//                    let myVC = self.storyboard?.instantiateViewController(withIdentifier: "NotificationlistViewController") as? NotificationlistViewController
+//                    myVC?.hidesBottomBarWhenPushed=true
+//                    self.navigationController?.pushViewController(myVC!, animated: true)
+//                    
+//                    myVC?.listArrayFoodBank = responceDic.object(forKey: "List") as! NSMutableArray
+//                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+//                    myVC?.strpage = String(describing: number)
+//                }
+//                else
+//                {
+//                    var Message=String()
+//                    Message = responceDic.object(forKey: "responseMessage") as! String
+//                    
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+//                    
+//                }
+//            }
+//            
+//        }) { (error) in
+//            
+//            AFWrapperClass.svprogressHudDismiss(view: self)
+//            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+//            //print(error.localizedDescription)
+//        }
     }
     
-    
+      // MARK: list Count Clicked:
      
     @IBAction func foodBanklistButtonClicked(_ sender: Any)
     {
@@ -566,6 +942,14 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     {
          _ = self.tabBarController?.selectedIndex = 3
     }
+    
+    @IBAction func VolunteerlistButtonClicked(_ sender: UIButton)
+    {
+         _ = self.tabBarController?.selectedIndex = 4
+    }
+    
+    
+    // MARK: Become volunteer:
     
     @IBAction func becomeVolunteerClicked(_ sender: Any)
     {
@@ -629,7 +1013,10 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             let UserNamelab = UILabel()
             UserNamelab.frame = CGRect(x:15, y:Userimage.frame.size.height+Userimage.frame.origin.y+10, width:userProfile.frame.size.width-30, height:20)
             UserNamelab.numberOfLines=0
-            UserNamelab.text=myArray.value(forKey: "first_name") as! String?
+            let str1 = myArray.value(forKey: "first_name") as! String?
+            let str2 = myArray.value(forKey: "last_name") as! String?
+            let strname = str1!+" "+str2!
+            UserNamelab.text=strname
             UserNamelab.font =  UIFont(name:"Helvetica", size: 14)
             UserNamelab.textColor=UIColor.white
             UserNamelab.textAlignment = .center
@@ -647,19 +1034,31 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             let Descriptionlab = UILabel()
             Descriptionlab.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:footerView.frame.size.width-20, height:15)
             Descriptionlab.text = "About Me"
+            Descriptionlab.textColor = UIColor.lightGray
             footerView.addSubview(Descriptionlab)
             
             TextDescription.frame = CGRect(x:10, y:Descriptionlab.frame.size.height+Descriptionlab.frame.origin.y+5, width:footerView.frame.size.width-20, height:50)
-            TextDescription.layer.borderWidth = 1.5
             TextDescription.textAlignment = .left
+            TextDescription.delegate = self
+            TextDescription.text = "Enter your text here.."
+            TextDescription.textColor = UIColor.lightGray
             TextDescription.layer.borderColor = UIColor.lightGray.cgColor
             footerView.addSubview(TextDescription)
             
+            let linelab = UILabel()
+            linelab.frame = CGRect(x:10, y:TextDescription.frame.size.height+TextDescription.frame.origin.y, width:footerView.frame.size.width-20, height:1)
+            linelab.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+            footerView.addSubview(linelab)
             
             
+            let locationlab = UILabel()
+            locationlab.frame = CGRect(x:10, y:linelab.frame.size.height+linelab.frame.origin.y+15, width:footerView.frame.size.width-20, height:15)
+            locationlab.text = "Address"
+            locationlab.textColor = UIColor.lightGray
+            footerView.addSubview(locationlab)
             
             let Cityview = UIView()
-            Cityview.frame = CGRect(x:10, y:TextDescription.frame.size.height+TextDescription.frame.origin.y+15, width:footerView.frame.size.width-20, height:50)
+            Cityview.frame = CGRect(x:10, y:locationlab.frame.size.height+locationlab.frame.origin.y+5, width:footerView.frame.size.width-20, height:50)
             Cityview.layer.borderWidth=1.0
             Cityview.layer.borderColor = UIColor(red: CGFloat(38 / 255.0), green: CGFloat(164 / 255.0), blue: CGFloat(154 / 255.0), alpha: CGFloat(1.0)).cgColor
             footerView.addSubview(Cityview)
@@ -668,7 +1067,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             
             citylab.frame = CGRect(x:5, y:5, width:Cityview.frame.size.width-10, height:40)
             citylab.text = " Select Location"
-            citylab.textAlignment = .center
+            citylab.textAlignment = .left
             citylab.font =  UIFont(name:"Helvetica", size: 15)
             citylab.numberOfLines = 2
             Cityview.addSubview(citylab)
@@ -677,7 +1076,6 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             locationButt.backgroundColor=UIColor.clear
             locationButt.addTarget(self, action: #selector(HomeVC.locationButtonAction(_:)), for: UIControlEvents.touchUpInside)
             Cityview.addSubview(locationButt)
-            
             
             
             
@@ -703,8 +1101,6 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             switchlab.setOn(false, animated: false)
             switchlab.addTarget(self, action: #selector(switchValueDidChange), for: .valueChanged)
             footerView.addSubview(switchlab)
-            
-            
             
             
             
@@ -735,6 +1131,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             footerView.addSubview(DoneButton2)
             
             self.setUsersClosestCity()
+            
+            self.addDoneButtonOnKeyboard()
         }
         else
         {
@@ -743,49 +1141,133 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             self.navigationController?.pushViewController(proVC, animated: true)
         }
         
-
+    }
+    
+    // MARK: TextView Delegates:
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if TextDescription.textColor == UIColor.lightGray {
+            TextDescription.text = nil
+            TextDescription.textColor = UIColor.darkGray
+        }
+    }
+    func textViewDidEndEditing(_ textView: UITextView) {
+        
+        if TextDescription.text.isEmpty {
+            TextDescription.text = "Enter your text here.."
+            TextDescription.textColor = UIColor.lightGray
+        }
+    }
+    // MARK: TextField Dekegate Methods:
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    func addDoneButtonOnKeyboard()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.TextDescription.inputAccessoryView = doneToolbar
+    }
+    
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
     }
     
     
     func foodbanklistlistClicked(_ sender: UIButton!)
     {
-        let baseURL: String  = String(format:"%@",Constants.mainURL)
-        let params = "method=Search_FoodBanks&lat=\(currentLatitude)&longt=\(currentLongitude)&text="
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&search=&lat=\(currentLatitude)&long=\(currentLongitude)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
         
-        print(params)
+        print(baseURL)
         
-        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
                 print(responceDic)
-                
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
-                    self.arrChildCategory = (responceDic.object(forKey: "FoodbankList") as? NSArray)! as! NSMutableArray
+                    self.arrChildCategory.removeAllObjects()
+                    self.arrChildCategory = (responceDic.object(forKey: "foodbankList") as? NSArray)! as! NSMutableArray
+                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                    self.strpage = String(describing: number)
                     
                     self.foodbanklistView()
                 }
                 else
                 {
+                    self.arrChildCategory.removeAllObjects()
+                    
                     var Message=String()
                     Message = responceDic.object(forKey: "responseMessage") as! String
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
-            
         }) { (error) in
-            
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
         }
         
+        
+        //
+        //
+        //
+        //        let baseURL: String  = String(format:"%@",Constants.mainURL)
+        //        let params = "method=Search_FoodBanks&lat=\(currentLatitude)&longt=\(currentLongitude)&text="
+        //
+        //        print(params)
+        //
+        //        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        //        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
+        //
+        //            DispatchQueue.main.async {
+        //                AFWrapperClass.svprogressHudDismiss(view: self)
+        //                let responceDic:NSDictionary = jsonDic as NSDictionary
+        //                print(responceDic)
+        //
+        //                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+        //                {
+        //                    self.arrChildCategory = (responceDic.object(forKey: "FoodbankList") as? NSArray)! as! NSMutableArray
+        //
+        //                    self.foodbanklistView()
+        //                }
+        //                else
+        //                {
+        //                    var Message=String()
+        //                    Message = responceDic.object(forKey: "responseMessage") as! String
+        //
+        //                    AFWrapperClass.svprogressHudDismiss(view: self)
+        //                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+        //
+        //                }
+        //            }
+        //
+        //        }) { (error) in
+        //
+        //            AFWrapperClass.svprogressHudDismiss(view: self)
+        //            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+        //            //print(error.localizedDescription)
+        //        }
+        //
     }
     
     
@@ -834,8 +1316,10 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         volunterFbTblView.frame = CGRect(x: 0, y: bglab.frame.origin.y+bglab.frame.size.height, width: footerView2.frame.size.width, height: footerView2.frame.size.height-70)
         volunterFbTblView.delegate = self
         volunterFbTblView.dataSource = self
+        volunterFbTblView.tag = 1
         volunterFbTblView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         volunterFbTblView.backgroundColor = UIColor.clear
+        volunterFbTblView.tableFooterView = UIView()
         footerView2.addSubview(volunterFbTblView)
         
         
@@ -846,10 +1330,29 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         volunterFbTblView.tableHeaderView = theSearchBar
         theSearchBar?.isUserInteractionEnabled = true
         
+        self.addDoneButtonOnKeyboardn()
     }
     
     
+    func addDoneButtonOnKeyboardn()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.theSearchBar?.inputAccessoryView = doneToolbar
+    }
     
+   
+
     
     
     func CloseButtonAction(_ sender: UIButton!)
@@ -905,7 +1408,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         popview3.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
         self.view.addSubview(popview3)
         
-        footerView3.frame = CGRect(x:0, y:0, width:popview.frame.size.width, height:popview.frame.size.height)
+        footerView3.frame = CGRect(x:0, y:0, width:popview3.frame.size.width, height:popview3.frame.size.height)
         footerView3.backgroundColor = UIColor.white
         popview3.addSubview(footerView3)
         
@@ -1061,7 +1564,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     {
         locationManager.delegate=self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.requestAlwaysAuthorization()
+        locationManager.requestWhenInUseAuthorization()
+        //  locationManager.requestAlwaysAuthorization()
         locationManager.startUpdatingLocation()
         
         currentLatitude = (locationManager.location?.coordinate.latitude)!
@@ -1074,7 +1578,6 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             firstLatitude = (locationManager.location?.coordinate.latitude)!
             firstLongitude = (locationManager.location?.coordinate.longitude)!
         }
-        
         
         camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
         self.mapView2.animate(to: camera)
@@ -1103,9 +1606,9 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         if switchlab.isOn
         {
             var message = String()
-            if (TextDescription.text?.isEmpty)!
+            if ((TextDescription.text?.isEmpty)! || TextDescription.text! == "Enter your text here..")
             {
-                message = "Please Enter Your Description"
+                message = "Please enter description"
             }
             else if (strfoodbankname == "")
             {
@@ -1118,16 +1621,54 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             }
             else
             {
-                self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=Becomevolenteer&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&description=\(TextDescription.text!)&address=\(citylab.text!)&foodbankid=\(strFoodbankId)&is_foodbank=1")
+//                self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=Becomevolenteer&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&description=\(TextDescription.text!)&address=\(citylab.text!)&foodbankid=\(strFoodbankId)&is_foodbank=1")
+                
+               // let strkey = Constants.ApiKey
+              
+                
+                let strlat = "\(firstLatitude)"
+                let strlong = "\(firstLongitude)"
+
+            
+                let strkey = Constants.ApiKey
+                
+                let PostDataValus = NSMutableDictionary()
+                PostDataValus.setValue(strkey, forKey: "api_key")
+                PostDataValus.setValue(strUserID, forKey: "user_id")
+                PostDataValus.setValue("1", forKey: "connect_foodbank")
+                PostDataValus.setValue(strFoodbankId, forKey: "foodbank_id")
+                PostDataValus.setValue(citylab.text!, forKey: "address")
+                PostDataValus.setValue(TextDescription.text!, forKey: "description")
+                PostDataValus.setValue(strlat, forKey: "lat")
+                PostDataValus.setValue(strlong, forKey: "long")
+               
+                
+                
+                var jsonStringValues = String()
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+                if jsonData == nil {
+                    
+                }
+                else {
+                    jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                    print("jsonString: \(jsonStringValues)")
+                }
+                
+                
+              
+                print(jsonStringValues)
+                
+                  self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@%@",Constants.mainURL,"addVolunteer") , params: jsonStringValues)
+                
             }
             
         }
         else
         {
             var message = String()
-            if (TextDescription.text?.isEmpty)!
+            if ((TextDescription.text?.isEmpty)! || TextDescription.text! == "Enter your text here..")
             {
-                message = "Please Enter Your Description"
+                message = "Please enter description"
             }
             if message.characters.count > 1
             {
@@ -1135,7 +1676,41 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             }
             else
             {
-                self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=Becomevolenteer&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&description=\(TextDescription.text!)&address=\(citylab.text!)&is_foodbank=0")
+//                self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=Becomevolenteer&lat=\(currentLatitude)&long=\(currentLongitude)&user_id=\(strUserID)&description=\(TextDescription.text!)&address=\(citylab.text!)&is_foodbank=0")
+                
+               
+                let strlat = "\(firstLatitude)"
+                let strlong = "\(firstLongitude)"
+                
+                let strkey = Constants.ApiKey
+                
+                let PostDataValus = NSMutableDictionary()
+                PostDataValus.setValue(strkey, forKey: "api_key")
+                PostDataValus.setValue(strUserID, forKey: "user_id")
+                PostDataValus.setValue("0", forKey: "connect_foodbank")
+                PostDataValus.setValue("", forKey: "foodbank_id")
+                PostDataValus.setValue(citylab.text!, forKey: "address")
+                PostDataValus.setValue(TextDescription.text!, forKey: "description")
+                PostDataValus.setValue(strlat, forKey: "lat")
+                PostDataValus.setValue(strlong, forKey: "long")
+                
+                
+                var jsonStringValues = String()
+                let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+                if jsonData == nil {
+                    
+                }
+                else {
+                    jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                    print("jsonString: \(jsonStringValues)")
+                }
+                
+                
+                
+                self.BecomeVolunteerAPIMethod(baseURL: String(format:"%@%@",Constants.mainURL,"addVolunteer") , params: jsonStringValues)
+                
+                
+                
             }
         }
     }
@@ -1144,17 +1719,15 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     @objc private  func BecomeVolunteerAPIMethod (baseURL:String , params: String)
     {
         
-        print(params);
-        
-        
+     //   print(params);
         AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
         AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: params, success: { (jsonDic) in
             
             DispatchQueue.main.async {
                 AFWrapperClass.svprogressHudDismiss(view: self)
                 let responceDic:NSDictionary = jsonDic as NSDictionary
-                print(responceDic)
-                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+              //  print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
                 {
                     
                     self.strvalinter = "1"
@@ -1208,6 +1781,13 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         //                let placeArray = placemarks as [CLPlacemark]!
         //                var placeMark: CLPlacemark!
         //                placeMark = placeArray?[0]
+        
+        
+        
+        
+        
+        
+        
         //
         //                if placeMark.isoCountryCode != nil
         //                {
@@ -1236,7 +1816,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             
             // Print fully formatted address
             if let formattedAddress = addressDict["FormattedAddressLines"] as? [String] {
-                print(formattedAddress.joined(separator: ", "))
+              //  print(formattedAddress.joined(separator: ", "))
                 
                 self.citylab.text! = formattedAddress.joined(separator: ", ")
                 self.locationlab.text = formattedAddress.joined(separator: ", ")
@@ -1252,26 +1832,51 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     //  MARK: searchbar Delegates and Datasource:
     
     
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchResults.count != 0 {
-            self.searchResults.removeAllObjects()
-            volunterFbTblView.tag = 1
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String)
+    {
+        let str = searchText
+        var encodeUrl = String()
+        let allowedCharacterSet = (CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[] ").inverted)
+        if let escapedString = str.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) {
+            encodeUrl = escapedString
         }
-        for i in 0..<arrChildCategory.count {
-            // [searchResults removeAllObjects];
-            let string: String = (self.arrChildCategory.object(at: i) as! NSDictionary).value(forKey: "fbank_title") as! String
-            let rangeValue: NSRange = (string as NSString).range(of: searchText, options: .caseInsensitive)
-            if rangeValue.length > 0
-            {
-                volunterFbTblView.tag = 2
-                searchResults.add(arrChildCategory[i])
+        
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&search=\(encodeUrl)&lat=\(currentLatitude)&long=\(currentLongitude)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
+        
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    self.arrChildCategory.removeAllObjects()
+                    self.arrChildCategory = (responceDic.object(forKey: "foodbankList") as? NSArray)! as! NSMutableArray
+                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                    self.strpage = String(describing: number)
+                    
+                    self.volunterFbTblView.reloadData()
+                }
+                else
+                {
+                     self.arrChildCategory.removeAllObjects()
+                     self.volunterFbTblView.reloadData()
+                    
+                    var Message=String()
+                    Message = responceDic.object(forKey: "responseMessage") as! String
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
             }
-            else
-            {
-                
-            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
         }
-        volunterFbTblView.reloadData()
     }
     
     
@@ -1311,91 +1916,359 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
     {
-        return 70
-        
+        if tableView.tag == 3 || tableView.tag == 4
+        {
+            return UITableViewAutomaticDimension
+        }
+        else
+        {
+            return 70
+        }
     }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        if volunterFbTblView.tag == 2
+        if tableView.tag == 3
+        {
+            return listArrayFoodBank.count
+        }
+        else if tableView.tag == 4
+        {
+             return listArrayFoodEvent.count
+        }
+        else if tableView.tag == 2
         {
             return searchResults.count
         }
-        else {
+        else
+        {
             return arrChildCategory.count
         }
     }
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
-        let cellIdetifier: String = "Cell"
-        Fbcell = UITableViewCell(style: .default, reuseIdentifier: cellIdetifier)
         
-        
-        if volunterFbTblView.tag == 2
+        if tableView.tag == 3
         {
-            let titlelab = UILabel()
-            titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
-            titlelab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            titlelab.font =  UIFont(name:"Helvetica", size: 15)
-            titlelab.textColor=UIColor.black
-            titlelab.textAlignment = .left
-            Fbcell?.addSubview(titlelab)
+            let identifier = "FBtableCell"
+            Foodcell = tableView.dequeueReusableCell(withIdentifier: identifier) as? FBtableCell
+            
+            if Foodcell == nil
+            {
+                tableView.register(UINib(nibName: "FBtableCell", bundle: nil), forCellReuseIdentifier: identifier)
+                Foodcell = tableView.dequeueReusableCell(withIdentifier: identifier) as? FBtableCell
+            }
+           
+            Foodcell.selectionStyle = UITableViewCellSelectionStyle.none
+            
+//            if self.listArrayFoodBank.count == 1 || self.listArrayFoodBank.count == 0
+//            {
+//                Foodcell.Bottomlbl.backgroundColor = UIColor.white
+//            }
+//            else
+//            {
+//                 Foodcell.Bottomlbl.backgroundColor = UIColor.lightGray
+//            }
+            
+            let imageURL: String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "header_image") as! String
+            let url = NSURL(string:imageURL)
+            Foodcell.imageViewUser.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+            
+            Foodcell.foodBankName.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as! String
             
             
-            let addresslab = UILabel()
-            addresslab.frame = CGRect(x:15, y:titlelab.frame.size.height+titlelab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            addresslab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as? String
-            addresslab.font =  UIFont(name:"Helvetica", size: 15)
-            addresslab.textColor=UIColor.black
-            addresslab.textAlignment = .left
-            Fbcell?.addSubview(addresslab)
+//            let foodbankManage = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "manage_user") as? String ?? ""
+//            if foodbankManage == ""
+//            {
+//                let strname1 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+//                let strname2 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+//                Foodcell.foodBnkUserName.text! = strname1+" "+strname2
+//            }
+//            else
+//            {
+//                Foodcell.foodBnkUserName.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "manage_other_contact") as? String ?? ""
+//            }
+            
+            let foodbankManage = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "manage_other_contact") as? String ?? ""
+            if foodbankManage == ""
+            {
+                let strname1 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+                let strname2 = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+                Foodcell.foodBnkUserName.text! = strname1+" "+strname2
+            }
+            else
+            {
+                Foodcell.foodBnkUserName.text! = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "manage_other_contact") as? String ?? ""
+            }
+           
             
             
-            let Distancelab = UILabel()
-            Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            Distancelab.text =  String(format: "%@ Kms ",((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String)!)
-            Distancelab.font =  UIFont(name:"Helvetica", size: 15)
-            Distancelab.textColor=UIColor.black
-            Distancelab.textAlignment = .left
-            Fbcell?.addSubview(Distancelab)
+            let straddress =  (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as? String ?? ""
+            let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+            Foodcell.locationLabel.text!  = stradd
+            
+            
+            let sliderValue = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "capacity_status") as? String ?? ""
+            if sliderValue == "" {
+                Foodcell.sliderFdBnk.value = 0
+                Foodcell.percentLbl.text! = "0"
+            }else{
+                Foodcell.sliderFdBnk.value = Float(sliderValue)!
+                Foodcell.percentLbl.text! = String(format:"%@%@",sliderValue,"%")
+                
+            }
+            
+            if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? NSNumber
+            {
+                 Foodcell.milesLabel.text! =  String(format: "%@ Kms",String(describing: quantity))
+            }
+            else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance")  as? String
+            {
+                 Foodcell.milesLabel.text! = String(format: "%@ Kms",quantity)
+            }
+            
+            return Foodcell
+        }
+        else if tableView.tag == 4
+        {
+            let identifier = "EventTableCell"
+            Eventcell = tableView.dequeueReusableCell(withIdentifier: identifier) as? EventTableCell
+            
+            if Eventcell == nil
+            {
+                tableView.register(UINib(nibName: "EventTableCell", bundle: nil), forCellReuseIdentifier: identifier)
+                Eventcell = tableView.dequeueReusableCell(withIdentifier: identifier) as? EventTableCell
+            }
+            
+            Eventcell.selectionStyle = UITableViewCellSelectionStyle.none
+            
+//            if self.listArrayFoodEvent.count == 1 || self.listArrayFoodEvent.count == 0
+//            {
+//                Eventcell.Bottomlbl.backgroundColor = UIColor.white
+//            }
+//            else
+//            {
+//                Eventcell.Bottomlbl.backgroundColor = UIColor.lightGray
+//            }
+            
+            let imageURL: NSArray = ((self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "images") as? NSArray)!
+            if imageURL.count == 0
+            {
+                Eventcell.EventImage.image = UIImage(named: "Logo")
+            }
+            else
+            {
+                let strurl = imageURL.object(at: 0)
+                let url = NSURL(string: strurl as! String )
+                Eventcell.EventImage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
+            }
+           
+            
+            Eventcell.EventTitle.text! = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "title") as? String ?? ""
+            
+            let strname1 = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "first_name") as? String ?? ""
+            let strname2 = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "last_name") as? String ?? ""
+            Eventcell.EventUserName.text! = strname1+" "+strname2
+            
+           
+            
+            let straddress = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "address") as? String ?? ""
+            let stradd = straddress.replacingOccurrences(of: "\n", with: "")
+             Eventcell.EventAddress.text! = stradd
+            
+            
+            
+            if let quantity = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? NSNumber
+            {
+                //   let strval: String = (quantity: quantity.stringValue) as! String
+                let strval = String(describing: quantity)
+                Eventcell.EventDistance.text! = strval as String + " kms"
+                
+            }
+            else if let quantity = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "distance") as? String
+            {
+                Eventcell.EventDistance.text! = quantity+" Kms"
+            }
+            
+            let StrStartDate = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "start_datetime") as? String ?? ""
+            if StrStartDate == ""
+            {
+                
+            }
+            else
+            {
+                let startDateArray:NSArray = StrStartDate.components(separatedBy: " ") as NSArray
+                if startDateArray.count > 1
+                {
+                    Eventcell.EventStartDate.text! = (startDateArray.object(at: 0) as? String)!
+                    Eventcell.EventStartTime.text! = (startDateArray.object(at: 1) as? String)!
+                }
+                else
+                {
+                    Eventcell.EventStartDate.text! = (startDateArray.object(at: 0) as? String)!
+                }
+            }
+            
+            let StrEndDate = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "end_datetime") as? String ?? ""
+            if StrEndDate == ""
+            {
+                
+            }
+            else
+            {
+                let EndDateArray:NSArray = StrEndDate.components(separatedBy: " ") as NSArray
+                if EndDateArray.count > 1
+                {
+                    Eventcell.EventEndDate.text! = (EndDateArray.object(at: 0) as? String)!
+                    Eventcell.EventEndTime.text! = (EndDateArray.object(at: 1) as? String)!
+                }
+                else
+                {
+                    Eventcell.EventEndDate.text! = (EndDateArray.object(at: 0) as? String)!
+                }
+            }
+            return Eventcell
         }
         else
         {
-            let titlelab = UILabel()
-            titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
-            titlelab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            titlelab.font =  UIFont(name:"Helvetica", size: 15)
-            titlelab.textColor=UIColor.black
-            titlelab.textAlignment = .left
-            Fbcell?.addSubview(titlelab)
-            
-            let addresslab = UILabel()
-            addresslab.frame = CGRect(x:15, y:titlelab.frame.size.height+titlelab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            addresslab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as? String
-            addresslab.font =  UIFont(name:"Helvetica", size: 15)
-            addresslab.textColor=UIColor.black
-            addresslab.textAlignment = .left
-            Fbcell?.addSubview(addresslab)
+            let cellIdetifier: String = "Cell"
+            Fbcell = UITableViewCell(style: .default, reuseIdentifier: cellIdetifier)
             
             
-            let Distancelab = UILabel()
-            Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
-            Distancelab.text =  String(format: "%@ Kms ",((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String)!)
-            Distancelab.font =  UIFont(name:"Helvetica", size: 15)
-            Distancelab.textColor=UIColor.black
-            Distancelab.textAlignment = .left
-            Fbcell?.addSubview(Distancelab)
+            if volunterFbTblView.tag == 2
+            {
+                let titlelab = UILabel()
+                titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
+                titlelab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+                titlelab.font =  UIFont(name:"Helvetica", size: 15)
+                titlelab.textColor=UIColor.black
+                titlelab.textAlignment = .left
+                Fbcell?.addSubview(titlelab)
+                
+                
+                let addresslab = UILabel()
+                addresslab.frame = CGRect(x:15, y:titlelab.frame.size.height+titlelab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
+                addresslab.text=(self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as? String
+                addresslab.font =  UIFont(name:"Helvetica", size: 15)
+                addresslab.textColor=UIColor.black
+                addresslab.textAlignment = .left
+                Fbcell?.addSubview(addresslab)
+                
+                
+                let Distancelab = UILabel()
+                Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
+                if let quantity = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber
+                {
+                    
+                    let strval = String(describing: quantity)
+                    Distancelab.text = String(format:"%@ Kms", strval)
+                    
+                }
+                else if let quantity = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String
+                {
+                    Distancelab.text = String(format:"%@ Kms", quantity)
+                    
+                }
+                //    Distancelab.text =  String(format: "%@ Kms ",((self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber)!)
+                Distancelab.font =  UIFont(name:"Helvetica", size: 15)
+                Distancelab.textColor=UIColor.black
+                Distancelab.textAlignment = .left
+                Fbcell?.addSubview(Distancelab)
+            }
+            else
+            {
+                let titlelab = UILabel()
+                titlelab.frame = CGRect(x:15, y:5, width:((Fbcell?.frame.size.width)!-30), height:20)
+                titlelab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+                titlelab.font =  UIFont(name:"Helvetica", size: 15)
+                titlelab.textColor=UIColor.black
+                titlelab.textAlignment = .left
+                Fbcell?.addSubview(titlelab)
+                
+                let addresslab = UILabel()
+                addresslab.frame = CGRect(x:15, y:titlelab.frame.size.height+titlelab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
+                addresslab.text=(self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "address") as? String
+                addresslab.font =  UIFont(name:"Helvetica", size: 15)
+                addresslab.textColor=UIColor.black
+                addresslab.textAlignment = .left
+                Fbcell?.addSubview(addresslab)
+                
+                
+                let Distancelab = UILabel()
+                Distancelab.frame = CGRect(x:15, y:addresslab.frame.size.height+addresslab.frame.origin.y, width:((Fbcell?.frame.size.width)!-30), height:20)
+                
+                if let quantity = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber
+                {
+                   
+                    let strval = String(describing: quantity)
+                     Distancelab.text = String(format:"%@ Kms", strval)
+                   
+                }
+                else if let quantity = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? String
+                {
+                     Distancelab.text = String(format:"%@ Kms", quantity)
+                   
+                }
+                //Distancelab.text =  String(format: "%@ Kms ",((self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "distance") as? NSNumber)!)
+                Distancelab.font =  UIFont(name:"Helvetica", size: 15)
+                Distancelab.textColor=UIColor.black
+                Distancelab.textAlignment = .left
+                Fbcell?.addSubview(Distancelab)
+            }
+            return Fbcell!
         }
-        return Fbcell!
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
+        if tableView.tag == 3
+        {
+            let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
+            if userID == strUserID as String
+            {
+                let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyFoodBankDetailsVC") as? MyFoodBankDetailsVC
+                myVC?.hidesBottomBarWhenPushed=true
+                self.navigationController?.pushViewController(myVC!, animated: true)
+                
+                myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+                myVC?.percentStr = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "capacity_status") as! String
+            }
+            else{
+                let myVC = self.storyboard?.instantiateViewController(withIdentifier: "FoodBankDetailsVC") as? FoodBankDetailsVC
+                myVC?.hidesBottomBarWhenPushed=true
+                self.navigationController?.pushViewController(myVC!, animated: true)
+                
+                myVC?.foodbankID = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+                myVC?.percentStr = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "capacity_status") as! String
+            }
+        }
+        else if tableView.tag == 4
+        {
+            let userID:String = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "user_id") as! String
+            if userID == strUserID as String
+            {
+                let myVC = self.storyboard?.instantiateViewController(withIdentifier: "MyEventsDetailsViewController") as? MyEventsDetailsViewController
+                myVC?.hidesBottomBarWhenPushed=true
+                self.navigationController?.pushViewController(myVC!, animated: true)
+                
+                myVC?.foodbankID = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+            }
+            else
+            {
+                let myVC = self.storyboard?.instantiateViewController(withIdentifier: "EventsDetailsViewController") as? EventsDetailsViewController
+                myVC?.hidesBottomBarWhenPushed=true
+                self.navigationController?.pushViewController(myVC!, animated: true)
+                
+                myVC?.foodbankID = (self.listArrayFoodEvent.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as! String
+            }
+        }
+        else
+        {
         
         if volunterFbTblView.tag == 2
         {
-            foodbankNamelab.text = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            strfoodbankname = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as! NSString
-            strFoodbankId = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_id") as! NSString
+            foodbankNamelab.text = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+            strfoodbankname = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as! NSString
+            strFoodbankId = (self.searchResults.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as! NSString
             
             popview2.isHidden=true
             footerView2.isHidden=true
@@ -1406,9 +2279,9 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         }
         else
         {
-            foodbankNamelab.text = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as? String
-            strfoodbankname = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_title") as! NSString
-            strFoodbankId = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "fbank_id") as! NSString
+            foodbankNamelab.text = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as? String
+            strfoodbankname = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "title") as! NSString
+            strFoodbankId = (self.arrChildCategory.object(at: indexPath.row) as! NSDictionary).value(forKey: "id") as! NSString
             
             popview2.isHidden=true
             footerView2.isHidden=true
@@ -1417,9 +2290,95 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             self.searchResults.removeAllObjects()
             volunterFbTblView.removeFromSuperview()
         }
+        }
         
     }
     
+    
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell,forRowAt indexPath: IndexPath)
+    {
+        let lastSectionIndex = tableView.numberOfSections - 1
+        let lastRowIndex = tableView.numberOfRows(inSection: lastSectionIndex) - 1
+        if (indexPath.section == lastSectionIndex) && (indexPath.row == lastRowIndex) {
+            if (strpage == "0") {
+                //  loadLbl.text = "No More List"
+                //  actInd.stopAnimating()
+            }
+            else if (strpage == "") {
+                //    loadLbl.text = "No More List"
+                //   actInd.stopAnimating()
+            }
+            else
+            {
+                if tableView.tag == 3
+                {
+                    
+                }
+                else if tableView.tag == 4
+                {
+                    
+                }
+                else
+                {
+                let strkey = Constants.ApiKey
+                let str:String = theSearchBar?.text ?? ""
+                   
+                    var encodeUrl = String()
+                    let allowedCharacterSet = (CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[] ").inverted)
+                    if let escapedString = str.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) {
+                        encodeUrl = escapedString
+                    }
+                    
+                    
+                let params = "api_key=\(strkey)&search=\(encodeUrl)&lat=\(currentLatitude)&long=\(currentLongitude)&page=\(self.strpage)"
+                let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"searchFoodbank",params)
+                
+                print(baseURL)
+                AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+                    
+                    DispatchQueue.main.async {
+                        AFWrapperClass.svprogressHudDismiss(view: self)
+                        let responceDic:NSDictionary = jsonDic as NSDictionary
+                        //  print(responceDic)
+                        if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                        {
+                            self.responsewithToken7(responceDic)
+                        }
+                        else
+                        {
+                            
+                        }
+                    }
+                }) { (error) in
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+                    //print(error.localizedDescription)
+                }
+                }
+            }
+        }
+    }
+    
+    func responsewithToken7(_ responseDict: NSDictionary)
+    {
+        var responseDictionary : NSDictionary = [:]
+        responseDictionary = responseDict
+        
+        
+        
+        var arr = NSMutableArray()
+        arr = (responseDictionary.value(forKey: "foodbankList") as? NSMutableArray)!
+        arr=arr as AnyObject as! NSMutableArray
+        self.arrChildCategory.addObjects(from: arr as [AnyObject])
+        
+        let number = responseDictionary.object(forKey: "nextPage") as! NSNumber
+        self.strpage = String(describing: number)
+        
+        self.volunterFbTblView.reloadData()
+        
+    }
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -1436,41 +2395,40 @@ extension HomeVC: GMSMapViewDelegate
     {
         mapView.delegate = self;
         
-        currentLatitude=position.target.latitude
-        currentLongitude=position.target.longitude
+        firstLatitude=position.target.latitude
+        firstLongitude=position.target.longitude
         
         
         self.citylab.text! = "Featching Address..."
         locationlab.text = "Featching Address..."
         
-        self.marker.position = CLLocationCoordinate2D(latitude: currentLatitude, longitude: currentLongitude)
+        self.marker.position = CLLocationCoordinate2D(latitude: firstLatitude, longitude: firstLongitude)
         self.marker.map = self.mapView
         
-        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
+        camera = GMSCameraPosition.camera(withLatitude: firstLatitude, longitude: firstLongitude, zoom: 8.0)
         self.mapView.animate(to: camera)
         
         
-        let location = CLLocation(latitude: currentLatitude, longitude: currentLongitude)
+        let location = CLLocation(latitude: firstLatitude, longitude: firstLongitude)
         
         
         geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
             // Process Response
             self.processResponse(withPlacemarks: placemarks, error: error)
         }
-        
     }
     
     
     private func mapView(mapView:GMSMapView!,idleAtCameraPosition position:GMSCameraPosition!)
     {
-        print(position)
+       // print(position)
         
     }
     
     private func processResponse(withPlacemarks placemarks: [CLPlacemark]?, error: Error?) {
         
-        if let error = error {
-            print("Unable to Reverse Geocode Location (\(error))")
+        if error != nil {
+         //   print("Unable to Reverse Geocode Location (\(error))")
             self.citylab.text! = "Unable to Find Address for Location"
             locationlab.text = "Unable to Find Address for Location"
             
@@ -1478,7 +2436,7 @@ extension HomeVC: GMSMapViewDelegate
             if let placemarks = placemarks, let placemark = placemarks.first {
                 self.citylab.text! = placemark.compactAddress!
                 locationlab.text = placemark.compactAddress!
-                print( self.citylab.text!)
+              //  print( self.citylab.text!)
             } else {
                 self.citylab.text! = "No Matching Addresses Found"
                 locationlab.text = "No Matching Addresses Found"
@@ -1498,18 +2456,22 @@ extension HomeVC: ABCGooglePlacesSearchViewControllerDelegate {
     {
         citylab.text=place.formatted_address
         locationlab.text = place.formatted_address
-        currentLatitude=place.location.coordinate.latitude
-        currentLongitude=place.location.coordinate.longitude
+        firstLatitude=place.location.coordinate.latitude
+        firstLongitude=place.location.coordinate.longitude
         
-        self.marker.map=nil
-        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 10.0)
-        mapView.delegate = self
-        mapView.camera=camera
-        self.marker.position = CLLocationCoordinate2D(latitude: currentLatitude, longitude: currentLongitude)
-        self.marker.map = self.mapView
-        self.marker.icon = UIImage(named: "Lmap_pin48.png")!.withRenderingMode(.alwaysTemplate)
-        self.marker.title = place.formatted_address
-        mapView.reloadInputViews()
+        
+//        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
+//        mapView2 = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: footerView3.frame.size.width, height: footerView3.frame.size.height), camera: camera)
+//        mapView2.delegate = self
+//        self.mapView2.settings.compassButton = true
+//        footerView3.addSubview(mapView2)
+        
+       // self.marker.map=nil
+        camera = GMSCameraPosition.camera(withLatitude: firstLatitude, longitude: firstLongitude, zoom: 10.0)
+        mapView2.delegate = self
+        mapView2.camera=camera
+     
+       // mapView.reloadInputViews()
         
     }
 }

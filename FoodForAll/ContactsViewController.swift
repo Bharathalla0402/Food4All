@@ -84,8 +84,34 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
         tableView.tableHeaderView = theSearchBar
         theSearchBar?.tag=1
         theSearchBar?.isUserInteractionEnabled = true
-
+        
+        self.addDoneButtonOnKeyboard3()
     }
+    
+    func addDoneButtonOnKeyboard3()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.theSearchBar?.inputAccessoryView = doneToolbar
+    }
+    
+    func doneButtonAction()
+    {
+        self.view.endEditing(true)
+    }
+    
+    
+    
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -106,6 +132,9 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
                     if success && contacts?.count > 0 {
                         
                         self.contacts = contacts!
+                        
+                        self.ContactList.removeAllObjects()
+                        self.EmailList.removeAllObjects()
                         
                         for i in 0..<self.contacts.count
                         {
@@ -212,6 +241,7 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
         theSearchBar?.resignFirstResponder()
         strCheck = "1"
         
+        theSearchBar?.delegate=self
         tableView.tag = 4
         theSearchBar?.placeholder = "Search Contact Number"
         theSearchBar?.tag=1
@@ -267,7 +297,10 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
          theSearchBar?.text = ""
          theSearchBar?.resignFirstResponder()
         
-        let text = "https://itunes.apple.com/tw/app/id1242021232"
+      // let text = "https://itunes.apple.com/tw/app/id1242021232"
+        
+        let text = "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4all"
+        //  let text = "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4All"
         
         // set up activity view controller
         let textToShare = [ text ]
@@ -294,7 +327,8 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
             if (MFMessageComposeViewController.canSendText())
             {
                 let controller = MFMessageComposeViewController()
-                controller.body = "Download the Food4All to become Volunteer \n https://itunes.apple.com/tw/app/id1242021232"
+                controller.body = "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4all"
+              //  controller.body = "Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4All"
                 controller.recipients = ContactId.copy() as? [String]
                 controller.messageComposeDelegate = self
                 present(controller, animated: true, completion: nil)
@@ -319,10 +353,11 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
     func configuredMailComposeViewController() -> MFMailComposeViewController {
         let mailComposerVC = MFMailComposeViewController()
         mailComposerVC.mailComposeDelegate = self // Extremely important to set the --mailComposeDelegate-- property, NOT the --delegate-- property
-        
+       
         mailComposerVC.setToRecipients(EmailId.copy() as? [String])
-        mailComposerVC.setSubject("IOS User App feedback")
-        mailComposerVC.setMessageBody("Download the Food4All to become Volunteer \n https://itunes.apple.com/tw/app/id1242021232", isHTML: false)
+        mailComposerVC.setSubject("Food4All")
+        mailComposerVC.setMessageBody("Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4all", isHTML: false)
+      //   mailComposerVC.setMessageBody("Download for iOS:  " + "https://itunes.apple.com/us/app/food4all/id1242021232?mt=8" + "\n" + "Download for Android:  " + "https://play.google.com/store/apps/details?id=org.food4All", isHTML: false)
         
         return mailComposerVC
     }
@@ -360,8 +395,10 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
             for i in 0..<EmailList.count {
                 // [searchResults removeAllObjects];
                 let string: String = (self.EmailList.object(at: i) as! NSDictionary).value(forKey: "email") as! String
+                let stringname: String = (self.EmailList.object(at: i) as! NSDictionary).value(forKey: "name") as! String
                 let rangeValue: NSRange = (string as NSString).range(of: searchText, options: .caseInsensitive)
-                if rangeValue.length > 0
+                let rangeValue2: NSRange = (stringname as NSString).range(of: searchText, options: .caseInsensitive)
+                if rangeValue.length > 0 || rangeValue2.length > 0
                 {
                     tableView.tag = 1
                     searchResults.add(EmailList[i])
@@ -382,8 +419,10 @@ class ContactsViewController: UIViewController, UITableViewDelegate, UITableView
             for i in 0..<ContactList.count {
                 // [searchResults removeAllObjects];
                 let string: String = (self.ContactList.object(at: i) as! NSDictionary).value(forKey: "phone") as! String
+                let stringname: String = (self.ContactList.object(at: i) as! NSDictionary).value(forKey: "name") as! String
                 let rangeValue: NSRange = (string as NSString).range(of: searchText, options: .caseInsensitive)
-                if rangeValue.length > 0
+                let rangeValue2: NSRange = (stringname as NSString).range(of: searchText, options: .caseInsensitive)
+                if rangeValue.length > 0 || rangeValue2.length > 0
                 {
                     tableView.tag = 3
                     searchResults2.add(ContactList[i])

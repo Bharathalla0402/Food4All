@@ -52,7 +52,7 @@ class InstagramLoginVC: UIViewController, UIWebViewDelegate {
     }
     
     func handleAuth(authToken: String)  {
-        print("Instagram authentication token ==", authToken)
+       // print("Instagram authentication token ==", authToken)
     }
     
     
@@ -69,7 +69,7 @@ class InstagramLoginVC: UIViewController, UIWebViewDelegate {
                     try InstagramEngine.shared().receivedValidAccessToken(from: url)
                     
                     if let accessToken = InstagramEngine.shared().accessToken {
-                        print("accessToken: \(accessToken)")
+                      //  print("accessToken: \(accessToken)")
                         //start
                         
                         let URl =  "https://api.instagram.com/v1/users/self/?access_token=\(accessToken)"
@@ -82,7 +82,7 @@ class InstagramLoginVC: UIViewController, UIWebViewDelegate {
                         Alamofire.request(URl, method: .get, parameters: parameter, encoding: JSONEncoding.default, headers: nil)
                             .responseJSON { response in
                                appInstance.hideLoader()
-                                print(response.result.value!)
+                              //  print(response.result.value!)
                                 
                                 if response.result.isSuccess {
                                     
@@ -96,7 +96,7 @@ class InstagramLoginVC: UIViewController, UIWebViewDelegate {
                                         
                                         if let json = NSString(data: data, encoding:  String.Encoding.utf8.rawValue){
                                             
-                                            print(json)
+                                          //  print(json)
                                             result["result"] = json
                                             
                                             let responceDic:NSDictionary = ((dict as AnyObject).object(forKey: "meta") as? NSDictionary)!
