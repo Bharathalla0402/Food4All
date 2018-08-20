@@ -392,19 +392,41 @@ class RearViewController: UIViewController,UITableViewDelegate,UITableViewDataSo
         }
         else if indexPath.row == 8
         {
-            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
-            self.navigationController?.pushViewController(myVC!, animated: true)
-            self.revealViewController().revealToggle(animated: true)
-            
-            UserDefaults.standard.removeObject(forKey: "UserId")
-            AFWrapperClass.svprogressHudDismiss(view: self)
-            AFWrapperClass.alert(Constants.applicationName, message: "Logout Successfully", view: self)
+           logoutMethod()
         }
         else
         {
             cell.selectionStyle = .none
         }
     }
+    
+    
+    func logoutMethod()
+    {
+        let alert = UIAlertController(title: "Food4All", message: "Are You Sure Want to Logout?", preferredStyle: UIAlertControllerStyle.alert)
+        
+        let alertOKAction=UIAlertAction(title:"Cancel", style: UIAlertActionStyle.default,handler: { action in
+           
+        })
+        
+        let alertCancelAction=UIAlertAction(title:"Logout", style: UIAlertActionStyle.destructive,handler: { action in
+            let myVC = self.storyboard?.instantiateViewController(withIdentifier: "SWRevealViewController") as? SWRevealViewController
+            self.navigationController?.pushViewController(myVC!, animated: true)
+            self.revealViewController().revealToggle(animated: true)
+            
+            UserDefaults.standard.removeObject(forKey: "Popupshow")
+            UserDefaults.standard.removeObject(forKey: "UserId")
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: "Logout Successfully", view: self)
+        })
+        
+        alert.addAction(alertOKAction)
+        alert.addAction(alertCancelAction)
+        
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    
 
     func configuredMailComposeViewController() -> MFMailComposeViewController {
         let mailComposerVC = MFMailComposeViewController()

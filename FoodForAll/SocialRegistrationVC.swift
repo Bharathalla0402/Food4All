@@ -259,7 +259,7 @@ class SocialRegistrationVC: UIViewController,UITextFieldDelegate,HMDiallingCodeD
                 //     AFWrapperClass.alert(Constants.applicationName, message: String(format: "+%@",diallingCode), view: self)
             }
             else{
-                let placeArray = placemarks as [CLPlacemark]!
+                let placeArray = placemarks as [CLPlacemark]?
                 var placeMark: CLPlacemark!
                 placeMark = placeArray?[0]
                 

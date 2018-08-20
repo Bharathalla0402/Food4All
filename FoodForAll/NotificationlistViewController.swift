@@ -34,6 +34,7 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
     var scrool = 1
     var count = 1
     var lastCount = 1
+    var NotificationId = String()
 
     
     override func viewDidLoad()
@@ -97,7 +98,46 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
     
     
     
-    
+    override func viewWillAppear(_ animated: Bool)
+    {
+        let strkey = Constants.ApiKey
+        let params = "api_key=\(strkey)&user_id=\(self.strUserID)"
+        let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
+        print(baseURL)
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    self.scrool = 1
+                    self.count = 1
+                    self.lastCount = 1
+                    
+                    self.listArrayFoodBank = responceDic.object(forKey: "NotificationList") as! NSMutableArray
+                    let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                    self.strpage = String(describing: number)
+                    
+                    self.NotificationTableView.reloadData()
+                }
+                else
+                {
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+        }) { (error) in
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
      
     
     @objc private  func showTableView()
@@ -143,6 +183,26 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
         cell.fimage.sd_setImage(with: (url)! as URL, placeholderImage: UIImage.init(named: "PlcHldrSmall"))
         
         cell.LocationAddress?.text = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "notification") as? String ?? ""
+        
+        var strId = String()
+        
+        if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "status") as? NSNumber
+        {
+            strId = String(describing: quantity)
+        }
+        else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "status") as? String
+        {
+            strId = quantity
+        }
+        
+        if strId == "1"
+        {
+            cell.contentView.backgroundColor = #colorLiteral(red: 0.8666666667, green: 0.8666666667, blue: 0.8666666667, alpha: 1)
+        }
+        else
+        {
+            cell.contentView.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        }
         
 //
 //        let userID:String = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "entity") as! String
@@ -483,7 +543,120 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             print(baseURL)
             self.VolunteerDetailAPIMethod(baseURL: String(format:"%@",baseURL))
         }
+        
+        if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as? NSNumber
+        {
+            NotificationId = String(describing: quantity)
+        }
+        else if let quantity = (self.listArrayFoodBank.object(at: indexPath.row) as! NSDictionary).object(forKey: "id") as? String
+        {
+            NotificationId = quantity
+        }
+        
+        
+        self.NotificationAPIMethod(baseURL: String(format:"%@%@",Constants.mainURL,"notification_read") , params: "notice_id=\(self.NotificationId)")
+        
     }
+    
+    
+    
+    @objc private   func NotificationAPIMethod (baseURL:String , params: String)
+    {
+      //  AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+     
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"readNotifications")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(NotificationId, forKey: "notice_id")
+       
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                print(responceDic)
+                if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                {
+                    let strkey = Constants.ApiKey
+                    let params = "api_key=\(strkey)&user_id=\(self.strUserID)"
+                    let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)
+                    print(baseURL)
+                    AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+                    AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
+                      
+                        DispatchQueue.main.async {
+                            AFWrapperClass.svprogressHudDismiss(view: self)
+                            let responceDic:NSDictionary = jsonDic as NSDictionary
+                            print(responceDic)
+                            if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                            {
+                                self.scrool = 1
+                                self.count = 1
+                                self.lastCount = 1
+                                
+                                self.listArrayFoodBank = responceDic.object(forKey: "NotificationList") as! NSMutableArray
+                                let number = responceDic.object(forKey: "nextPage") as! NSNumber
+                                self.strpage = String(describing: number)
+                                
+                                self.NotificationTableView.reloadData()
+                            }
+                            else
+                            {
+                                let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                                let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
+                                
+                                AFWrapperClass.svprogressHudDismiss(view: self)
+                                AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                            }
+                        }
+                    }) { (error) in
+                        AFWrapperClass.svprogressHudDismiss(view: self)
+                        AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+                        //print(error.localizedDescription)
+                    }
+                }
+                else
+                {
+//                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+//                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
+//
+//                    AFWrapperClass.svprogressHudDismiss(view: self)
+//                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+            
+        }) { (error) in
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+    
     
     
     @objc private   func VolunteerDetailAPIMethod (baseURL:String)
@@ -512,7 +685,6 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
                 }
             }
-            
         })
         { (error) in
             
@@ -538,8 +710,6 @@ class NotificationlistViewController: UIViewController,UITableViewDelegate,UITab
             }
             else
             {
-                
-                
                 let strkey = Constants.ApiKey
                 let params = "api_key=\(strkey)&user_id=\(strUserID)&page=\(self.strpage)"
                 let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listNotifications",params)

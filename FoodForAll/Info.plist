@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.4.6</string>
+	<string>1.4.7</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -41,7 +41,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>twitterkit-7f7f1bd8aa491a595eb532c029c17b78e65b6b06</string>
+				<string>twitterkit-X7IpyAaluh7pxLbJQ3rpdinPd</string>
 			</array>
 		</dict>
 		<dict>
@@ -54,26 +54,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1.1.10</string>
-	<key>Fabric</key>
-	<dict>
-		<key>APIKey</key>
-		<string>7f7f1bd8aa491a595eb532c029c17b78e65b6b06</string>
-		<key>Kits</key>
-		<array>
-			<dict>
-				<key>KitInfo</key>
-				<dict>
-					<key>consumerKey</key>
-					<string>NEgQkkvIoaHTzyH4nvnwgUZho</string>
-					<key>consumerSecret</key>
-					<string>olOTtlG7iL7DEp7xvbCbxJAuvRrR8CpjYUgS96V1Pw5uGsWM92</string>
-				</dict>
-				<key>KitName</key>
-				<string>Twitter</string>
-			</dict>
-		</array>
-	</dict>
+	<string>1.1.11</string>
 	<key>FacebookAppID</key>
 	<string>160743847789712</string>
 	<key>FacebookDisplayName</key>
@@ -92,6 +73,8 @@
 		<string>googlechromes</string>
 		<string>comgooglemaps</string>
 		<string>instagram</string>
+		<string>twitter</string>
+		<string>twitterauth</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

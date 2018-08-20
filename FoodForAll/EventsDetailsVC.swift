@@ -971,8 +971,7 @@ class EventsDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDele
         else
         {
             
-            
-            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Report this FoodSharing", preferredStyle: UIAlertControllerStyle.alert)
+            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Report this FoodSharing?", preferredStyle: UIAlertControllerStyle.alert)
             
             let alertOKAction=UIAlertAction(title:"Yes", style: UIAlertActionStyle.default,handler: { action in
                 self.CheckCondition = "1"
@@ -1018,7 +1017,7 @@ class EventsDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDele
         else
         {
             
-            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Request this FoodSharing", preferredStyle: UIAlertControllerStyle.alert)
+            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Request this FoodSharing?", preferredStyle: UIAlertControllerStyle.alert)
             
             let alertOKAction=UIAlertAction(title:"Yes", style: UIAlertActionStyle.default,handler: { action in
                 self.StrChatMessageTypeId = "1"
@@ -1208,7 +1207,7 @@ class EventsDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDele
             message = "Please Enter Description"
         }
         
-        if message.characters.count > 1
+        if message.count > 1
         {
             AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
         }

@@ -19,6 +19,7 @@ class Constants {
     // static let mainURL = "http://think360.in/demoFood4All/webservices/Api.php"
    // static let mainURL = "http://think360.in/food4all/webservices/Api.php"
   
+  //  static let mainURL = "http://think360.in/food4all/Api/"
    // static let mainURL = "http://www.think360.in/livefood4all/Api/"
    // static let mainURL = "https://food4all.org/Api/"
     static let mainURL = "https://www.food4all.org/Api/"

@@ -917,7 +917,6 @@ class ShareFoodVC: UIViewController,UITableViewDelegate,UITableViewDataSource,GM
              myVC?.SharedMealID=idStr as String
             self.navigationController?.pushViewController(myVC!, animated: true)
         }
-
     }
     
     

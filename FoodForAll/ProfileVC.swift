@@ -245,11 +245,11 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
                     }
                     else
                     {
-                        self.currentLatitude = Double(self.myArray.value(forKey: "lat") as? String ?? "")!
-                        self.currentLongitude = Double(self.myArray.value(forKey: "long") as? String ?? "")!
+                      //  self.currentLatitude = Double(self.myArray.value(forKey: "lat") as? String ?? "")!
+                      //  self.currentLongitude = Double(self.myArray.value(forKey: "long") as? String ?? "")!
                     }
-                    print(self.currentLatitude)
-                    print(self.currentLongitude)
+                   // print(self.currentLatitude)
+                   // print(self.currentLongitude)
                 }
                 else
                 {
@@ -383,7 +383,6 @@ class ProfileVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController)
     {
-        
         dismiss(animated: true, completion: nil)
     }
     

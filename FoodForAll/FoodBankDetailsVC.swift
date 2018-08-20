@@ -13,20 +13,18 @@ import LCBannerView
 import SDWebImage
 
 
-class VolunteersCollectionCell: UICollectionViewCell {
-    
+class VolunteersCollectionCell: UICollectionViewCell
+{
     @IBOutlet weak var VolunteerlistImage: UIImageView!
     @IBOutlet weak var volunteername: UILabel!
     @IBOutlet weak var volunteerRemoveButt2: UIButton!
     @IBOutlet weak var volunteerRemoveButt: UIButton!
-   
 }
 
 class FoodCategoriesCell: UICollectionViewCell
 {
     @IBOutlet var FoodTypeImage: UIImageView!
     @IBOutlet var FoodtypeName: UILabel!
-    
 }
 
 
@@ -953,7 +951,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
         }
         else
         {
-            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Report this FoodBank", preferredStyle: UIAlertControllerStyle.alert)
+            let alert = UIAlertController(title: "Food4All", message: "Are you sure want to Report this FoodBank?", preferredStyle: UIAlertControllerStyle.alert)
             
             let alertOKAction=UIAlertAction(title:"Yes", style: UIAlertActionStyle.default,handler: { action in
                  self.CheckCondition = "1"
@@ -1003,7 +1001,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
                   //  ReportRequestMethod()
                     
                     
-                    let alert = UIAlertController(title: "Food4All", message: "Are you sure want to connect this foodbank", preferredStyle: UIAlertControllerStyle.alert)
+                    let alert = UIAlertController(title: "Food4All", message: "Are you sure want to connect this foodbank?", preferredStyle: UIAlertControllerStyle.alert)
                     
                     let alertOKAction=UIAlertAction(title:"Yes", style: UIAlertActionStyle.default,handler: { action in
                         
@@ -1181,7 +1179,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
         locationlab.text = "Address"
         locationlab.textColor = UIColor.lightGray
         footerView4.addSubview(locationlab)
-        
+        locationlab.isHidden = true
         
         
         let Cityview = UIView()
@@ -1189,7 +1187,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
         Cityview.layer.borderWidth=1.0
         Cityview.layer.borderColor = UIColor(red: CGFloat(38 / 255.0), green: CGFloat(164 / 255.0), blue: CGFloat(154 / 255.0), alpha: CGFloat(1.0)).cgColor
         footerView4.addSubview(Cityview)
-        
+        Cityview.isHidden = true
         
         
         citylab.frame = CGRect(x:5, y:5, width:Cityview.frame.size.width-10, height:40)
@@ -1203,7 +1201,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
         locationButt.backgroundColor=UIColor.clear
         locationButt.addTarget(self, action: #selector(self.locationButtonAction(_:)), for: UIControlEvents.touchUpInside)
         Cityview.addSubview(locationButt)
-        
+        locationButt.isHidden = true
         
         
         
@@ -1582,8 +1580,8 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
             
             // let strkey = Constants.ApiKey
             
-            let strlat = "\(firstLatitude)"
-            let strlong = "\(firstLongitude)"
+          //  let strlat = "\(firstLatitude)"
+          //  let strlong = "\(firstLongitude)"
             
             let strkey = Constants.ApiKey
             
@@ -1592,10 +1590,10 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
             PostDataValus.setValue(strUserID, forKey: "user_id")
             PostDataValus.setValue("1", forKey: "connect_foodbank")
             PostDataValus.setValue(foodbankID, forKey: "foodbank_id")
-            PostDataValus.setValue(citylab.text!, forKey: "address")
+          //  PostDataValus.setValue(citylab.text!, forKey: "address")
             PostDataValus.setValue(TextDescription.text!, forKey: "description")
-            PostDataValus.setValue(strlat, forKey: "lat")
-            PostDataValus.setValue(strlong, forKey: "long")
+          //  PostDataValus.setValue(strlat, forKey: "lat")
+          //  PostDataValus.setValue(strlong, forKey: "long")
             
             var jsonStringValues = String()
             let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
@@ -1676,7 +1674,6 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
     
     func ReportRequestMethod()
     {
-        
         popview.isHidden=false
         footerView.isHidden=false
         forgotPassWordTF.text=""
@@ -1807,7 +1804,7 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
             message = "Please Enter Description"
         }
         
-        if message.characters.count > 1
+        if message.count > 1
         {
             AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
         }
@@ -1884,7 +1881,6 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
                     
                     AFWrapperClass.svprogressHudDismiss(view: self)
                     AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
-                    
                 }
             }
             
@@ -1934,7 +1930,6 @@ class FoodBankDetailsVC: UIViewController,GMSMapViewDelegate,CLLocationManagerDe
                      self.listArrayFoodVolunteerlist = (responceDic.object(forKey: "volunteerList") as? NSMutableArray)!
                     
                    // self.listArrayFoodBankManagerlist = (responceDic.object(forKey: "FoodbankList") as? NSDictionary)!
-                    
                   //  self.listArrayFoodVolunteerlist = (self.listArrayFoodBankManagerlist.object(forKey: "volunter") as? NSMutableArray)!
                   //  self.listArrayFoodVolunteerRequestlist = (self.listArrayFoodBankManagerlist.object(forKey: "volunterRequest") as? NSMutableArray)!
                   //  self.listArrayFoodVolunteerGrouplist = (self.listArrayFoodBankManagerlist.object(forKey: "group") as? NSMutableArray)!

@@ -224,6 +224,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             if let lat = self.locationManager.location?.coordinate.latitude {
                 currentLatitude = lat
                 firstLatitude = lat
+                myLatitude = lat
             }else {
                 
             }
@@ -231,6 +232,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             if let long = self.locationManager.location?.coordinate.longitude {
                 currentLongitude = long
                 firstLongitude = long
+                myLongitude = long
             }else {
                 
             }
@@ -265,7 +267,6 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
     
     @IBAction func NotificationButtonClicked(_ sender: Any)
     {
-        
         if strUserID == ""
         {
             
@@ -305,7 +306,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             AFWrapperClass.svprogressHudDismiss(view: self)
             AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
             //print(error.localizedDescription)
-        }
+            }
         }
         
         
@@ -459,7 +460,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
     {
         
         let strkey = Constants.ApiKey
-        let params = "api_key=\(strkey)&user_id=\(strUserID)"
+        let params = "api_key=\(strkey)&user_id=\(strUserID)&lat=\(myLatitude)&long=\(myLongitude)"
         let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listVolunteers",params)
         
         print(baseURL)
@@ -798,7 +799,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             else
             {
                 let strkey = Constants.ApiKey
-                let params = "api_key=\(strkey)&user_id=\(strUserID)&page=\(self.strpage)"
+                let params = "api_key=\(strkey)&user_id=\(strUserID)&page=\(self.strpage)&lat=\(myLatitude)&long=\(myLongitude)"
                 let baseURL: String  = String(format:"%@%@?%@",Constants.mainURL,"listVolunteers",params)
                 
                 AFWrapperClass.requestGETURLWithUrlsession(baseURL, success: { (jsonDic) in
@@ -987,7 +988,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             locationlab.text = "Address"
             locationlab.textColor = UIColor.lightGray
             footerView.addSubview(locationlab)
-            
+            locationlab.isHidden = true
             
             
             let Cityview = UIView()
@@ -995,7 +996,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             Cityview.layer.borderWidth=1.0
             Cityview.layer.borderColor = UIColor(red: CGFloat(38 / 255.0), green: CGFloat(164 / 255.0), blue: CGFloat(154 / 255.0), alpha: CGFloat(1.0)).cgColor
             footerView.addSubview(Cityview)
-            
+            Cityview.isHidden = true
             
             
             citylab.frame = CGRect(x:5, y:5, width:Cityview.frame.size.width-10, height:40)
@@ -1009,7 +1010,7 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             locationButt.backgroundColor=UIColor.clear
             locationButt.addTarget(self, action: #selector(VolinteerVC.locationButtonAction(_:)), for: UIControlEvents.touchUpInside)
             Cityview.addSubview(locationButt)
-            
+            locationButt.isHidden = true
             
           
             
@@ -1552,8 +1553,8 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
             }
             else
             {
-                let strlat = "\(firstLatitude)"
-                let strlong = "\(firstLongitude)"
+              //  let strlat = "\(firstLatitude)"
+              //  let strlong = "\(firstLongitude)"
                 
                 let strkey = Constants.ApiKey
                 
@@ -1562,10 +1563,10 @@ class VolinteerVC: UIViewController,CLLocationManagerDelegate,UICollectionViewDa
                 PostDataValus.setValue(strUserID, forKey: "user_id")
                 PostDataValus.setValue("1", forKey: "connect_foodbank")
                 PostDataValus.setValue(strFoodbankId, forKey: "foodbank_id")
-                PostDataValus.setValue(citylab.text!, forKey: "address")
+              //  PostDataValus.setValue(citylab.text!, forKey: "address")
                 PostDataValus.setValue(TextDescription.text!, forKey: "description")
-                PostDataValus.setValue(strlat, forKey: "lat")
-                PostDataValus.setValue(strlong, forKey: "long")
+              //  PostDataValus.setValue(strlat, forKey: "lat")
+              //  PostDataValus.setValue(strlong, forKey: "long")
                 
                 
                 

@@ -666,7 +666,7 @@ class SettingsVC: UIViewController {
         let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateSettings")
         let strkey = Constants.ApiKey
 
-        let PostDataValus = NSMutableDictionary()
+         let PostDataValus = NSMutableDictionary()
          PostDataValus.setValue(strkey, forKey: "api_key")
          PostDataValus.setValue(strUserID, forKey: "user_id")
          PostDataValus.setValue(self.postsee, forKey: "distance_radius")

@@ -47,8 +47,11 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     
     var myArray = NSDictionary()
     var strUserID = NSString()
+    var UserID = String()
     var status6 = NSString()
     var textlab = UILabel()
+    
+    var foodid = String()
     
     @IBOutlet weak var bgImageview: UIImageView!
     @IBOutlet weak var ProfilePic: UIImageView!
@@ -70,6 +73,9 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     
     @IBOutlet weak var collectionviewheight: NSLayoutConstraint!
     
+    @IBOutlet var ChatButt: UIButton!
+    @IBOutlet var EmailButt: UIButton!
+    @IBOutlet var CallButt: UIButton!
     
     
     @IBOutlet weak var vollab1: UILabel!
@@ -91,11 +97,8 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     
     
     
-    
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         
         
         textlab.frame = CGRect(x:connectedFoodbankView.frame.size.width/2-100, y:connectedFoodbankView.frame.size.height/2-20, width:200, height:40)
@@ -123,6 +126,18 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
             
         }
         
+       
+        
+        if let quantity = self.VolunteerDetails.value(forKey: "id") as? NSNumber
+        {
+            UserID =  String(describing: quantity)
+        }
+        else if let quantity = self.VolunteerDetails.value(forKey: "id") as? String
+        {
+            UserID = quantity
+        }
+        
+        print(UserID)
         
         let stringUrl = self.VolunteerDetails.value(forKey: "image") as? String ?? ""
         let url = URL.init(string:stringUrl)
@@ -132,13 +147,36 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         {
             let data = UserDefaults.standard.object(forKey: "UserId") as? Data
             myArray = (NSKeyedUnarchiver.unarchiveObject(with: data!) as? NSDictionary)!
-            strUserID=myArray.value(forKey: "id") as! NSString
+           // strUserID=myArray.value(forKey: "id") as! NSString
+            
+            if let quantity = myArray.value(forKey: "id") as? NSNumber
+            {
+                strUserID =  String(describing: quantity) as NSString
+            }
+            else if let quantity = myArray.value(forKey: "id") as? String
+            {
+                strUserID = quantity as NSString
+            }
         }
         else
         {
             strUserID = ""
         }
         
+        print(strUserID)
+        
+        if UserID == strUserID as String
+        {
+            ChatButt.isHidden = true
+            EmailButt.isHidden = true
+            CallButt.isHidden = true
+        }
+        else
+        {
+            ChatButt.isHidden = false
+            EmailButt.isHidden = false
+            CallButt.isHidden = false
+        }
         
         
         let mutableAttributedString = NSMutableAttributedString()
@@ -327,6 +365,14 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
 
     }
     
+    
+    override func viewWillAppear(_ animated: Bool)
+    {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    
     @IBAction func EmailButtClicked(_ sender: UIButton)
     {
         if stremail == ""
@@ -339,12 +385,15 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
         }
         else
         {
-        let mailComposeViewController = configuredMailComposeViewController()
-        if MFMailComposeViewController.canSendMail() {
-            self.present(mailComposeViewController, animated: true, completion: nil)
-        } else {
-            self.showSendMailErrorAlert()
-        }
+            let mailComposeViewController = configuredMailComposeViewController()
+            if MFMailComposeViewController.canSendMail()
+            {
+                self.present(mailComposeViewController, animated: true, completion: nil)
+            }
+            else
+            {
+                self.showSendMailErrorAlert()
+            }
         }
     }
     
@@ -556,6 +605,110 @@ class VolunteerDetailsViewController: UIViewController,UICollectionViewDataSourc
     }
     
     
+    @IBAction func chatButtonClicked(_ sender: Any)
+    {
+        
+        if UserDefaults.standard.object(forKey: "UserId") != nil
+        {
+            
+            let baseURL: String  = String(format:"%@%@",Constants.mainURL,"addChat")
+            let strkey = Constants.ApiKey
+            
+            let PostDataValus = NSMutableDictionary()
+            PostDataValus.setValue(strkey, forKey: "api_key")
+            PostDataValus.setValue(self.UserID, forKey: "sender_id")
+            PostDataValus.setValue(strUserID, forKey: "user_id")
+            PostDataValus.setValue("users", forKey: "entity")
+            PostDataValus.setValue(self.UserID, forKey: "entity_id")
+            
+            
+            
+            
+            var jsonStringValues = String()
+            let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+            if jsonData == nil {
+                
+            }
+            else {
+                jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+                print("jsonString: \(jsonStringValues)")
+            }
+            
+            
+            print(baseURL)
+            print(jsonStringValues)
+            
+            
+            // let baseURL: String  = String(format:"%@",Constants.mainURL)
+            //let params = "method=set_conversation&buyer_id=\(strUserID)&post_id=\(foodbankID)&selling_id=\(self.UserID)&post_url=\(posturl)"
+            
+            //  print(params)
+            
+            AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+            AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+                
+                DispatchQueue.main.async {
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    let responceDic:NSDictionary = jsonDic as NSDictionary
+                    print(responceDic)
+                    if (responceDic.object(forKey: "status") as! NSNumber) == 1
+                    {
+                        let myVC = self.storyboard?.instantiateViewController(withIdentifier: "ChatingDetailsViewController") as? ChatingDetailsViewController
+                        // myVC?.strConversionId=String(format:"%@",(responceDic.object(forKey: "conversation_id") as! NSNumber)
+                        
+                        if let quantity = responceDic.object(forKey: "chat_id") as? NSNumber
+                        {
+                            self.foodid =  String(describing: quantity)
+                        }
+                        else if let quantity = responceDic.object(forKey: "chat_id") as? String
+                        {
+                            self.foodid = quantity
+                        }
+                        myVC?.strConversionId=self.foodid
+                        self.navigationController?.pushViewController(myVC!, animated: false)
+                    }
+                    else
+                    {
+                        var Message=String()
+                        Message = responceDic.object(forKey: "responseMessage") as! String
+                        
+                        AFWrapperClass.svprogressHudDismiss(view: self)
+                        AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                    }
+                }
+                
+            }) { (error) in
+                
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+                //print(error.localizedDescription)
+            }
+        }
+        else
+        {
+            let alert = UIAlertController(title: "Food4All", message: "Please Login into account to Communicate with chat.", preferredStyle: UIAlertControllerStyle.alert)
+            
+            let alertOKAction=UIAlertAction(title:"Login", style: UIAlertActionStyle.default,handler: { action in
+               self.loginmethod()
+            })
+            
+            let alertCancelAction=UIAlertAction(title:"Cancel", style: UIAlertActionStyle.destructive,handler: { action in
+                
+            })
+            
+            alert.addAction(alertOKAction)
+            alert.addAction(alertCancelAction)
+            
+            self.present(alert, animated: true, completion: nil)
+        }
+    }
+    
+    func loginmethod()
+    {
+        let proVC = self.storyboard?.instantiateViewController(withIdentifier: "ViewController") as! ViewController
+        proVC.hidesBottomBarWhenPushed=true
+        self.navigationController?.pushViewController(proVC, animated: true)
+    }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

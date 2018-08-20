@@ -165,7 +165,7 @@ fileprivate extension ACFloatingTextfield {
         
        
         
-         let data = UserDefaults.standard.object(forKey: "txt") as! String
+         let data = UserDefaults.standard.object(forKey: "txt") as? String ?? ""
         
         if data == "no"
         {

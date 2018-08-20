@@ -2985,7 +2985,6 @@ class SetupFoodBankVC: UIViewController,CLLocationManagerDelegate,UIImagePickerC
             {
                 cell.SelectButt.setImage(UIImage(named: "unselected-radio.png"), for: .normal)
             }
-
         }
         else
         {

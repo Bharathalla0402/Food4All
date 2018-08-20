@@ -89,7 +89,7 @@ class AppDelegate: UIResponder,UIApplicationDelegate,CLLocationManagerDelegate,G
         //        assert(configureError == nil, "Error configuring Google services: \(configureError)")
         
         GIDSignIn.sharedInstance().delegate = self
-        Fabric.with([Twitter.self])
+      //  Fabric.with([Twitter.self])
         
         appInstance = self
         
@@ -119,7 +119,9 @@ class AppDelegate: UIResponder,UIApplicationDelegate,CLLocationManagerDelegate,G
        // self.getDashBoardAPImethod()
         
         
+         Twitter.sharedInstance().start(withConsumerKey:"X7IpyAaluh7pxLbJQ3rpdinPd", consumerSecret:"7nFFruJHBjlZoIJV9JxBkDfGZ4f7ljZcQFenD3X3iBbh6QwDg8")
         
+        FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
 
         
 //        let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -133,7 +135,7 @@ class AppDelegate: UIResponder,UIApplicationDelegate,CLLocationManagerDelegate,G
 //        
 //        window?.rootViewController = revealController
         
-        return FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
+        return true
     }
     
     
@@ -164,30 +166,47 @@ class AppDelegate: UIResponder,UIApplicationDelegate,CLLocationManagerDelegate,G
     
 
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool
-    {
-
-        if Twitter.sharedInstance().application(app, open:url, options: options) {
-            return true
+//    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool
+//    {
+//
+//        if Twitter.sharedInstance().application(app, open:url, options: options) {
+//            return true
+//        }
+//
+//        if PDKClient.sharedInstance().handleCallbackURL(url)
+//        {
+//            return true
+//        }
+//
+//        if !url.absoluteString.contains("808187279005")
+//        {
+//            return GIDSignIn.sharedInstance().handle(url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String?, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+//
+//        }else{
+//            if FBSDKApplicationDelegate.sharedInstance().application(app, open: url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String?, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+//            {
+//            return true
+//            }
+//           return true
+//        }
+//    }
+    
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        FBSDKApplicationDelegate.sharedInstance().application(app,open: url,sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String?,annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        func application(application: UIApplication,openURL url: NSURL,sourceApplication: String?,annotation: AnyObject?) -> Bool {
+            return FBSDKApplicationDelegate.sharedInstance().application(application,open: url as URL?,sourceApplication:sourceApplication,annotation: annotation)
         }
+        //return GIDSignIn.sharedInstance().handle(url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String!, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
         
-        if PDKClient.sharedInstance().handleCallbackURL(url)
-        {
-            return true
-        }
-        
-        if !url.absoluteString.contains("160743847789712")
-        {
-            return GIDSignIn.sharedInstance().handle(url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String!, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
-
-        }else{
-            if FBSDKApplicationDelegate.sharedInstance().application(app, open: url, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as! String!, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
-            {
-            return true
-            }
-           return false
-        }
+        let directedByGGL =  GIDSignIn.sharedInstance().handle(url as URL?, sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String, annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        let directedByTWTR =  Twitter.sharedInstance().application(app, open: url, options: options)
+        let directedBypin = PDKClient.sharedInstance().handleCallbackURL(url)
+        let sourceApplication = options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String
+        let annotation = options[UIApplicationOpenURLOptionsKey.annotation]
+        let Gidssgn = GIDSignIn.sharedInstance().handle(url,sourceApplication: sourceApplication,annotation: annotation)
+        return directedByGGL || directedByTWTR || Gidssgn || directedBypin
     }
+    
 
     
     func sign(_ signIn: GIDSignIn!, didDisconnectWith user:GIDGoogleUser!,

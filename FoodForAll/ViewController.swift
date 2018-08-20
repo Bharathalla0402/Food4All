@@ -113,7 +113,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     override func viewDidLoad() {
         super.viewDidLoad()
         
-       
+        
         
        self.diallingCode.delegate = self
         
@@ -125,8 +125,6 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         {
             DeviceToken = "bnhj"
         }
-        
-        
         
         
         locationManager.delegate=self
@@ -278,36 +276,36 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         orLabe.clipsToBounds = true
         scrollViewLogin.addSubview(orLabe)
         
-        twitterLoginbtn.frame = CGRect(x:self.view.frame.width/2-20, y:orLabe.frame.origin.y+50, width:40, height:40)
+        twitterLoginbtn.frame = CGRect(x:self.view.frame.width/2+5, y:orLabe.frame.origin.y+50, width:40, height:40)
         twitterLoginbtn.setImage(#imageLiteral(resourceName: "Twitter"), for: UIControlState.normal)
-        twitterLoginbtn.addTarget(self, action: #selector(ViewController.twitterloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        twitterLoginbtn.addTarget(self, action: #selector(self.twitterloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
         twitterLoginbtn.layer.cornerRadius = 4
         self.scrollViewLogin.addSubview(twitterLoginbtn)
         
-        twitterLoginbtn.isHidden = true
+       // twitterLoginbtn.isHidden = true
         
         
-        googleSigninButton.frame =  CGRect(x:twitterLoginbtn.frame.origin.x+50, y:orLabe.frame.origin.y+50, width:40, height:40)
+        googleSigninButton.frame =  CGRect(x:twitterLoginbtn.frame.origin.x-50, y:orLabe.frame.origin.y+50, width:40, height:40)
         googleSigninButton.setImage(#imageLiteral(resourceName: "GoogleSignIn icon"), for: UIControlState.normal)
-        googleSigninButton.addTarget(self, action: #selector(ViewController.googleloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        googleSigninButton.addTarget(self, action: #selector(self.googleloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
         googleSigninButton.layer.cornerRadius = 4
         googleSigninButton.clipsToBounds = true
         self.scrollViewLogin.addSubview(googleSigninButton)
         
         
         
-        facebookLoginbtn.frame = CGRect(x:twitterLoginbtn.frame.origin.x-50, y:twitterLoginbtn.frame.origin.y, width:40, height:40)
+        facebookLoginbtn.frame = CGRect(x:twitterLoginbtn.frame.origin.x-100, y:twitterLoginbtn.frame.origin.y, width:40, height:40)
         facebookLoginbtn.setImage(#imageLiteral(resourceName: "FaceBook"), for: UIControlState.normal)
-        facebookLoginbtn.addTarget(self, action: #selector(ViewController.faceBookloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        facebookLoginbtn.addTarget(self, action: #selector(self.faceBookloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
         facebookLoginbtn.layer.cornerRadius = 4
         self.scrollViewLogin.addSubview(facebookLoginbtn)
         
         
-//        InstagramLoginbtn.frame = CGRect(x:googleSigninButton.frame.origin.x+50, y:twitterLoginbtn.frame.origin.y+2, width:40, height:40)
-//        InstagramLoginbtn.setImage(UIImage(named: "instagram.png"), for: .normal)
-//        InstagramLoginbtn.addTarget(self, action: #selector(ViewController.InstagramloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
-//        InstagramLoginbtn.layer.cornerRadius = 4
-//        self.scrollViewLogin.addSubview(InstagramLoginbtn)
+        InstagramLoginbtn.frame = CGRect(x:twitterLoginbtn.frame.origin.x+50, y:twitterLoginbtn.frame.origin.y+2, width:40, height:40)
+        InstagramLoginbtn.setImage(UIImage(named: "instagram.png"), for: .normal)
+        InstagramLoginbtn.addTarget(self, action: #selector(self.InstagramloginButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        InstagramLoginbtn.layer.cornerRadius = 4
+        self.scrollViewLogin.addSubview(InstagramLoginbtn)
         
         
         
@@ -536,7 +534,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                                         
                                         if let json = NSString(data: data, encoding:  String.Encoding.utf8.rawValue){
                                             
-                                           // print(json)
+                                            print(json)
                                             result["result"] = json
                                             
                                             let responceDic:NSDictionary = ((dict as AnyObject).object(forKey: "meta") as? NSDictionary)!
@@ -545,10 +543,27 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                                             if (((responceDic as AnyObject).object(forKey: "code")) as! NSNumber) == 200
                                             {
                                                 self.dataDic2 = ((dict as AnyObject).object(forKey: "data") as? NSDictionary)!
+                                                print(self.dataDic2)
+                                                let instagramId:String = (self.dataDic2 as AnyObject).object(forKey: "id") as? String ?? ""
+                                                let instagramname:String = (self.dataDic2 as AnyObject).object(forKey: "full_name") as? String ?? ""
                                                 
-                                                let instagramId:String = (self.dataDic2 as AnyObject).object(forKey: "id") as! String
+                                                let url: String = (self.dataDic2 as AnyObject).object(forKey: "profile_picture") as? String ?? ""
+                                                self.imgURL = NSURL(string: url as String)!
                                                 
-                                                  self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=instagramlogin&instagram_id=\(instagramId)&gcm_id=\(self.DeviceToken)&device_type=ios")
+                                        
+                                                self.emailChkStr = "NO"
+                                                self.nameGet = instagramname
+                                                self.name1Get = instagramname
+                                                self.name2Get = ""
+                                                self.socialID = instagramId
+                                               
+                                                self.socialRegistaerStr = "instagram"
+                                                
+                                                self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=twitterlogin&twitter_id=\(self.socialID)&gcm_id=\(self.DeviceToken)&device_type=ios")
+                                                
+                                                
+                                                
+//                                                  self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=instagramlogin&instagram_id=\(instagramId)&gcm_id=\(self.DeviceToken)&device_type=ios")
                                                 
                                                 self.Inpopview.isHidden=true
                                                 self.InfooterView.isHidden=true
@@ -630,6 +645,7 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
     func CloseButtonAction(_ sender: UIButton!)
     {
+        self.view.endEditing(true)
         Inpopview.isHidden=true
         InfooterView.isHidden=true
     }
@@ -1698,16 +1714,16 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                     
                     
                     var email=String()
-                    email = self.faceBookDic.object(forKey: "email") as! String
+                    email = self.faceBookDic.object(forKey: "email") as? String ?? ""
                     
                     var fbid=String()
-                    fbid = self.faceBookDic.object(forKey: "id") as! String
+                    fbid = self.faceBookDic.object(forKey: "id") as? String ?? ""
                     
-                    self.emailGet = self.faceBookDic.object(forKey: "email") as! String
-                    self.nameGet = self.faceBookDic.object(forKey: "name") as! String
-                    self.name1Get = self.faceBookDic.object(forKey: "first_name") as! String
-                    self.name2Get = self.faceBookDic.object(forKey: "last_name") as! String
-                    self.socialID = self.faceBookDic.object(forKey: "id") as! String
+                    self.emailGet = self.faceBookDic.object(forKey: "email") as? String ?? ""
+                    self.nameGet = self.faceBookDic.object(forKey: "name") as? String ?? ""
+                    self.name1Get = self.faceBookDic.object(forKey: "first_name") as? String ?? ""
+                    self.name2Get = self.faceBookDic.object(forKey: "last_name") as? String ?? ""
+                    self.socialID = self.faceBookDic.object(forKey: "id") as? String ?? ""
                     let info : NSDictionary =  self.faceBookDic.object(forKey: "picture") as! NSDictionary
                     let info2 : NSDictionary =  info.object(forKey: "data") as! NSDictionary
                     let url: NSString = (info2.object(forKey: "url") as? NSString)!
@@ -1743,6 +1759,10 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
         else if socialRegistaerStr == "twitter"
         {
             strSocialParameter = "twitter_id"
+        }
+        else if socialRegistaerStr == "instagram"
+        {
+            strSocialParameter = "instagram_id"
         }
         
        
@@ -2216,6 +2236,9 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
                 {
                    // self.strUserId = responceDic.object(forKey: "user_id")  as! String
                     
+                    self.popview4.isHidden=true
+                    self.footerView4.isHidden=true
+                    
                     let foodVC = self.storyboard?.instantiateViewController(withIdentifier: "ConfirmOTPVC") as? ConfirmOTPVC
                     foodVC?.UsearID = String(describing: self.strUserId)
                     self.navigationController?.pushViewController(foodVC!, animated: true)
@@ -2467,100 +2490,147 @@ class ViewController: UIViewController,UITextFieldDelegate,GIDSignInDelegate,GID
     
      // MARK: Twitter Login Button Action :
     
-     func twitterloginButtonAction(_ sender: UIButton!)
-     {
-       //  AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
-        
-        
-      
-        
-        Twitter.sharedInstance().logIn { session, error in
+    
+    func twitterloginButtonAction(_ sender: UIButton!)
+    {
+    
+        Twitter.sharedInstance().logIn(completion: { (session, error) in
             if (session != nil) {
-                AFWrapperClass.svprogressHudDismiss(view: self)
-        
-                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
-                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_ user: TWTRUser?, _ error: Error?) -> Void in
-                    //    print("\(user?.profileImageURL)")
-                    
-                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
-                    
-                    //  print(self.imageURL)
-                    
-                    
-                  
-                })
-                
-                
-                
-                
-                
-                let stores = Twitter.sharedInstance().sessionStore
-                if let userID = stores.session()?.userID {
-                    stores.logOutUserID(userID)
-                    Twitter.sharedInstance().sessionStore.logOutUserID(userID)
-                }
-            } else {
-                AFWrapperClass.svprogressHudDismiss(view: self)
-                AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
-                //   print("error: \(String(describing: error?.localizedDescription))")
-            }
-        }
-        
-        
-        Twitter.sharedInstance().logIn { session, error in
-            if (session != nil) {
-                AFWrapperClass.svprogressHudDismiss(view: self)
-              //  print("signed in as \(session?.)")
-              //  print("signed in as \(session?.userID)")
-                
-                var fbid=String()
-                fbid = (session?.userID)!
-                
+                print("signed in as \(String(describing: session?.userName))");
+                let twUsername = session?.userName
+                print( twUsername!)
+
+//                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
+//                    client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_, user: TWTRUser?, _, error: Error?) ->
+//                            self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
+//                         print(self.imageURL)
+//                })
+//
                 self.TwitterCheckId = (session?.userID)!
-                
-             //   self.imageURL = NSURL(string:  (session?.profileImageURL)!)!
+
+                //   self.imageURL = NSURL(string:  (session?.profileImageURL)!)!
                 self.emailChkStr = "NO"
                 self.nameGet = (session?.userName)!
-                 self.name1Get = (session?.userName)!
+                self.name1Get = (session?.userName)!
                 self.name2Get = ""
                 self.socialID = (session?.userID)!
                 self.imgURL = self.imageURL
                 self.socialRegistaerStr = "twitter"
-                
-              
-                
-                
-//                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
-//                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_, user: TWTRUser?, _, error: Error?) ->
-//                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
-//                    emailChkStr = "NO"
-//                    nameGet = (session?.userName)!
-//                    socialID = (session?.userID)!
-//                    imgURL = self.imageURL
-//                    socialRegistaerStr = "Twitter"
-//                })
-                
-               // var email=String()
-              //  email = "Bharath@hmail.com"
-                
-                self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=twitterlogin&twitter_id=\(fbid)&gcm_id=\(self.DeviceToken)&device_type=ios")
-                
-                
+
+                  self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=twitterlogin&twitter_id=\(self.socialID)&gcm_id=\(self.DeviceToken)&device_type=ios")
+
                 let stores = Twitter.sharedInstance().sessionStore
                 if let userID = stores.session()?.userID {
                     stores.logOutUserID(userID)
                     Twitter.sharedInstance().sessionStore.logOutUserID(userID)
                 }
-            } else {
-                AFWrapperClass.svprogressHudDismiss(view: self)
-                AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
-              //  print("error: \(String(describing: error?.localizedDescription))")
-            }
-        }
 
-     }
+            } else {
+                print("error: \(String(describing: error?.localizedDescription))");
+            }
+        })
+    }
     
     
+
+//     func twitterloginButtonAction(_ sender: UIButton!)
+//     {
+//       //  AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+//
+//
+//
+//
+//        Twitter.sharedInstance().logIn { session, error in
+//            if (session != nil) {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//
+//                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
+//                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_ user: TWTRUser?, _ error: Error?) -> Void in
+//                    //    print("\(user?.profileImageURL)")
+//
+//                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
+//
+//                    //  print(self.imageURL)
+//
+//
+//
+//                })
+//
+//
+//
+//
+//
+//                let stores = Twitter.sharedInstance().sessionStore
+//                if let userID = stores.session()?.userID {
+//                    stores.logOutUserID(userID)
+//                    Twitter.sharedInstance().sessionStore.logOutUserID(userID)
+//                }
+//            } else {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
+//                //   print("error: \(String(describing: error?.localizedDescription))")
+//            }
+//        }
+//
+//
+//        Twitter.sharedInstance().logIn { session, error in
+//            if (session != nil) {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//              //  print("signed in as \(session?.)")
+//              //  print("signed in as \(session?.userID)")
+//
+//                var fbid=String()
+//                fbid = (session?.userID)!
+//
+//                self.TwitterCheckId = (session?.userID)!
+//
+//             //   self.imageURL = NSURL(string:  (session?.profileImageURL)!)!
+//                self.emailChkStr = "NO"
+//                self.nameGet = (session?.userName)!
+//                 self.name1Get = (session?.userName)!
+//                self.name2Get = ""
+//                self.socialID = (session?.userID)!
+//                self.imgURL = self.imageURL
+//                self.socialRegistaerStr = "twitter"
+//
+//
+//                print(self.nameGet)
+//                print(self.socialID)
+//                print(self.imgURL)
+//
+//
+//
+////                let client = TWTRAPIClient(userID: Twitter.sharedInstance().sessionStore.session()!.userID)
+////                client.loadUser(withID: Twitter.sharedInstance().sessionStore.session()!.userID, completion: {(_, user: TWTRUser?, _, error: Error?) ->
+////                    self.imageURL = NSURL(string:  (user?.profileImageURL)!)!
+////                    emailChkStr = "NO"
+////                    nameGet = (session?.userName)!
+////                    socialID = (session?.userID)!
+////                    imgURL = self.imageURL
+////                    socialRegistaerStr = "Twitter"
+////                })
+//
+//               // var email=String()
+//              //  email = "Bharath@hmail.com"
+//
+//                self.FbLoginAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=twitterlogin&twitter_id=\(fbid)&gcm_id=\(self.DeviceToken)&device_type=ios")
+//
+//
+//                let stores = Twitter.sharedInstance().sessionStore
+//                if let userID = stores.session()?.userID {
+//                    stores.logOutUserID(userID)
+//                    Twitter.sharedInstance().sessionStore.logOutUserID(userID)
+//                }
+//            } else {
+//                AFWrapperClass.svprogressHudDismiss(view: self)
+//                AFWrapperClass.alert(Constants.applicationName, message: (error?.localizedDescription)!, view: self)
+//              //  print("error: \(String(describing: error?.localizedDescription))")
+//            }
+//        }
+//
+//     }
+//
+//
     
     
     @IBAction func bavkButtonAction(_ sender: Any) {

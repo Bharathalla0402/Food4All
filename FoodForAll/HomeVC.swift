@@ -17,7 +17,7 @@ import WebKit
 
 
 
-class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UITableViewDelegate,UITableViewDataSource,UISearchBarDelegate,UIWebViewDelegate,UITextViewDelegate {
+class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UITableViewDelegate,UITableViewDataSource,UISearchBarDelegate,UIWebViewDelegate,UITextViewDelegate,UITextFieldDelegate {
 
     
     @IBOutlet weak var topView: UINavigationBar!
@@ -89,6 +89,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     var locationButt = UIButton()
     
     
+    
+    
     var TextDescription = UITextView()
     var frontView = UIView()
     
@@ -131,6 +133,22 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
      var strpage = String()
      var strVideoUrl = String()
     var strwidth = String()
+    
+    var addressCheck = String()
+    var popupcheck = String()
+    var popview4 = UIView()
+    var footerView4 = UIView()
+    var updatelat = Double()
+    var updatelong = Double()
+    var CancelButton4 = UIButton()
+    var DoneButton4 = UIButton()
+    var forgotPassWordTF = ACFloatingTextfield()
+    
+    var popview5 = UIView()
+    var footerView5 = UIView()
+    var rememberButton = UIButton()
+    var CancelButton5 = UIButton()
+    var DoneButton5 = UIButton()
     
     @IBOutlet var VideoWebView: WKWebView!
     @IBOutlet weak var DataWebView: UIWebView!
@@ -251,6 +269,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let lat = self.locationManager.location?.coordinate.latitude {
                 currentLatitude = lat
                 firstLatitude = lat
+                updatelat = lat
+                myLatitude = lat
             }else {
                 
             }
@@ -258,6 +278,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let long = self.locationManager.location?.coordinate.longitude {
                 currentLongitude = long
                 firstLongitude = long
+                 updatelong = long
+                 myLongitude = long
             }else {
                 
             }
@@ -339,6 +361,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let lat = self.locationManager.location?.coordinate.latitude {
                 currentLatitude = lat
                 firstLatitude = lat
+                updatelat = lat
+                 myLatitude = lat
             }else {
                 
             }
@@ -346,6 +370,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let long = self.locationManager.location?.coordinate.longitude {
                 currentLongitude = long
                 firstLongitude = long
+                updatelong = long
+                 myLongitude = long
             }else {
                 
             }
@@ -442,6 +468,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let lat = self.locationManager.location?.coordinate.latitude {
                 currentLatitude = lat
                 firstLatitude = lat
+                updatelat = lat
+                 myLatitude = lat
             }else {
                 
             }
@@ -449,6 +477,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let long = self.locationManager.location?.coordinate.longitude {
                 currentLongitude = long
                 firstLongitude = long
+                updatelong = long
+                 myLongitude = long
             }else {
                 
             }
@@ -759,6 +789,46 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
                     }
                     
                     
+                    
+                    
+                    if let quantity = responceDic.object(forKey: "address") as? NSNumber
+                    {
+                        self.addressCheck =  String(describing: quantity)
+                    }
+                    else if let quantity = responceDic.object(forKey: "address") as? String
+                    {
+                        self.addressCheck = quantity
+                    }
+                    
+                    if self.addressCheck == "1"
+                    {
+                        if UserDefaults.standard.object(forKey: "UserId") != nil
+                        {
+                            self.addaddress()
+                        }
+                    }
+                    else if self.addressCheck == "2"
+                    {
+                        if UserDefaults.standard.object(forKey: "UserId") != nil
+                        {
+                            if UserDefaults.standard.object(forKey: "Popupshow") != nil
+                            {
+                                
+                            }
+                            else
+                            {
+                                self.Switchaddress()
+                            }
+                        }
+                    }
+                    else
+                    {
+                        
+                    }
+                    
+                    
+                    
+                    
                     //print(self.imagesArray)
 //                    if self.imagesArray.count == 0
 //                    {
@@ -783,6 +853,133 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             //print(error.localizedDescription)
         }
     }
+    
+     // MARK: Switch Address
+    
+    func Switchaddress()
+    {
+        self.tabBarController?.tabBar.isUserInteractionEnabled = false
+        
+        popview5.isHidden=false
+        footerView5.isHidden=false
+       
+        
+        popview5.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview5.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview5)
+        
+        footerView5.frame = CGRect(x:self.view.frame.size.width/2-150, y:self.view.frame.size.height/2-100, width:300, height:220)
+        footerView5.backgroundColor = UIColor.white
+        footerView5.layer.cornerRadius = 8.0
+        footerView5.clipsToBounds = true
+        popview5.addSubview(footerView5)
+        
+        
+        let forgotlab = UILabel()
+        forgotlab.frame = CGRect(x:0, y:0, width:footerView5.frame.size.width, height:40)
+        forgotlab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        forgotlab.text="Food4All"
+        forgotlab.font =  UIFont(name:"Helvetica-Bold", size: 15)
+        forgotlab.textColor=UIColor.white
+        forgotlab.textAlignment = .center
+        footerView5.addSubview(forgotlab)
+        
+        
+        let labUnderline = UILabel()
+        labUnderline.frame = CGRect(x:0, y:forgotlab.frame.origin.y+forgotlab.frame.size.height+1, width:footerView5.frame.size.width, height:2)
+        labUnderline.backgroundColor = UIColor.darkGray
+        labUnderline.isHidden=true
+        footerView5.addSubview(labUnderline)
+        
+        
+        let label2 = UILabel()
+        label2.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
+        label2.text = "Are you sure want to switch the address?"
+        label2.numberOfLines = 0
+        label2.textAlignment = .center
+        footerView5.addSubview(label2)
+        
+        rememberButton.frame = CGRect(x:10, y:label2.frame.size.height+label2.frame.origin.y+20, width:30, height:30)
+        rememberButton.backgroundColor = UIColor.clear
+        rememberButton.setImage(UIImage(named: "UncheckBox"), for: UIControlState.normal)
+        rememberButton.addTarget(self, action: #selector(self.rememberButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        rememberButton.isSelected = false
+        footerView5.addSubview(rememberButton)
+        
+        let rememberLabel = UILabel()
+        rememberLabel.frame = CGRect(x:rememberButton.frame.origin.x+30, y:rememberButton.frame.origin.y, width:200, height:30)
+        rememberLabel.backgroundColor = UIColor.clear
+        rememberLabel.text="Don't show this message again"
+        rememberLabel.font =  UIFont(name:"Helvetica", size: 14)
+        rememberLabel.textAlignment = .left
+        rememberLabel.textColor=UIColor.darkGray
+        footerView5.addSubview(rememberLabel)
+        
+        
+        CancelButton5.frame = CGRect(x:10, y:rememberLabel.frame.size.height+rememberLabel.frame.origin.y+20, width:footerView5.frame.size.width/2-15, height:40)
+        CancelButton5.backgroundColor=#colorLiteral(red: 0.9137254902, green: 0.9137254902, blue: 0.9137254902, alpha: 1)
+        CancelButton5.setTitle("No", for: .normal)
+        CancelButton5.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        CancelButton5.setTitleColor(#colorLiteral(red: 0.4980392157, green: 0.4980392157, blue: 0.4980392157, alpha: 1), for: .normal)
+        CancelButton5.titleLabel?.textAlignment = .center
+        CancelButton5.addTarget(self, action: #selector(self.switchcanceladdressButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView5.addSubview(CancelButton5)
+        
+        
+        DoneButton5.frame = CGRect(x:CancelButton5.frame.size.width+CancelButton5.frame.origin.x+10, y:rememberLabel.frame.size.height+rememberLabel.frame.origin.y+20, width:footerView5.frame.size.width/2-15, height:40)
+        DoneButton5.backgroundColor=#colorLiteral(red: 0.1097696498, green: 0.6676027775, blue: 0.8812960982, alpha: 1)
+        DoneButton5.setTitle("Yes", for: .normal)
+        DoneButton5.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        DoneButton5.setTitleColor(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1), for: .normal)
+        DoneButton5.titleLabel?.textAlignment = .center
+        DoneButton5.addTarget(self, action: #selector(self.switchaddressDoneButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView5.addSubview(DoneButton5)
+    }
+    
+    // MARK: remember Button Action :
+    func rememberButtonAction(_ sender: UIButton!)
+    {
+        if sender.isSelected
+        {
+            rememberButton.setImage(UIImage(named: "UncheckBox"), for: .normal)
+            sender.isSelected = false
+        }
+        else
+        {
+            rememberButton.setImage(UIImage(named: "CheckRightbox"), for: .normal)
+            sender.isSelected = true
+        }
+    }
+    
+    // MARK: Cancel Button Action :
+    func switchcanceladdressButtonAction(_ sender: UIButton!)
+    {
+        self.tabBarController?.tabBar.isUserInteractionEnabled = true
+        popview5.isHidden=true
+        footerView5.isHidden=true
+        
+         UserDefaults.standard.set("true", forKey: "Popupshow")
+    }
+    
+    
+    // MARK: Done Button Action :
+    func switchaddressDoneButtonAction(_ sender: UIButton!)
+    {
+        self.tabBarController?.tabBar.isUserInteractionEnabled = true
+        popview5.isHidden=true
+        footerView5.isHidden=true
+        
+        if rememberButton.isSelected
+        {
+            UserDefaults.standard.set("true", forKey: "Popupshow")
+        }
+        
+        if UserDefaults.standard.object(forKey: "UserId") != nil
+        {
+             self.addaddress()
+        }
+    }
+    
     
      // MARK: videobutt Clicked :
     
@@ -948,6 +1145,214 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
          _ = self.tabBarController?.selectedIndex = 4
     }
     
+     // MARK: Add Location
+    
+    func addaddress()
+    {
+        self.tabBarController?.tabBar.isUserInteractionEnabled = false
+        popupcheck = "2"
+        
+        popview4.isHidden=false
+        footerView4.isHidden=false
+        forgotPassWordTF.text=""
+        forgotPassWordTF.placeholder=""
+        forgotPassWordTF.removeFromSuperview()
+        
+        popview4.frame = CGRect(x:0, y:0, width:self.view.frame.size.width, height:self.view.frame.size.height)
+        popview4.backgroundColor=UIColor(patternImage: UIImage(named: "black_strip1.png")!)
+        self.view.addSubview(popview4)
+        
+        footerView4.frame = CGRect(x:self.view.frame.size.width/2-150, y:self.view.frame.size.height/2-100, width:300, height:200)
+        footerView4.backgroundColor = UIColor.white
+        popview4.addSubview(footerView4)
+        
+        
+        let forgotlab = UILabel()
+        forgotlab.frame = CGRect(x:0, y:0, width:footerView4.frame.size.width, height:40)
+        forgotlab.backgroundColor=#colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2431372549, alpha: 1)
+        forgotlab.text="Add Address"
+        forgotlab.font =  UIFont(name:"Helvetica-Bold", size: 15)
+        forgotlab.textColor=UIColor.white
+        forgotlab.textAlignment = .center
+        footerView4.addSubview(forgotlab)
+        
+        
+        let labUnderline = UILabel()
+        labUnderline.frame = CGRect(x:0, y:forgotlab.frame.origin.y+forgotlab.frame.size.height+1, width:footerView4.frame.size.width, height:2)
+        labUnderline.backgroundColor = UIColor.darkGray
+        labUnderline.isHidden=true
+        footerView4.addSubview(labUnderline)
+        
+        
+        
+        forgotPassWordTF = ACFloatingTextfield()
+        forgotPassWordTF.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
+        forgotPassWordTF.delegate = self
+        forgotPassWordTF.placeholder = "Please Select address"
+        forgotPassWordTF.placeHolderColor=UIColor.lightGray
+        forgotPassWordTF.selectedPlaceHolderColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.lineColor=UIColor.lightGray
+        forgotPassWordTF.selectedLineColor=#colorLiteral(red: 0.5520249009, green: 0.773814857, blue: 0.2442161441, alpha: 1)
+        forgotPassWordTF.font = UIFont.systemFont(ofSize: 14)
+        forgotPassWordTF.keyboardType=UIKeyboardType.emailAddress
+        forgotPassWordTF.autocorrectionType = .no
+        forgotPassWordTF.autocapitalizationType = .none
+        forgotPassWordTF.spellCheckingType = .no
+        footerView4.addSubview(forgotPassWordTF)
+        
+        let selectbutt = UIButton()
+        selectbutt.frame = CGRect(x:10, y:labUnderline.frame.size.height+labUnderline.frame.origin.y+15, width:280, height:45)
+        selectbutt.backgroundColor=UIColor.clear
+        selectbutt.addTarget(self, action: #selector(HomeVC.locationButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(selectbutt)
+        
+        
+        CancelButton4.frame = CGRect(x:10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView4.frame.size.width/2-15, height:40)
+        CancelButton4.backgroundColor=#colorLiteral(red: 0.9137254902, green: 0.9137254902, blue: 0.9137254902, alpha: 1)
+        CancelButton4.setTitle("Cancel", for: .normal)
+        CancelButton4.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        CancelButton4.setTitleColor(#colorLiteral(red: 0.4980392157, green: 0.4980392157, blue: 0.4980392157, alpha: 1), for: .normal)
+        CancelButton4.titleLabel?.textAlignment = .center
+        CancelButton4.addTarget(self, action: #selector(self.canceladdressButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(CancelButton4)
+        CancelButton4.isHidden = true
+        
+        DoneButton4.frame = CGRect(x:10, y:forgotPassWordTF.frame.size.height+forgotPassWordTF.frame.origin.y+35, width:footerView4.frame.size.width-20, height:40)
+        DoneButton4.backgroundColor=#colorLiteral(red: 0.1097696498, green: 0.6676027775, blue: 0.8812960982, alpha: 1)
+        DoneButton4.setTitle("Done", for: .normal)
+        DoneButton4.titleLabel!.font =  UIFont(name:"Helvetica", size: 16)
+        DoneButton4.setTitleColor(#colorLiteral(red: 1, green: 1, blue: 1, alpha: 1), for: .normal)
+        DoneButton4.titleLabel?.textAlignment = .center
+        DoneButton4.addTarget(self, action: #selector(self.addaddressDoneButtonAction(_:)), for: UIControlEvents.touchUpInside)
+        footerView4.addSubview(DoneButton4)
+        
+        self.forgotPassWordTF.text = ""
+        
+         self.setUsersClosestCity()
+        
+        self.addDoneButtonOnKeyboard2()
+        
+    }
+    
+    func addDoneButtonOnKeyboard2()
+    {
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle       = UIBarStyle.default
+        let flexSpace              = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let done: UIBarButtonItem  = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.done, target: self, action: #selector(self.doneButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(flexSpace)
+        items.append(done)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        self.forgotPassWordTF.inputAccessoryView = doneToolbar
+    }
+    
+   
+    
+    // MARK: Cancel Button Action :
+    func canceladdressButtonAction(_ sender: UIButton!)
+    {
+        self.tabBarController?.tabBar.isUserInteractionEnabled = true
+        popview4.isHidden=true
+        footerView4.isHidden=true
+        self.popupcheck = "1"
+    }
+    
+    
+    // MARK: Done Button Action :
+    func addaddressDoneButtonAction(_ sender: UIButton!)
+    {
+        var message = String()
+        if (forgotPassWordTF.text?.isEmpty)!
+        {
+            message = "Please Select the address"
+        }
+        
+        if message.characters.count > 1
+        {
+            AFWrapperClass.alert(Constants.applicationName, message: message, view: self)
+        }
+        else
+        {
+            self.ForgotAPIMethod(baseURL: String(format:"%@",Constants.mainURL) , params: "method=forgetPassword&email=\(forgotPassWordTF.text!)")
+        }
+        
+    }
+    
+    
+    @objc private  func ForgotAPIMethod (baseURL:String , params: String)
+    {
+        //  print(params);
+        
+        
+        let baseURL: String  = String(format:"%@%@",Constants.mainURL,"updateAddress")
+        let strkey = Constants.ApiKey
+        
+        let PostDataValus = NSMutableDictionary()
+        PostDataValus.setValue(strkey, forKey: "api_key")
+        PostDataValus.setValue(self.strUserID, forKey: "user_id")
+        PostDataValus.setValue(updatelat, forKey: "lat")
+        PostDataValus.setValue(updatelong, forKey: "long")
+        PostDataValus.setValue(forgotPassWordTF.text, forKey: "address")
+        
+        
+        
+        var jsonStringValues = String()
+        let jsonData: Data? = try? JSONSerialization.data(withJSONObject: PostDataValus, options: .prettyPrinted)
+        if jsonData == nil {
+            
+        }
+        else {
+            jsonStringValues = String(data: jsonData!, encoding: String.Encoding.utf8)!
+            print("jsonString: \(jsonStringValues)")
+        }
+        
+        
+        print(baseURL)
+        print(jsonStringValues)
+        
+        
+        
+        AFWrapperClass.svprogressHudShow(title: "Loading...", view: self)
+        AFWrapperClass.requestPOSTURLWithUrlsession(baseURL, params: jsonStringValues, success: { (jsonDic) in
+            
+            DispatchQueue.main.async {
+                AFWrapperClass.svprogressHudDismiss(view: self)
+                 self.tabBarController?.tabBar.isUserInteractionEnabled = true
+                self.popupcheck = "1"
+                let responceDic:NSDictionary = jsonDic as NSDictionary
+                   print(responceDic)
+                if (responceDic.object(forKey: "responseCode") as! NSNumber) == 200
+                {
+                    self.popview4.isHidden=true
+                    self.footerView4.isHidden=true
+                }
+                else
+                {
+                    let strerror = responceDic.object(forKey: "error") as? String ?? "Server error"
+                    let Message = responceDic.object(forKey: "responseMessage") as? String ?? strerror
+                    
+                    AFWrapperClass.svprogressHudDismiss(view: self)
+                    AFWrapperClass.alert(Constants.applicationName, message: Message, view: self)
+                }
+            }
+            
+        }) { (error) in
+            
+            AFWrapperClass.svprogressHudDismiss(view: self)
+            AFWrapperClass.alert(Constants.applicationName, message: error.localizedDescription, view: self)
+            //print(error.localizedDescription)
+        }
+    }
+    
+    
+    
+
+    
     
     // MARK: Become volunteer:
     
@@ -955,6 +1360,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
     {
         if UserDefaults.standard.object(forKey: "UserId") != nil
         {
+            popupcheck = "1"
             self.tabBarController?.tabBar.isUserInteractionEnabled = false
             popview.isHidden=false
             footerView.isHidden=false
@@ -1055,6 +1461,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             locationlab.frame = CGRect(x:10, y:linelab.frame.size.height+linelab.frame.origin.y+15, width:footerView.frame.size.width-20, height:15)
             locationlab.text = "Address"
             locationlab.textColor = UIColor.lightGray
+            locationlab.isHidden = true
             footerView.addSubview(locationlab)
             
             let Cityview = UIView()
@@ -1062,7 +1469,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             Cityview.layer.borderWidth=1.0
             Cityview.layer.borderColor = UIColor(red: CGFloat(38 / 255.0), green: CGFloat(164 / 255.0), blue: CGFloat(154 / 255.0), alpha: CGFloat(1.0)).cgColor
             footerView.addSubview(Cityview)
-            
+            Cityview.isHidden = true
             
             
             citylab.frame = CGRect(x:5, y:5, width:Cityview.frame.size.width-10, height:40)
@@ -1076,7 +1483,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             locationButt.backgroundColor=UIColor.clear
             locationButt.addTarget(self, action: #selector(HomeVC.locationButtonAction(_:)), for: UIControlEvents.touchUpInside)
             Cityview.addSubview(locationButt)
-            
+            locationButt.isHidden = true
             
             
             
@@ -1413,7 +1820,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         popview3.addSubview(footerView3)
         
         
-        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
+        camera = GMSCameraPosition.camera(withLatitude: myLatitude, longitude: myLongitude, zoom: 8.0)
         mapView2 = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: footerView3.frame.size.width, height: footerView3.frame.size.height), camera: camera)
         mapView2.delegate = self
         self.mapView2.settings.compassButton = true
@@ -1475,7 +1882,14 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         locationlab.frame = CGRect(x:10, y:52, width:locationView.frame.size.width-20, height:40)
         locationlab.numberOfLines=0
         locationlab.backgroundColor=UIColor.white
-        locationlab.text = self.citylab.text!
+        if self.popupcheck == "2"
+        {
+            locationlab.text = self.forgotPassWordTF.text
+        }
+        else
+        {
+            locationlab.text = self.citylab.text!
+        }
         locationlab.font =  UIFont(name:"Helvetica", size: 15)
         locationlab.textColor=UIColor.black
         locationlab.textAlignment = .left
@@ -1566,7 +1980,7 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
         //  locationManager.requestAlwaysAuthorization()
-        locationManager.startUpdatingLocation()
+      //  locationManager.startUpdatingLocation()
         
         currentLatitude = (locationManager.location?.coordinate.latitude)!
         currentLongitude = (locationManager.location?.coordinate.longitude)!
@@ -1577,6 +1991,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             currentLongitude = (locationManager.location?.coordinate.longitude)!
             firstLatitude = (locationManager.location?.coordinate.latitude)!
             firstLongitude = (locationManager.location?.coordinate.longitude)!
+            updatelat =  (locationManager.location?.coordinate.latitude)!
+            updatelong = (locationManager.location?.coordinate.latitude)!
         }
         
         camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
@@ -1626,8 +2042,8 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
                // let strkey = Constants.ApiKey
               
                 
-                let strlat = "\(firstLatitude)"
-                let strlong = "\(firstLongitude)"
+              //  let strlat = "\(firstLatitude)"
+              //  let strlong = "\(firstLongitude)"
 
             
                 let strkey = Constants.ApiKey
@@ -1637,10 +2053,10 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
                 PostDataValus.setValue(strUserID, forKey: "user_id")
                 PostDataValus.setValue("1", forKey: "connect_foodbank")
                 PostDataValus.setValue(strFoodbankId, forKey: "foodbank_id")
-                PostDataValus.setValue(citylab.text!, forKey: "address")
+              //  PostDataValus.setValue(citylab.text!, forKey: "address")
                 PostDataValus.setValue(TextDescription.text!, forKey: "description")
-                PostDataValus.setValue(strlat, forKey: "lat")
-                PostDataValus.setValue(strlong, forKey: "long")
+              //  PostDataValus.setValue(strlat, forKey: "lat")
+              //  PostDataValus.setValue(strlong, forKey: "long")
                
                 
                 
@@ -1800,11 +2216,9 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
         //        }
         
         
-        
-        
-        
+      
         let geoCoder = CLGeocoder()
-        let location = CLLocation(latitude: currentLatitude, longitude: currentLongitude)
+        let location = CLLocation(latitude: myLatitude, longitude: myLongitude)
         
         geoCoder.reverseGeocodeLocation(location, completionHandler: { placemarks, error in
             guard let addressDict = placemarks?[0].addressDictionary else {
@@ -1818,8 +2232,17 @@ class HomeVC: UIViewController,LCBannerViewDelegate,CLLocationManagerDelegate,UI
             if let formattedAddress = addressDict["FormattedAddressLines"] as? [String] {
               //  print(formattedAddress.joined(separator: ", "))
                 
-                self.citylab.text! = formattedAddress.joined(separator: ", ")
-                self.locationlab.text = formattedAddress.joined(separator: ", ")
+                if self.popupcheck == "2"
+                {
+                      self.forgotPassWordTF.text = formattedAddress.joined(separator: ", ")
+                     self.locationlab.text = formattedAddress.joined(separator: ", ")
+                }
+                else
+                {
+                    self.citylab.text! = formattedAddress.joined(separator: ", ")
+                    self.locationlab.text = formattedAddress.joined(separator: ", ")
+                }
+               
             }
             
         })
@@ -2398,9 +2821,21 @@ extension HomeVC: GMSMapViewDelegate
         firstLatitude=position.target.latitude
         firstLongitude=position.target.longitude
         
+        updatelat = position.target.latitude
+        updatelong = position.target.longitude
         
-        self.citylab.text! = "Featching Address..."
-        locationlab.text = "Featching Address..."
+        if popupcheck == "2"
+        {
+            self.forgotPassWordTF.text = "Featching Address..."
+            locationlab.text = "Featching Address..."
+        }
+        else
+        {
+            self.citylab.text! = "Featching Address..."
+            locationlab.text = "Featching Address..."
+        }
+       
+        
         
         self.marker.position = CLLocationCoordinate2D(latitude: firstLatitude, longitude: firstLongitude)
         self.marker.map = self.mapView
@@ -2429,17 +2864,48 @@ extension HomeVC: GMSMapViewDelegate
         
         if error != nil {
          //   print("Unable to Reverse Geocode Location (\(error))")
-            self.citylab.text! = "Unable to Find Address for Location"
-            locationlab.text = "Unable to Find Address for Location"
+            
+            if popupcheck == "2"
+            {
+                locationlab.text = "Unable to Find Address for Location"
+                self.forgotPassWordTF.text = "Unable to Find Address for Location"
+            }
+            else
+            {
+                self.citylab.text! = "Unable to Find Address for Location"
+                locationlab.text = "Unable to Find Address for Location"
+            }
+            
+           
             
         } else {
             if let placemarks = placemarks, let placemark = placemarks.first {
-                self.citylab.text! = placemark.compactAddress!
-                locationlab.text = placemark.compactAddress!
+                
+                if popupcheck == "2"
+                {
+                    locationlab.text = placemark.compactAddress!
+                    self.forgotPassWordTF.text = placemark.compactAddress!
+                }
+                else
+                {
+                    self.citylab.text! = placemark.compactAddress!
+                    locationlab.text = placemark.compactAddress!
+                }
+               
               //  print( self.citylab.text!)
             } else {
-                self.citylab.text! = "No Matching Addresses Found"
-                locationlab.text = "No Matching Addresses Found"
+                
+                if popupcheck == "2"
+                {
+                    locationlab.text = "No Matching Addresses Found"
+                    self.forgotPassWordTF.text = "No Matching Addresses Found"
+                }
+                else
+                {
+                    self.citylab.text! = "No Matching Addresses Found"
+                    locationlab.text = "No Matching Addresses Found"
+                }
+                
             }
         }
     }
@@ -2459,7 +2925,8 @@ extension HomeVC: ABCGooglePlacesSearchViewControllerDelegate {
         firstLatitude=place.location.coordinate.latitude
         firstLongitude=place.location.coordinate.longitude
         
-        
+        updatelat = place.location.coordinate.latitude
+        updatelong = place.location.coordinate.longitude
 //        camera = GMSCameraPosition.camera(withLatitude: currentLatitude, longitude: currentLongitude, zoom: 8.0)
 //        mapView2 = GMSMapView.map(withFrame: CGRect(x: 0, y: 0, width: footerView3.frame.size.width, height: footerView3.frame.size.height), camera: camera)
 //        mapView2.delegate = self
